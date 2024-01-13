@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
-%% @doc crud top level supervisor.
+%% @doc server top level supervisor.
 %% @end
 %%%-------------------------------------------------------------------
 
--module(crud_sup).
+-module(server_supervisor).
 
 -behaviour(supervisor).
 

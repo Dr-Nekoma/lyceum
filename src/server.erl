@@ -1,16 +1,16 @@
 %%%-------------------------------------------------------------------
-%% @doc crud public API
+%% @doc server public API
 %% @end
 %%%-------------------------------------------------------------------
 
--module(crud_app).
+-module(server).
 
 -behaviour(application).
 
 -export([start/2, stop/1, postgres_test/0, calculate_area/0, area/0]).
 
 start(_StartType, _StartArgs) ->
-    crud_sup:start_link().
+    server_supervisor:start_link().
 
 stop(_State) ->
     ok.
@@ -20,18 +20,10 @@ postgres_test() ->
 	epgsql:connect(#{host => "localhost",
 			 username => "admin",
 			 password => "admin",
-			 database => "crud",
+			 database => "mmo",
 			 timeout => 4000
 			}),
     epgsql:squery(Connection, "SELECT 'Hello World! :)'").
-
-%% -spec area({atom(), term()}) -> integer().
-
-%% area({square, X}) ->
-%%     X*X;
-
-%% area({rectangle, X, Y}) ->
-%%     X*Y.
 
 -spec area() -> integer().
 
@@ -44,7 +36,7 @@ area() ->
     area().
 
 calculate_area() ->
-    Pid = spawn(crud_app, area, []),
+    Pid = spawn(server, area, []),
     Pid ! {self(), square, 2},
     receive
 	{_, Reply} -> io:format(integer_to_list(Reply))

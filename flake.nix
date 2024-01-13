@@ -82,7 +82,7 @@
                 services.postgres = {
                   package = pkgs.postgresql_15.withPackages (p: [ ]);
                   enable = true;
-                  initialDatabases = [ { name = "crud"; } ];
+                  initialDatabases = [ { name = "mmo"; } ];
                   port = 5432;
                   listen_addresses = "127.0.0.1";
                   initialScript = ''
