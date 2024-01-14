@@ -7,13 +7,36 @@
 
 -behaviour(application).
 
--export([start/2, stop/1, postgres_test/0, calculate_area/0, area/0]).
+-export([start/2, stop/1, start/0]).
 
 start(_StartType, _StartArgs) ->
     server_supervisor:start_link().
 
 stop(_State) ->
     ok.
+
+start() ->
+    spawn(fun () -> {ok, Sock} = gen_tcp:listen(12321, [{packet, line}]),
+                    echo_loop(Sock)
+          end).
+
+%% internal functions
+
+echo_loop(Sock) ->
+    {ok, Conn} = gen_tcp:accept(Sock),
+    io:format("Got connection: ~p~n", [Conn]),
+    Handler = spawn(fun () -> handle(Conn) end),
+    gen_tcp:controlling_process(Conn, Handler),
+    echo_loop(Sock).
+
+handle(Conn) ->
+    receive
+        {tcp, Conn, Data} ->
+            gen_tcp:send(Conn, Data),
+            handle(Conn);
+        {tcp_closed, Conn} ->
+            io:format("Connection closed: ~p~n", [Conn])
+    end.
 
 postgres_test() ->
     {ok, Connection} =
@@ -25,29 +48,5 @@ postgres_test() ->
 			}),
     epgsql:squery(Connection, "SELECT 'Hello World! :)'").
 
--spec area() -> integer().
-
-area() ->
-    receive
-	{From, square, X} -> 
-	    From ! {self(), X*X};
-	{From, rectangle, X, Y} -> From ! {self(), X*Y}
-    end,
-    area().
-
-calculate_area() ->
-    Pid = spawn(server, area, []),
-    Pid ! {self(), square, 2},
-    receive
-	{_, Reply} -> io:format(integer_to_list(Reply))
-    end.
-
-%% remote_call(Pid, Request) ->
-%%     Tag = erlang:make_ref(),
-%%     Pid ! {self(), Tag, Request},
-%%     receive
-%% 	{Tag, Response} ->
-%% 	    Response
-%%     end.
 
 %% internal functions
