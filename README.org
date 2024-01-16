@@ -1,0 +1,17 @@
+#+TITLE: Lyceum Server 🏛️
+
+* About
+
+This is an MMO Server written in Erlang, for a game called Lyceum.
+
+* How to run
+
+Currently it is very simple:
+
+#+BEGIN_SRC shell
+  nix develop --impure
+  rebar3 get-deps
+  rebar3 shell
+#+END_SRC
+
+Then simply interact with /localhost:8080/.
