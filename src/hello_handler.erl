@@ -2,8 +2,7 @@
 
 -behavior(cowboy_rest).
 
-%% REST Callbacks
--export([init/2, allowed_methods/2, content_types_provided/2, hello/2, postgres_hello/0]).
+-export([init/2, allowed_methods/2, content_types_provided/2, hello/2]).
 
 init(Request, State) ->
     {cowboy_rest, Request, State}.
@@ -18,7 +17,6 @@ hello(Request, State) ->
     Message = [{response, [{version, "0.1"}], [{message, [], [postgres_hello()]}]}],
     {utilities:encode(Message), Request, State}.
 
-%% -------------------------------------------------------
 postgres_hello() ->
     {ok, Connection} =
         epgsql:connect(#{host => "localhost",
