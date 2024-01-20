@@ -34,7 +34,8 @@ registry(Request, State) ->
     {ok, Body, _} = cowboy_req:read_urlencoded_body(Request),
     case utilities:retrieve_input(Body) of
 	{ok, Input} ->
-	    
+	    ok
+    end,
     Message = [{response, [{version, "0.1"}], [{message, [], [postgres_hello()]}]}],
     {utilities:encode(Message), Request, State}.
 
