@@ -23,6 +23,8 @@ decode({topLevel, Data}) ->
     {XML, []} = xmerl_scan:string(Data),
     decode(XML).
 
+%% To test:
+%% utilities:decode({topLevel, "<?xml version=\"1.0\"?><abc><xyz>XYZ</xyz><def>DEF</def></abc>"}).
 
 retrieve_input(Body) ->
     case Body of 
