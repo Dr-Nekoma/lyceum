@@ -32,6 +32,7 @@ retrieve_input(Body) ->
             {ok, Input};
         [] ->
             {error, cowboy_req:reply(400, #{<<"content-type">> => <<"text/xml">>}, encode([{message, [], ["Missing body on the request."]}]))};
-        _ ->
+        Otherwise ->
+	    io:format("~p~n", Otherwise),
             {error, cowboy_req:reply(400, #{<<"content-type">> => <<"text/xml">>}, encode([{message, [], ["Bad request."]}]))}
     end.

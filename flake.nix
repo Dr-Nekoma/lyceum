@@ -80,7 +80,7 @@
                 ];
 
                 services.postgres = {
-                  package = pkgs.postgresql_15.withPackages (p: [ ]);
+                  package = pkgs.postgresql_15.withPackages (p: with p; []);
                   enable = true;
                   initialDatabases = [ { name = "mmo"; } ];
                   port = 5432;
