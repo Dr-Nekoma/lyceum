@@ -77,6 +77,7 @@
                   pkgs.rebar3
                   pkgs.erlang
                   pkgs.erlang-ls
+                  pkgs.zig
                 ];
 
                 services.postgres = {
