@@ -103,3 +103,4 @@ pub fn main() !void {
 
 // TODO: Do proper error handling in receive_message
 // TODO: Create build.zig
+// TODO: Make zig build command nix compatible
