@@ -8,7 +8,7 @@
 %-behaviour(application).
 
 -export([start/1, init/1, start/2, start/0, stop/1, stop/0]).
--export([foo/1, bar/1]).
+-export([foo/1, bar/1, receive_whatever/0]).
 
 start(_StartType, _StartArgs) ->
     Dispatch = cowboy_router:compile([{'_', [{"/", hello_handler, []},
@@ -16,6 +16,13 @@ start(_StartType, _StartArgs) ->
     {ok, _} =
         cowboy:start_clear(my_http_listener, [{port, 7070}], #{env => #{dispatch => Dispatch}}),
     server_supervisor:start_link().
+
+receive_whatever() ->
+    erlang:set_cookie(lyceum),
+    receive
+	Value ->
+	    io:format("Yo, we received something ~p ", [Value])
+    end.
 
 start() ->
     start(none, none).

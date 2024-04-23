@@ -4,12 +4,12 @@ const ei = @cImport({
 
 const std = @import("std");
 const server_name = "lyceum_server@nixos";
+const server_name_2 = "lyceum_server_a";
 
 const LNode = struct {
     c_node: ei.ei_cnode,
     fd: i32,
-    node_name: [:0]const u8 = "lyceum_client@nixos",
-    port: i32 = 4369,
+    node_name: [:0]const u8 = "lyceum_client",
     identification_number: i32 = 99,
     cookie: [:0]const u8 = "lyceum",
 };
@@ -34,18 +34,20 @@ pub fn prepare_connection() !LNode {
 }
 
 pub fn establish_connection(ec: *LNode) !void {
-    const sockfd: i32 = ei.ei_connect_host_port(&ec.c_node, @constCast(server_name), ec.port);
+    const sockfd: i32 = ei.ei_connect(&ec.c_node, @constCast(server_name));
     if (sockfd < 0) return error.ei_connect_failed;
     ec.fd = sockfd;
 }
 
-pub fn send_message(ec: *LNode, message: [:0]const u8) void {
+pub fn send_message(ec: *LNode, message: [:0]const u8) !void {
     var buf: ei.ei_x_buff = undefined;
     _ = ei.ei_x_new_with_version(&buf);
     _ = ei.ei_x_encode_tuple_header(&buf, 2);
     _ = ei.ei_x_encode_pid(&buf, ei.ei_self(&ec.c_node));
     _ = ei.ei_x_encode_atom(&buf, message.ptr);
-    _ = ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(server_name), buf.buff, buf.index);
+    const result = ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(server_name_2), buf.buff, buf.index);
+    return if (result < 0)
+        error.ei_reg_send_failed;
 }
 
 pub fn main() !void {
@@ -53,5 +55,5 @@ pub fn main() !void {
     if (connection_status != 0) return error.ei_init_failed;
     var node: LNode = try prepare_connection();
     try establish_connection(&node);
-    send_message(&node, "Hello from Lyceum!");
+    try send_message(&node, "Hello from Lyceum!");
 }
