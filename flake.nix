@@ -70,7 +70,8 @@
       devShells = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          erlang = pkgs.erlang_26;
+          erlangLatest = pkgs.erlang_26;
+          zigLatest = pkgs.zig_0_12;
           linuxPkgs = with pkgs; [ inotify-tools ];
           darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
             CoreFoundation
@@ -81,7 +82,7 @@
           # `nix develop .#ci`
           # reduce the number of packages to the bare minimum needed for CI
           ci = pkgs.mkShell {
-            buildInputs = with pkgs; [ erlang gnumake rebar3 ];
+            buildInputs = with pkgs; [ erlangLatest gnumake rebar3 ];
           };
 
           # `nix develop`
@@ -98,7 +99,12 @@
 
                 languages.erlang = {
                   enable = true;
-                  package = erlang;
+                  package = erlangLatest;
+                };
+
+                languages.zig = {
+                  enable = true;
+                  package = zigLatest;
                 };
 
                 env = {
@@ -106,7 +112,7 @@
                   LANG = "en_US.UTF-8";
                   # https://www.erlang.org/doc/man/kernel_app.html
                   ERL_AFLAGS = "-kernel shell_history enabled";
-                  ERL_INCLUDE_PATH = "${erlang}/lib/erlang/usr/include";
+                  ERL_INCLUDE_PATH = "${erlangLatest}/lib/erlang/usr/include";
                 };
 
                 enterShell = ''
