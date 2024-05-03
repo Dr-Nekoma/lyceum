@@ -82,7 +82,7 @@
           # `nix develop .#ci`
           # reduce the number of packages to the bare minimum needed for CI
           ci = pkgs.mkShell {
-            buildInputs = with pkgs; [ erlangLatest gnumake rebar3 ];
+            buildInputs = with pkgs; [ erlangLatest gnumake rebar3 zigLatest ];
           };
 
           # `nix develop`
