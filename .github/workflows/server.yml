@@ -19,8 +19,23 @@ jobs:
       image: erlang:22.0.7
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Compile
-      run: rebar3 compile
-    - name: Run tests
-      run: rebar3 do eunit, ct
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v17
+        with:
+          # Mostly to avoid GitHub rate limiting
+          extra_nix_config: |
+            access-tokens = github.com=${{ github.token }}
+
+      - name: Install Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Build
+        run: |
+          nix develop .#ci --impure -c make build
+
+      - name: Test
+        run: |
+          nix develop .#ci --impure -c make test

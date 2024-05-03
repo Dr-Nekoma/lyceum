@@ -1,7 +1,10 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    devenv.url = "github:cachix/devenv/v0.6.3";
+    devenv = {
+      url = "github:cachix/devenv";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = { self, nixpkgs, devenv, ... } @ inputs:
@@ -67,17 +70,56 @@
       devShells = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
+          erlangLatest = pkgs.erlang_26;
+          zigLatest = pkgs.zig_0_12;
+          linuxPkgs = with pkgs; [ inotify-tools ];
+          darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
+            CoreFoundation
+            CoreServices
+          ];
         in
         {
+          # `nix develop .#ci`
+          # reduce the number of packages to the bare minimum needed for CI
+          ci = pkgs.mkShell {
+            buildInputs = with pkgs; [ erlangLatest gnumake rebar3 ];
+          };
+
+          # `nix develop`
           default = devenv.lib.mkShell {
             inherit inputs pkgs;
             modules = [
               ({ pkgs, lib, ... }: {
-                packages = [
-                  pkgs.rebar3
-                  pkgs.erlang
-                  pkgs.erlang-ls
-                ];
+                packages = with pkgs; [
+                  erlang-ls
+                  erlfmt
+                  gnumake
+                  rebar3
+                ] ++ lib.optionals stdenv.isLinux (linuxPkgs) ++ lib.optionals stdenv.isDarwin darwinPkgs;
+
+                languages.erlang = {
+                  enable = true;
+                  package = erlangLatest;
+                };
+
+                languages.zig = {
+                  enable = true;
+                  package = zigLatest;
+                };
+
+                env = {
+                  LOCALE_ARCHIVE = lib.optionalString pkgs.stdenv.isLinux "${pkgs.glibcLocales}/lib/locale/locale-archive";
+                  LANG = "en_US.UTF-8";
+                  # https://www.erlang.org/doc/man/kernel_app.html
+                  ERL_AFLAGS = "-kernel shell_history enabled";
+                  ERL_INCLUDE_PATH = "${erlangLatest}/lib/erlang/usr/include";
+                };
+
+                enterShell = ''
+                  echo "Starting Erlang environment..."
+                  rebar3 get-deps
+                  rebar3 shell
+                '';
 
                 services.postgres = {
                   package = pkgs.postgresql_15.withPackages (p: with p; []);
