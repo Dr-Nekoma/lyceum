@@ -12,18 +12,18 @@ permissions:
 jobs:
 
   build:
-
+    name: Build and Test
     runs-on: ubuntu-latest
 
-    container:
-      image: erlang:22.0.7
+    #container:
+    #  image: erlang:22.0.7
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v17
+        uses: cachix/install-nix-action@v26
         with:
           # Mostly to avoid GitHub rate limiting
           extra_nix_config: |
