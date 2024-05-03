@@ -1,0 +1,16 @@
+.{
+    // the name of your project
+    .name = "lyceum-client",
+    .version = "0.0.1",
+    .dependencies = .{
+        .@"raylib-zig" = .{
+            .url = "https://github.com/Not-Nik/raylib-zig/archive/devel.tar.gz",
+            .hash = "1220dd1a778e09fe861b0203e08cdfc2978bfd7034c41cc35a2d44df6fb329b34d85", // put the actual hash here
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}

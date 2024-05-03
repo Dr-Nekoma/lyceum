@@ -1,12 +1,12 @@
-const ei = @cImport({
+pub const ei = @cImport({
     @cInclude("ei.h");
 });
 
-const std = @import("std");
-const process_name = "lyceum_server";
-const server_name = process_name ++ "@nixos";
+pub const std = @import("std");
+pub const process_name = "lyceum_server";
+pub const server_name = process_name ++ "@nixos";
 
-const LNode = struct {
+pub const LNode = struct {
     c_node: ei.ei_cnode,
     fd: i32,
     node_name: [:0]const u8 = "lyceum_client",
@@ -89,16 +89,6 @@ pub fn receive_message(ec: *LNode) ![]u8 {
     _ = ei.ei_decode_string(buf.buff, &index, string_buffer.ptr);
 
     return string_buffer;
-}
-
-pub fn main() !void {
-    const connection_status = ei.ei_init();
-    if (connection_status != 0) return error.ei_init_failed;
-    var node: LNode = try prepare_connection();
-    try establish_connection(&node);
-    try send_message(&node, "Hello from Lyceum!");
-    var msg: []const u8 = try receive_message(&node);
-    std.debug.print("{s}", .{msg});
 }
 
 // TODO: Do proper error handling in receive_message
