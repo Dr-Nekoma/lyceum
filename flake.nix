@@ -25,6 +25,17 @@
             dirs = dirs;
             interface = { version = interfaceVersion; path = interfacePath; };
         };
+
+      mkEnvVars = pkgs: erlangLatest: erlangLibs: raylib: {
+        LOCALE_ARCHIVE = pkgs.lib.optionalString pkgs.stdenv.isLinux "${pkgs.glibcLocales}/lib/locale/locale-archive";
+        LANG = "en_US.UTF-8";
+        # https://www.erlang.org/doc/man/kernel_app.html
+        ERL_AFLAGS = "-kernel shell_history enabled";
+        ERL_INCLUDE_PATH = "${erlangLatest}/lib/erlang/usr/include";
+        ERLANG_INTERFACE_PATH = "${erlangLibs.interface.path}";
+        ERLANG_PATH = "${erlangLatest}";
+        RAYLIB_PATH = "${raylib}";
+      };
     in
       {
         packages = forAllSystems (system:
@@ -103,6 +114,7 @@
           # `nix develop .#ci`
           # reduce the number of packages to the bare minimum needed for CI
           ci = pkgs.mkShell {
+            env = mkEnvVars pkgs erlangLatest erlangLibs raylib;
             buildInputs = with pkgs; [ erlangLatest just rebar3 zigLatest ];
           };
 
@@ -128,16 +140,7 @@
                   package = zigLatest;
                 };
 
-                env = {
-                  LOCALE_ARCHIVE = lib.optionalString pkgs.stdenv.isLinux "${pkgs.glibcLocales}/lib/locale/locale-archive";
-                  LANG = "en_US.UTF-8";
-                  # https://www.erlang.org/doc/man/kernel_app.html
-                  ERL_AFLAGS = "-kernel shell_history enabled";
-                  ERL_INCLUDE_PATH = "${erlangLatest}/lib/erlang/usr/include";
-                  ERLANG_INTERFACE_PATH = "${erlangLibs.interface.path}";
-                  ERLANG_PATH = "${erlangLatest}";
-                  RAYLIB_PATH = "${raylib}";
-                };
+                env = mkEnvVars pkgs erlangLatest erlangLibs raylib;
 
                 enterShell = ''
                   echo "Starting Erlang environment..."
