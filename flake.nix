@@ -104,7 +104,16 @@
           raylib = pkgs.raylib;
           zigLatest = pkgs.zig_0_12;
 
-          linuxPkgs = with pkgs; [ inotify-tools ];
+          linuxPkgs = with pkgs; [
+            inotify-tools
+            xorg.libX11
+            xorg.libXrandr
+            xorg.libXinerama
+            xorg.libXcursor
+            xorg.libXi
+            xorg.libXi
+            libGL
+          ];
           darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
             CoreFoundation
             CoreServices
