@@ -1,3 +1,4 @@
+# Erlang
 .rebar3
 _build
 _checkouts
@@ -18,6 +19,15 @@ logs
 *.iml
 rebar3.crashdump
 *~
+
+# Zig
+zig-cache/
+zig-out/
+/release/
+/debug/
+/build/
+/build-*/
+/docgen_tmp/
 
 # Nix
 result

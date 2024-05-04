@@ -32,10 +32,19 @@ jobs:
       - name: Install Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - name: Build
+      - name: "[Erlang] build"
         run: |
-          nix develop .#ci --impure -c make build
+          nix develop .#ci --impure -c just build
 
-      - name: Test
+      - name: "[Erlang] tests"
         run: |
-          nix develop .#ci --impure -c make test
+          nix develop .#ci --impure -c just test
+
+# Uncomment this trash when you fix the zig code
+#      - name: "[Zig] build"
+#        run: |
+#          nix develop .#ci --impure -c just client
+#
+#      - name: "[Zig] tests"
+#        run: |
+#          nix develop .#ci --impure -c just client-test

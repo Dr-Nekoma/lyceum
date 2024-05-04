@@ -1,2 +1,0 @@
-client:
-	zig build-exe client.zig -I/nix/store/x5019694zjgn7s6ljaz7c128ar4vcd8w-erlang-25.3.2.8/lib/erlang/lib/erl_interface-5.3.2.1/include -L/nix/store/x5019694zjgn7s6ljaz7c128ar4vcd8w-erlang-25.3.2.8/lib/erlang/lib/erl_interface-5.3.2.1/lib -lc -lei -lpthread -O Debug
