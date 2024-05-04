@@ -38,6 +38,7 @@ pub fn establish_connection(ec: *LNode) !void {
     ec.fd = sockfd;
 }
 
+// TODO: Enhance this function to properly send a struct rather than a string to the server
 pub fn send_message(ec: *LNode, message: [:0]const u8) !void {
     var buf: ei.ei_x_buff = undefined;
     _ = ei.ei_x_new_with_version(&buf);

@@ -24,8 +24,9 @@ lyceum_wrapper() ->
 
 receive_whatever() ->
     receive
-	Value ->
-	    io:format("Yo, we received something ~p ", [Value])
+	{Pid, Value} ->
+	    io:format("Yo, we received something ~p ", [Value]),
+	    Pid ! {self(), "Yo bruh, I got you xD"}	    
     end,    
     receive_whatever().
 

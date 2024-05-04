@@ -8,10 +8,9 @@ const rl = @import("raylib");
 //     var node: erl.LNode = try erl.prepare_connection();
 //     try erl.establish_connection(&node);
 //     try erl.send_message(&node, "Hello from Lyceum!");
-//     var msg: []const u8 = try erl.receive_message(&node);
+//     const msg: []const u8 = try erl.receive_message(&node);
 //     std.debug.print("{s}", .{msg});
 // }
-
 
 pub fn main() anyerror!void {
     // Initialization
