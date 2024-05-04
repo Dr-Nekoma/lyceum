@@ -23,32 +23,32 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    exe.root_module.addOptions("config", optimize);
 
-    const raylib_dep = b.dependency("raylib-zig", .{
-        .target = target,
-        .optimize = optimize,
-    });
+    if (b.systemIntegrationOption("raylib-zig", .{})) {
+        // TODO: double-check this
+        exe.linkSystemLibrary("raylib");
+        exe.linkSystemLibrary("raylib-math");
+        exe.linkSystemLibrary("rlgl");
+    } else {
+        const raylib_dep = b.dependency("raylib-zig", .{
+            .target = target,
+            .optimize = optimize,
+        });
 
-    const raylib = raylib_dep.module("raylib"); // main raylib module
-    const raylib_math = raylib_dep.module("raylib-math"); // raymath module
-    const rlgl = raylib_dep.module("rlgl"); // rlgl module
-    const raylib_artifact = raylib_dep.artifact("raylib"); // raylib C library
+        const raylib = raylib_dep.module("raylib"); // main raylib module
+        const raylib_math = raylib_dep.module("raylib-math"); // raymath module
+        const rlgl = raylib_dep.module("rlgl"); // rlgl module
+        const raylib_artifact = raylib_dep.artifact("raylib"); // raylib C library
 
-    exe.linkLibrary(raylib_artifact);
-    exe.root_module.addImport("raylib", raylib);
-    exe.root_module.addImport("raylib-math", raylib_math);
-    exe.root_module.addImport("rlgl", rlgl);
+        exe.linkLibrary(raylib_artifact);
+        exe.root_module.addImport("raylib", raylib);
+        exe.root_module.addImport("raylib-math", raylib_math);
+        exe.root_module.addImport("rlgl", rlgl);
+    }
 
     exe.linkLibC();
     exe.linkSystemLibrary("pthread");
     exe.linkSystemLibrary("ei");
-
-    // const raylib_optimize = b.option(
-    //     std.builtin.OptimizeMode,
-    //     "raylib-optimize",
-    //     "Prioritize performance, safety, or binary size (-O flag), defaults to value of optimize option",
-    // ) orelse optimize;
 
     // const strip = b.option(
     //     bool,
