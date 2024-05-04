@@ -134,7 +134,7 @@
                   # https://www.erlang.org/doc/man/kernel_app.html
                   ERL_AFLAGS = "-kernel shell_history enabled";
                   ERL_INCLUDE_PATH = "${erlangLatest}/lib/erlang/usr/include";
-                  ERLANG_INTERFACE_PATH = "${erlangLibs.interface.path}/lib";
+                  ERLANG_INTERFACE_PATH = "${erlangLibs.interface.path}";
                   ERLANG_PATH = "${erlangLatest}";
                   RAYLIB_PATH = "${raylib}";
                 };
