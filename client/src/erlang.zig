@@ -93,5 +93,4 @@ pub fn receive_message(ec: *LNode) ![]u8 {
 }
 
 // TODO: Do proper error handling in receive_message
-// TODO: Create build.zig
 // TODO: Make zig build command nix compatible
