@@ -4,12 +4,7 @@
   {registered, []},
   {mod, {server, []}},
   {applications,
-   [kernel,
-    stdlib,
-    cowboy,
-    epgsql,
-    xmerl
-   ]},
+   [epgsql]},
   {env,[]},
   {modules, []},
 

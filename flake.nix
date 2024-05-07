@@ -2,7 +2,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     devenv = {
-      url = "github:cachix/devenv";
+      url = "github:cachix/devenv/v0.6.3";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -112,7 +112,7 @@
             xorg.libXcursor
             xorg.libXi
             xorg.libXi
-            libGL
+            libGL            
           ];
           darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
             CoreFoundation
@@ -137,6 +137,7 @@
                   erlfmt
                   just
                   rebar3
+                  dbeaver
                 ] ++ lib.optionals stdenv.isLinux (linuxPkgs) ++ lib.optionals stdenv.isDarwin darwinPkgs;
 
                 languages.erlang = {
@@ -157,7 +158,7 @@
                 '';
 
                 services.postgres = {
-                  package = pkgs.postgresql_15.withPackages (p: with p; []);
+                  package = pkgs.postgresql_15.withPackages (p: with p; [p.periods]);
                   enable = true;
                   initialDatabases = [ { name = "mmo"; } ];
                   port = 5432;

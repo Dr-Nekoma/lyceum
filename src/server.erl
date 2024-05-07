@@ -5,80 +5,37 @@
 
 -module(server).
 
-%-behaviour(application).
+-behaviour(application).
 
--export([start/1, init/1, start/2, start/0, stop/1, stop/0]).
--export([foo/1, bar/1, lyceum_wrapper/0, receive_whatever/0]).
+-export([start/2, stop/1, main/1, handle_message/1]).
 
-start(_StartType, _StartArgs) ->
-    Dispatch = cowboy_router:compile([{'_', [{"/", hello_handler, []},
-					     {"/user", user_handler, []}]}]),
-    {ok, _} =
-        cowboy:start_clear(my_http_listener, [{port, 7070}], #{env => #{dispatch => Dispatch}}),
-    server_supervisor:start_link().
+-include("user_registry.hrl").
 
-lyceum_wrapper() ->
-    erlang:set_cookie(lyceum),
-    Pid = spawn(?MODULE, receive_whatever, []),
-    erlang:register(lyceum_server, Pid).
+%% TODO: We shall remove the cookie given that this is a public game, lmao
+start(_, _) ->
+    Connection = user_handler:database_connect(),
+    Pid = spawn(?MODULE, handle_message, [Connection]),
+    erlang:register(lyceum_server, Pid),
+    {ok, Pid}.
 
-receive_whatever() ->
+handle_message(Connection) ->
     receive
-	{Pid, Value} ->
+	{Pid, #{action := registration, username := Username, email := Email, password := Password}} ->
+	    io:format("This user now exists: ~p", [Username]),
+	    user_handler:insert_user(#user_registry{username = Username, 
+						    password = Password,
+						    email = Email},
+				    Connection),
+	    Response = "I registered " ++ Username,
+	    Pid ! {self(), Response};
+        {Pid, Value} ->
 	    io:format("Yo, we received something ~p ", [Value]),
-	    Pid ! {self(), "Yo bruh, I got you xD"}	    
+	    Pid ! {self(), "Yo bruh, I got you xD"}
     end,    
-    receive_whatever().
+    handle_message(Connection).
 
-start() ->
-    start(none, none).
-
-stop(_State) ->
+stop(_) ->
     ok.
 
-start(ExtPrg) ->
-    spawn(?MODULE, init, [ExtPrg]).
-stop() ->
-    complex ! stop.
-
-foo(X) ->
-    call_port({foo, X}).
-bar(Y) ->
-    call_port({bar, Y}).
-
-call_port(Msg) ->
-    complex ! {call, self(), Msg},
-    receive
-	{complex, Result} ->
-	    Result
-    end.
-
-init(ExtPrg) ->
-    register(complex, self()),
-    process_flag(trap_exit, true),
-    Port = open_port({spawn, ExtPrg}, [{packet, 2}, binary]),
-    loop(Port).
-
-loop(Port) ->
-    receive
-	{call, Caller, Msg} ->
-	    Port ! {self(), {command, term_to_binary(Msg)}},
-	    receive
-		{Port, {data, Data}} ->
-		    Caller ! {complex, binary_to_term(Data)}
-	    end,
-	    loop(Port);
-	stop ->
-	    Port ! {self(), close},
-	    receive
-		{Port, closed} ->
-		    exit(normal)
-	    end;
-	{'EXIT', Port, Reason} ->
-	    exit(port_terminated)
-    end.
-
-encode({foo, X}) -> [1, X];
-encode({bar, Y}) -> [2, Y].
-
-decode([Int]) -> Int.
+main(_) ->
+    start(none,none).

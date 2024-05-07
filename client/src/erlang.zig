@@ -13,6 +13,22 @@ pub const LNode = struct {
     cookie: [:0]const u8 = "lyceum",
 };
 
+pub const Action = enum {
+    user_registry,
+    debug,
+};
+
+pub const User_Registry = struct {
+    username: [:0]const u8,
+    email: [:0]const u8,
+    password: [:0]const u8,
+};
+
+pub const Payload = union(Action) {
+    user_registry: User_Registry,
+    debug: [:0]const u8,
+};
+
 pub fn prepare_connection() !LNode {
     var l_node: LNode = .{
         .c_node = undefined,
@@ -39,7 +55,7 @@ pub fn establish_connection(ec: *LNode) !void {
 }
 
 // TODO: Enhance this function to properly send a struct rather than a string to the server
-pub fn send_message(ec: *LNode, message: [:0]const u8) !void {
+pub fn send_string(ec: *LNode, message: [:0]const u8) !void {
     var buf: ei.ei_x_buff = undefined;
     _ = ei.ei_x_new_with_version(&buf);
     _ = ei.ei_x_encode_tuple_header(&buf, 2);
@@ -48,6 +64,44 @@ pub fn send_message(ec: *LNode, message: [:0]const u8) !void {
     const result = ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(process_name), buf.buff, buf.index);
     return if (result < 0)
         error.ei_reg_send_failed;
+}
+
+// TODO: Improve this to some degree. SOS Marinho xD
+pub fn send_user_registry(ec: *LNode, message: User_Registry) !void {
+    var buf: ei.ei_x_buff = undefined;
+    _ = ei.ei_x_new_with_version(&buf);
+    _ = ei.ei_x_encode_tuple_header(&buf, 2);
+    _ = ei.ei_x_encode_pid(&buf, ei.ei_self(&ec.c_node));
+    _ = ei.ei_x_encode_map_header(&buf, 4);
+    _ = ei.ei_x_encode_atom(&buf, "action");
+    _ = ei.ei_x_encode_atom(&buf, "registration");
+    _ = ei.ei_x_encode_atom(&buf, "email");
+    _ = ei.ei_x_encode_string(&buf, message.email.ptr);
+    _ = ei.ei_x_encode_atom(&buf, "username");
+    _ = ei.ei_x_encode_string(&buf, message.username.ptr);
+    _ = ei.ei_x_encode_atom(&buf, "password");
+    _ = ei.ei_x_encode_string(&buf, message.password.ptr);
+    const result = ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(process_name), buf.buff, buf.index);
+    return if (result < 0)
+        error.ei_reg_send_failed;
+}
+
+pub fn send_payload(ec: *LNode, message: Payload) !void {
+    switch (message) {
+        .user_registry => |item| {
+            try send_user_registry(ec, item);
+        },
+        .debug => |item| {
+            var buf: ei.ei_x_buff = undefined;
+            _ = ei.ei_x_new_with_version(&buf);
+            _ = ei.ei_x_encode_tuple_header(&buf, 2);
+            _ = ei.ei_x_encode_pid(&buf, ei.ei_self(&ec.c_node));
+            _ = ei.ei_x_encode_atom(&buf, item.ptr);
+            const result = ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(process_name), buf.buff, buf.index);
+            return if (result < 0)
+                error.ei_reg_send_failed;
+        },
+    }
 }
 
 pub fn receive_message(ec: *LNode) ![]u8 {

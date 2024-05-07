@@ -1,7 +1,7 @@
 CREATE TABLE "user"(
        "username" VARCHAR(32) NOT NULL,
        "password" TEXT NOT NULL,
-       "e-mail" TEXT NOT NULL,
+       "e-mail" TEXT NOT NULL CHECK ("e-mail" ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
        PRIMARY KEY("username", "e-mail")
 );
 
