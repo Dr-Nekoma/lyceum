@@ -2,7 +2,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     devenv = {
-      url = "github:cachix/devenv/v0.6.3";
+      url = "github:cachix/devenv";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -44,6 +44,7 @@
             env = zig2nix.outputs.zig-env.${system} {};
             system-triple = env.lib.zigTripleFromString system;
           in {
+            devenv-up = self.devShells.${system}.default.config.procfileScript;
             # docs = pkgs.stdenv.mkDerivation {
             #   name = "docs";
             #   src = ./.;

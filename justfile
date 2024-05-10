@@ -9,3 +9,6 @@ build:
 
 test:
 	rebar3 do eunit, ct
+
+postgres:
+	devenv up
