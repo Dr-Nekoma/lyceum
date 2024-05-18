@@ -9,17 +9,22 @@ pub const textBoxSize: rl.Vector2 = .{
 content: [:0]u8,
 position: *usize,
 
-pub fn at(self: @This(), textBoxPosition: rl.Vector2, _: bool) void {
-    const textBox = rl.Rectangle.init(textBoxPosition.x,
-                                      textBoxPosition.y,
-                                      textBoxSize.x,
-                                      textBoxSize.y);
+pub fn at(
+    self: @This(),
+    textBoxPosition: rl.Vector2,
+    _: bool,
+) void {
+    const textBox = rl.Rectangle.init(
+        textBoxPosition.x,
+        textBoxPosition.y,
+        textBoxSize.x,
+        textBoxSize.y,
+    );
     var mouseOnText = false;
     if (rl.checkCollisionPointRec(rl.getMousePosition(), textBox)) {
         mouseOnText = true;
 
         rl.setMouseCursor(@intFromEnum(rl.MouseCursor.mouse_cursor_ibeam));
-
 
         var key = rl.getCharPressed();
 
@@ -31,7 +36,7 @@ pub fn at(self: @This(), textBoxPosition: rl.Vector2, _: bool) void {
                 self.position.* += 1;
             }
 
-            key = rl.getCharPressed();  
+            key = rl.getCharPressed();
         }
 
         if (rl.isKeyPressed(.key_backspace)) {
@@ -46,22 +51,32 @@ pub fn at(self: @This(), textBoxPosition: rl.Vector2, _: bool) void {
 
     rl.drawRectangleV(textBoxPosition, textBoxSize, config.ColorPalette.primary);
     if (mouseOnText) {
-        rl.drawRectangleLines(@intFromFloat(textBoxPosition.x),
-                              @intFromFloat(textBoxPosition.y),
-                              @intFromFloat(textBoxSize.x),
-                              @intFromFloat(textBoxSize.y),
-                              config.ColorPalette.secondary,);
+        rl.drawRectangleLines(
+            @intFromFloat(textBoxPosition.x),
+            @intFromFloat(textBoxPosition.y),
+            @intFromFloat(textBoxSize.x),
+            @intFromFloat(textBoxSize.y),
+            config.ColorPalette.secondary,
+        );
     } else {
-        rl.drawRectangleLines(@intFromFloat(textBoxPosition.x),
-                              @intFromFloat(textBoxPosition.y),
-                              @intFromFloat(textBoxSize.x),
-                              @intFromFloat(textBoxSize.y),
-                              rl.Color.white,);
+        rl.drawRectangleLines(
+            @intFromFloat(textBoxPosition.x),
+            @intFromFloat(textBoxPosition.y),
+            @intFromFloat(textBoxSize.x),
+            @intFromFloat(textBoxSize.y),
+            rl.Color.white,
+        );
     }
 
     // TODO: Fix redacted drawing buffer
     // const redactedBuffer = if (!redacted) self.content else (.{'*'} ** self.position) ++ .{0};
-    rl.drawText(self.content, @intFromFloat(textBoxPosition.x + 5), @intFromFloat(textBoxPosition.y + 8), config.textFontSize, rl.Color.white);
+    rl.drawText(
+        self.content,
+        @intFromFloat(textBoxPosition.x + 5),
+        @intFromFloat(textBoxPosition.y + 8),
+        config.textFontSize,
+        rl.Color.white,
+    );
 
     // TODO: Fix blinking cursor
     // if (mouseOnText) {
