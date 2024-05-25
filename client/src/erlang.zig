@@ -105,7 +105,7 @@ pub fn prepare_connection() !LNode {
 }
 
 pub fn establish_connection(ec: *LNode) !void {
-    const sockfd =  ei.ei_connect(&ec.c_node, @constCast(server_name));
+    const sockfd = ei.ei_connect(&ec.c_node, @constCast(server_name));
     try erlang_validate(error.ei_connect_failed, sockfd);
     ec.fd = sockfd;
 }
@@ -197,4 +197,3 @@ pub fn receive_message(ec: *LNode) ![]u8 {
 
     return string_buffer;
 }
-
