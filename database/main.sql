@@ -5,6 +5,8 @@ CREATE TABLE "user"(
        PRIMARY KEY("username", "e-mail")
 );
 
+select * from "user";
+
 CREATE TABLE "map"(
        "name" VARCHAR(16) NOT NULL,
        PRIMARY KEY("name")
@@ -15,7 +17,7 @@ CREATE TABLE "character"(
        "e-mail" TEXT NOT NULL,
        "username" VARCHAR(32) NOT NULL,
        FOREIGN KEY ("e-mail", "username") REFERENCES "user"("e-mail", "username"),
-       PRIMARY KEY("name", "username")
+       PRIMARY KEY("name", "username", "e-mail")
 );
 
 CREATE TABLE "character_stats"(
@@ -27,7 +29,7 @@ CREATE TABLE "character_stats"(
        "endurance" SMALLINT NOT NULL CHECK ("endurance" > 0 AND "endurance" <= 150),
        "intelligence" SMALLINT NOT NULL CHECK ("intelligence" > 0 AND "intelligence" <= 150),
        "faith" SMALLINT NOT NULL CHECK ("faith" > 0 AND "faith" <= 150),
-       FOREIGN KEY ("name", "username") REFERENCES "character"("name", "username"),
+       FOREIGN KEY ("name", "username", "e-mail") REFERENCES "character"("name", "username", "e-mail"),
        PRIMARY KEY("name", "username")
 );
 

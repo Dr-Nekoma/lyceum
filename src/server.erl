@@ -10,6 +10,7 @@
 -export([start/2, stop/1, main/1, handle_message/1]).
 
 -include("user_registry.hrl").
+-include("user_login.hrl").
 
 %% TODO: We shall remove the cookie given that this is a public game, lmao
 start(_, _) ->
@@ -27,6 +28,13 @@ handle_message(Connection) ->
 						    email = Email},
 				    Connection),
 	    Response = "I registered " ++ Username,
+	    Pid ! {self(), Response};
+	{Pid, #{action := login, username := Username, password := Password}} ->
+	    io:format("This user logged: ~p", [Username]),
+	    user_handler:check_user(#user_login{username = Username, 
+						password = Password},
+				    Connection),
+	    Response = "I found " ++ Username,
 	    Pid ! {self(), Response};
         {Pid, Value} ->
 	    io:format("Yo, we received something ~p ", [Value]),
