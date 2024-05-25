@@ -2,10 +2,7 @@ const rl = @import("raylib");
 const config = @import("../config.zig");
 
 pub fn at(message: [:0]const u8, position: rl.Vector2, size: rl.Vector2, color: rl.Color) bool {
-    const buttonArea = rl.Rectangle.init(position.x,
-                                         position.y,
-                                         size.x,
-                                         size.y);
+    const buttonArea = rl.Rectangle.init(position.x, position.y, size.x, size.y);
     const isSelected = rl.checkCollisionPointRec(rl.getMousePosition(), buttonArea);
     if (isSelected) {
         const time = rl.getTime();
@@ -15,9 +12,9 @@ pub fn at(message: [:0]const u8, position: rl.Vector2, size: rl.Vector2, color: 
             .x = position.x - offset,
             .y = position.y - offset,
         };
-        const boundarySize: rl.Vector2 =. {
-            .x = size.x + 2*offset,
-            .y = size.y + 2*offset,
+        const boundarySize: rl.Vector2 = .{
+            .x = size.x + 2 * offset,
+            .y = size.y + 2 * offset,
         };
         rl.drawRectangleV(boundaryPosition, boundarySize, boundaryColor);
     }

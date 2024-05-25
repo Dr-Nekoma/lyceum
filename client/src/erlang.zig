@@ -73,8 +73,8 @@ fn send_erlang_data(buf: *ei.ei_x_buff, data: Erlang_Data) !void {
             }
         },
         .string => |str| {
-            try erlang_validate(error.encode_string, ei.ei_x_encode_string(buf, str.ptr));       
-        }
+            try erlang_validate(error.encode_string, ei.ei_x_encode_string(buf, str.ptr));
+        },
     }
 }
 
@@ -84,7 +84,7 @@ pub fn send_message(ec: *LNode, data: Erlang_Data) !void {
     try send_erlang_data(&buf, data);
     const result = ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(process_name), buf.buff, buf.index);
     return if (result < 0)
-        error.ei_reg_send_failed;    
+        error.ei_reg_send_failed;
 }
 
 pub fn prepare_connection() !LNode {
@@ -144,32 +144,24 @@ pub fn send_string(ec: *LNode, message: [:0]const u8) !void {
 // }
 
 fn send_with_self(ec: *LNode, data: Erlang_Data) !void {
-    return send_message(ec, .{
-        .tuple = &.{
-            .{.pid = ei.ei_self(&ec.c_node)},
-            data
-    }});
+    return send_message(ec, .{ .tuple = &.{ .{ .pid = ei.ei_self(&ec.c_node) }, data } });
 }
 
 fn send_user_registry(ec: *LNode, message: User_Registry) !void {
-    return send_with_self(ec, .{
-        .map = &.{
-            .{.{.atom = "action"},   .{.atom = "registration"}},
-            .{.{.atom = "email"},    .{.string = message.email}},
-            .{.{.atom = "username"}, .{.string = message.username}},
-            .{.{.atom = "password"}, .{.string = message.password}}, 
-        }
-    });
+    return send_with_self(ec, .{ .map = &.{
+        .{ .{ .atom = "action" }, .{ .atom = "registration" } },
+        .{ .{ .atom = "email" }, .{ .string = message.email } },
+        .{ .{ .atom = "username" }, .{ .string = message.username } },
+        .{ .{ .atom = "password" }, .{ .string = message.password } },
+    } });
 }
 
 fn send_user_login(ec: *LNode, message: User_Login) !void {
-    return send_with_self(ec, .{
-        .map = &.{
-            .{.{.atom = "action"},   .{.atom = "login"}},
-            .{.{.atom = "username"}, .{.string = message.username}},
-            .{.{.atom = "password"}, .{.string = message.password}}, 
-        }
-    });
+    return send_with_self(ec, .{ .map = &.{
+        .{ .{ .atom = "action" }, .{ .atom = "login" } },
+        .{ .{ .atom = "username" }, .{ .string = message.username } },
+        .{ .{ .atom = "password" }, .{ .string = message.password } },
+    } });
 }
 
 pub fn send_payload(ec: *LNode, message: Payload) !void {

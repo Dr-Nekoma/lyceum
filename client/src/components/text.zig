@@ -10,16 +10,12 @@ content: [:0]u8,
 position: *usize,
 
 pub fn at(self: @This(), textBoxPosition: rl.Vector2, _: bool) void {
-    const textBox = rl.Rectangle.init(textBoxPosition.x,
-                                      textBoxPosition.y,
-                                      textBoxSize.x,
-                                      textBoxSize.y);
+    const textBox = rl.Rectangle.init(textBoxPosition.x, textBoxPosition.y, textBoxSize.x, textBoxSize.y);
     var mouseOnText = false;
     if (rl.checkCollisionPointRec(rl.getMousePosition(), textBox)) {
         mouseOnText = true;
 
         rl.setMouseCursor(@intFromEnum(rl.MouseCursor.mouse_cursor_ibeam));
-
 
         var key = rl.getCharPressed();
 
@@ -31,7 +27,7 @@ pub fn at(self: @This(), textBoxPosition: rl.Vector2, _: bool) void {
                 self.position.* += 1;
             }
 
-            key = rl.getCharPressed();  
+            key = rl.getCharPressed();
         }
 
         if (rl.isKeyPressed(.key_backspace)) {
@@ -46,17 +42,21 @@ pub fn at(self: @This(), textBoxPosition: rl.Vector2, _: bool) void {
 
     rl.drawRectangleV(textBoxPosition, textBoxSize, config.ColorPalette.primary);
     if (mouseOnText) {
-        rl.drawRectangleLines(@intFromFloat(textBoxPosition.x),
-                              @intFromFloat(textBoxPosition.y),
-                              @intFromFloat(textBoxSize.x),
-                              @intFromFloat(textBoxSize.y),
-                              config.ColorPalette.secondary,);
+        rl.drawRectangleLines(
+            @intFromFloat(textBoxPosition.x),
+            @intFromFloat(textBoxPosition.y),
+            @intFromFloat(textBoxSize.x),
+            @intFromFloat(textBoxSize.y),
+            config.ColorPalette.secondary,
+        );
     } else {
-        rl.drawRectangleLines(@intFromFloat(textBoxPosition.x),
-                              @intFromFloat(textBoxPosition.y),
-                              @intFromFloat(textBoxSize.x),
-                              @intFromFloat(textBoxSize.y),
-                              rl.Color.white,);
+        rl.drawRectangleLines(
+            @intFromFloat(textBoxPosition.x),
+            @intFromFloat(textBoxPosition.y),
+            @intFromFloat(textBoxSize.x),
+            @intFromFloat(textBoxSize.y),
+            rl.Color.white,
+        );
     }
 
     // TODO: Fix redacted drawing buffer

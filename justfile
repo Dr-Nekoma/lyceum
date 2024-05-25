@@ -12,3 +12,6 @@ test:
 
 postgres:
 	devenv up
+
+format:
+	zig fmt $(find ./ -type f \( -iname \*.zig \))
