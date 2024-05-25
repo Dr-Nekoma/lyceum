@@ -82,9 +82,7 @@ pub fn send_message(ec: *LNode, data: Erlang_Data) !void {
     var buf: ei.ei_x_buff = undefined;
     try erlang_validate(error.new_with_version, ei.ei_x_new_with_version(&buf));
     try send_erlang_data(&buf, data);
-    const result = ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(process_name), buf.buff, buf.index);
-    return if (result < 0)
-        error.ei_reg_send_failed;
+    try erlang_validate(error.reg_send_failed, ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(process_name), buf.buff, buf.index));
 }
 
 pub fn prepare_connection() !LNode {
@@ -107,44 +105,17 @@ pub fn prepare_connection() !LNode {
 }
 
 pub fn establish_connection(ec: *LNode) !void {
-    const sockfd: i32 = ei.ei_connect(&ec.c_node, @constCast(server_name));
-    if (sockfd < 0) return error.ei_connect_failed;
+    const sockfd =  ei.ei_connect(&ec.c_node, @constCast(server_name));
+    try erlang_validate(error.ei_connect_failed, sockfd);
     ec.fd = sockfd;
 }
 
-// TODO: Enhance this function to properly send a struct rather than a string to the server
-pub fn send_string(ec: *LNode, message: [:0]const u8) !void {
-    var buf: ei.ei_x_buff = undefined;
-    _ = ei.ei_x_new_with_version(&buf);
-    _ = ei.ei_x_encode_tuple_header(&buf, 2);
-    _ = ei.ei_x_encode_pid(&buf, ei.ei_self(&ec.c_node));
-    _ = ei.ei_x_encode_atom(&buf, message.ptr);
-    const result = ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(process_name), buf.buff, buf.index);
-    return if (result < 0)
-        error.ei_reg_send_failed;
-}
-
-// pub fn send_user_registry(ec: *LNode, message: User_Registry) !void {
-//     var buf: ei.ei_x_buff = undefined;
-//     _ = ei.ei_x_new_with_version(&buf);
-//     _ = ei.ei_x_encode_tuple_header(&buf, 2);
-//     _ = ei.ei_x_encode_pid(&buf, ei.ei_self(&ec.c_node));
-//     _ = ei.ei_x_encode_map_header(&buf, 4);
-//     _ = ei.ei_x_encode_atom(&buf, "action");
-//     _ = ei.ei_x_encode_atom(&buf, "registration");
-//     _ = ei.ei_x_encode_atom(&buf, "email");
-//     _ = ei.ei_x_encode_string(&buf, message.email.ptr);
-//     _ = ei.ei_x_encode_atom(&buf, "username");
-//     _ = ei.ei_x_encode_string(&buf, message.username.ptr);
-//     _ = ei.ei_x_encode_atom(&buf, "password");
-//     _ = ei.ei_x_encode_string(&buf, message.password.ptr);
-//     const result = ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(process_name), buf.buff, buf.index);
-//     return if (result < 0)
-//         error.ei_reg_send_failed;
-// }
-
 fn send_with_self(ec: *LNode, data: Erlang_Data) !void {
     return send_message(ec, .{ .tuple = &.{ .{ .pid = ei.ei_self(&ec.c_node) }, data } });
+}
+
+pub fn send_string(ec: *LNode, message: [:0]const u8) !void {
+    return send_with_self(ec, .{ .atom = message });
 }
 
 fn send_user_registry(ec: *LNode, message: User_Registry) !void {
@@ -180,6 +151,11 @@ pub fn send_payload(ec: *LNode, message: Payload) !void {
     }
 }
 
+// Here is a sketch of an idea
+// .{ .map = .{ .size = 2,
+//              .keys = ["this", "that"]}
+// TODO: Try to make a nice system just like for sending
+// TODO: Do proper error handling in receive_message
 pub fn receive_message(ec: *LNode) ![]u8 {
     var msg: ei.erlang_msg = undefined;
     var index: i32 = 0;
@@ -222,5 +198,3 @@ pub fn receive_message(ec: *LNode) ![]u8 {
     return string_buffer;
 }
 
-// TODO: Do proper error handling in receive_message
-// TODO: Make zig build command nix compatible
