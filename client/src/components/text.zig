@@ -12,7 +12,25 @@ position: *usize,
 pub fn at(
     self: @This(),
     textBoxPosition: rl.Vector2,
-    _: bool,
+) void {
+    return self.at_impl(0, textBoxPosition);
+}
+
+pub fn redacted_at(
+    self: @This(),
+    comptime buffer_size: usize,
+    textBoxPosition: rl.Vector2,
+) void {
+    return if (buffer_size == 0)
+        @compileError("Buffer size for redacted text must be non-zero")
+    else
+        self.at_impl(buffer_size, textBoxPosition);
+}
+
+fn at_impl(
+    self: @This(),
+    comptime buffer_size: usize,
+    textBoxPosition: rl.Vector2,
 ) void {
     const textBox = rl.Rectangle.init(
         textBoxPosition.x,
@@ -68,10 +86,13 @@ pub fn at(
         );
     }
 
-    // TODO: Fix redacted drawing buffer
-    // const redactedBuffer = if (!redacted) self.content else (.{'*'} ** self.position) ++ .{0};
+    const is_redacted = buffer_size != 0;
+    var redaction: [buffer_size:0]u8 = .{0} ** buffer_size;
+    if (is_redacted)
+        @memset(redaction[0..@min(self.content.len, buffer_size)], '*');
+
     rl.drawText(
-        self.content,
+        if (is_redacted) &redaction else self.content,
         @intFromFloat(textBoxPosition.x + 5),
         @intFromFloat(textBoxPosition.y + 8),
         config.textFontSize,
