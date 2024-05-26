@@ -5,21 +5,13 @@ const config = @import("config.zig");
 const button = @import("components/button.zig");
 const text = @import("components/text.zig");
 
-// pub fn main() !void {
-//     const connection_status = erl.ei.ei_init();
-//     if (connection_status != 0) return error.ei_init_failed;
-//     var node: erl.LNode = try erl.prepare_connection();
-//     try erl.establish_connection(&node);
-//     try erl.send_payload(&node, .{
-//         .user_registry = .{
-//             .username = "Nathan",
-//             .email = "zcxv@bnm.drn",
-//             .password = "3756849034567890",
-//         },
-//     });
-//     const msg: []const u8 = try erl.receive_message(&node);
-//     std.debug.print("{s}", .{msg});
-// }
+pub fn print_connect_server_error(message: anytype) !void {
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print(
+        "Could not connect to Lyceum Server!\n\u{1b}[31mError: \u{1b}[37m{}\n",
+        .{message},
+    );
+}
 
 pub const Menu = struct {
     pub const Login = struct {
@@ -51,14 +43,16 @@ pub const GameState = struct {
     width: f32,
     height: f32,
     menu: Menu = .{},
+    node: *erl.LNode,
 
-    pub fn init(width: f32, height: f32) !GameState {
+    pub fn init(width: f32, height: f32, node: *erl.LNode) !GameState {
         if (width < 0) return error.negative_width;
         if (height < 0) return error.negative_height;
         return .{
             .scene = .nothing,
             .width = width,
             .height = height,
+            .node = node,
         };
     }
 
@@ -158,41 +152,44 @@ pub const GameState = struct {
         )) gameState.scene = .game_spawn;
     }
 
-    pub fn joinGameScene(gameState: *@This()) void {
-        const message1 = rl.textFormat("You tried to login with credentials %s and %s", .{
-            &gameState.menu.login.username,
-            &gameState.menu.login.password,
+    pub fn joinGameScene(gameState: *@This()) !void {
+        // const message1 = rl.textFormat("You tried to login with credentials %s and %s", .{&gameState.menu.login.username, &gameState.menu.login.password});
+        // const message1Size = rl.measureText(message1, config.buttonFontSize);
+        // const message1SizeFloat: f32 = @floatFromInt(message1Size);
+        // const message1PositionX: i32 = @intFromFloat(gameState.width / 2 - message1SizeFloat / 2);
+        // const message1PositionY: i32 = @intFromFloat(gameState.height / 2);
+        // const message2 = "Game is not implemented yet!";
+        // const message2Size = rl.measureText(message2, config.buttonFontSize);
+        // const message2SizeFloat: f32 = @floatFromInt(message2Size);
+        // const message2PositionX: i32 = @intFromFloat(gameState.width / 2 - message2SizeFloat / 2);
+        // const message2PositionY: i32 = @intFromFloat(gameState.height / 2 + config.buttonFontSize + config.menuButtonsPadding);
+        // rl.drawText(message1, message1PositionX, message1PositionY, config.buttonFontSize, rl.Color.white);
+        // rl.drawText(message2, message2PositionX, message2PositionY, config.buttonFontSize, rl.Color.white);
+
+        // TODO: Add a timeout for login
+        try erl.send_payload(gameState.node, .{
+            .user_login = .{
+                .username = &gameState.menu.login.username,
+                .password = &gameState.menu.login.password,
+            },
         });
-        const message1Size = rl.measureText(message1, config.buttonFontSize);
-        const message1SizeFloat: f32 = @floatFromInt(message1Size);
-        const message1PositionX: i32 = @intFromFloat(gameState.width / 2 - message1SizeFloat / 2);
-        const message1PositionY: i32 = @intFromFloat(gameState.height / 2);
-        const message2 = "Game is not implemented yet!";
-        const message2Size = rl.measureText(message2, config.buttonFontSize);
-        const message2SizeFloat: f32 = @floatFromInt(message2Size);
-        const message2PositionX: i32 = @intFromFloat(gameState.width / 2 - message2SizeFloat / 2);
-        const message2PositionY: i32 = @intFromFloat(
-            gameState.height / 2 + config.buttonFontSize + config.menuButtonsPadding,
-        );
-        rl.drawText(
-            message1,
-            message1PositionX,
-            message1PositionY,
-            config.buttonFontSize,
-            rl.Color.white,
-        );
-        rl.drawText(
-            message2,
-            message2PositionX,
-            message2PositionY,
-            config.buttonFontSize,
-            rl.Color.white,
-        );
+        // TODO: Add loading animation to wait for response
+        const msg: []const u8 = try erl.receive_message(gameState.node);
+        std.debug.print("{s}", .{msg});
+        gameState.scene = .nothing;
     }
 };
 
 pub fn main() anyerror!void {
-    var gameState = try GameState.init(800, 450);
+    const connection_status = erl.ei.ei_init();
+    if (connection_status != 0) return error.ei_init_failed;
+    var node: erl.LNode = try erl.prepare_connection();
+    erl.establish_connection(&node) catch |error_value| {
+        try print_connect_server_error(error_value);
+        std.process.exit(2);
+    };
+
+    var gameState = try GameState.init(800, 450, &node);
 
     rl.setConfigFlags(.flag_window_resizable);
     rl.initWindow(@intFromFloat(gameState.width), @intFromFloat(gameState.height), "Lyceum");
@@ -217,7 +214,7 @@ pub fn main() anyerror!void {
                 GameState.loginScene(&gameState);
             },
             .game_spawn => {
-                GameState.joinGameScene(&gameState);
+                try GameState.joinGameScene(&gameState);
             },
             .nothing => {
                 GameState.mainMenu(&gameState);
