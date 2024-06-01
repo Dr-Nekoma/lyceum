@@ -68,23 +68,13 @@ fn at_impl(
     }
 
     rl.drawRectangleV(textBoxPosition, textBoxSize, config.ColorPalette.primary);
-    if (mouseOnText) {
-        rl.drawRectangleLines(
-            @intFromFloat(textBoxPosition.x),
-            @intFromFloat(textBoxPosition.y),
-            @intFromFloat(textBoxSize.x),
-            @intFromFloat(textBoxSize.y),
-            config.ColorPalette.secondary,
-        );
-    } else {
-        rl.drawRectangleLines(
-            @intFromFloat(textBoxPosition.x),
-            @intFromFloat(textBoxPosition.y),
-            @intFromFloat(textBoxSize.x),
-            @intFromFloat(textBoxSize.y),
-            rl.Color.white,
-        );
-    }
+    rl.drawRectangleLines(
+        @intFromFloat(textBoxPosition.x),
+        @intFromFloat(textBoxPosition.y),
+        @intFromFloat(textBoxSize.x),
+        @intFromFloat(textBoxSize.y),
+        if (mouseOnText) config.ColorPalette.secondary else rl.Color.white,
+    );
 
     const is_redacted = buffer_size != 0;
     var redaction: [buffer_size:0]u8 = .{0} ** buffer_size;
