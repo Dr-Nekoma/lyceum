@@ -65,16 +65,32 @@ pub const GameState = struct {
 
     fn userRegistryButton(gameState: *@This()) void {
         const buttonSize = gameState.menuButtonSize();
-        const buttonPosition: rl.Vector2 = .{ .x = (gameState.width / 2) - (buttonSize.x / 2), .y = (gameState.height / 2) - (buttonSize.y / 2) };
-        if (button.at("Create User", buttonPosition, buttonSize, config.ColorPalette.primary)) gameState.scene = .user_registry;
+        const buttonPosition: rl.Vector2 = .{
+            .x = (gameState.width / 2) - (buttonSize.x / 2),
+            .y = (gameState.height / 2) - (buttonSize.y / 2),
+        };
+        if (button.at(
+            "Create User",
+            buttonPosition,
+            buttonSize,
+            config.ColorPalette.primary,
+        )) gameState.scene = .user_registry;
     }
 
     fn userLoginButton(gameState: *@This()) void {
         const buttonSize = gameState.menuButtonSize();
         const createUserButtonX = (gameState.width / 2) - (buttonSize.x / 2);
         const createUserButtonY = (gameState.height / 2) - (buttonSize.y / 2);
-        const buttonPosition: rl.Vector2 = .{ .x = createUserButtonX, .y = createUserButtonY + buttonSize.y + config.menuButtonsPadding };
-        if (button.at("Login", buttonPosition, buttonSize, config.ColorPalette.primary)) gameState.scene = .user_login;
+        const buttonPosition: rl.Vector2 = .{
+            .x = createUserButtonX,
+            .y = createUserButtonY + buttonSize.y + config.menuButtonsPadding,
+        };
+        if (button.at(
+            "Login",
+            buttonPosition,
+            buttonSize,
+            config.ColorPalette.primary,
+        )) gameState.scene = .user_login;
     }
 
     pub fn mainMenu(gameState: *@This()) void {
@@ -84,20 +100,56 @@ pub const GameState = struct {
 
     pub fn loginScene(gameState: *@This()) void {
         const buttonSize = gameState.menuButtonSize();
-        const usernameBoxPosition: rl.Vector2 = .{ .x = (gameState.width / 2) - (buttonSize.x / 2), .y = (gameState.height / 2) - (buttonSize.y / 2) };
-        const usernameLabelPositionY = usernameBoxPosition.y - config.buttonFontSize - 2 * config.menuButtonsPadding;
-        rl.drawText("User Name:", @intFromFloat(usernameBoxPosition.x), @intFromFloat(usernameLabelPositionY), config.buttonFontSize, rl.Color.white);
-        const usernameText = text{ .content = &gameState.menu.login.username, .position = &gameState.menu.login.usernamePosition };
-        usernameText.at(usernameBoxPosition, false);
+        const usernameBoxPosition: rl.Vector2 = .{
+            .x = (gameState.width / 2) - (buttonSize.x / 2),
+            .y = (gameState.height / 2) - (buttonSize.y / 2),
+        };
+        const usernameLabelPositionY =
+            usernameBoxPosition.y - config.buttonFontSize - 2 * config.menuButtonsPadding;
 
-        const passwordLabelPositionY = usernameBoxPosition.y + text.textBoxSize.y + 2 * config.menuButtonsPadding;
-        const passwordBoxPosition: rl.Vector2 = .{ .x = usernameBoxPosition.x, .y = passwordLabelPositionY + config.buttonFontSize + 2 * config.menuButtonsPadding };
-        rl.drawText("Password:", @intFromFloat(passwordBoxPosition.x), @intFromFloat(passwordLabelPositionY), config.buttonFontSize, rl.Color.white);
-        const passwordText = text{ .content = &gameState.menu.login.password, .position = &gameState.menu.login.passwordPosition };
-        passwordText.at(passwordBoxPosition, true);
+        rl.drawText(
+            "User Name:",
+            @intFromFloat(usernameBoxPosition.x),
+            @intFromFloat(usernameLabelPositionY),
+            config.buttonFontSize,
+            rl.Color.white,
+        );
+        const usernameText = text{
+            .content = &gameState.menu.login.username,
+            .position = &gameState.menu.login.usernamePosition,
+        };
+        usernameText.at(usernameBoxPosition);
 
-        const buttonPosition: rl.Vector2 = .{ .x = usernameBoxPosition.x, .y = passwordBoxPosition.y + text.textBoxSize.y + 2 * config.menuButtonsPadding };
-        if (button.at("Login", buttonPosition, buttonSize, config.ColorPalette.primary)) gameState.scene = .game_spawn;
+        const passwordLabelPositionY =
+            usernameBoxPosition.y + text.textBoxSize.y + 2 * config.menuButtonsPadding;
+
+        const passwordBoxPosition: rl.Vector2 = .{
+            .x = usernameBoxPosition.x,
+            .y = passwordLabelPositionY + config.buttonFontSize + 2 * config.menuButtonsPadding,
+        };
+        rl.drawText(
+            "Password:",
+            @intFromFloat(passwordBoxPosition.x),
+            @intFromFloat(passwordLabelPositionY),
+            config.buttonFontSize,
+            rl.Color.white,
+        );
+        const passwordText = text{
+            .content = &gameState.menu.login.password,
+            .position = &gameState.menu.login.passwordPosition,
+        };
+        passwordText.redacted_at(Menu.Login.bufferSize, passwordBoxPosition);
+
+        const buttonPosition: rl.Vector2 = .{
+            .x = usernameBoxPosition.x,
+            .y = passwordBoxPosition.y + text.textBoxSize.y + 2 * config.menuButtonsPadding,
+        };
+        if (button.at(
+            "Login",
+            buttonPosition,
+            buttonSize,
+            config.ColorPalette.primary,
+        )) gameState.scene = .game_spawn;
     }
 
     pub fn joinGameScene(gameState: *@This()) !void {

@@ -9,8 +9,35 @@ pub const textBoxSize: rl.Vector2 = .{
 content: [:0]u8,
 position: *usize,
 
-pub fn at(self: @This(), textBoxPosition: rl.Vector2, _: bool) void {
-    const textBox = rl.Rectangle.init(textBoxPosition.x, textBoxPosition.y, textBoxSize.x, textBoxSize.y);
+pub fn at(
+    self: @This(),
+    textBoxPosition: rl.Vector2,
+) void {
+    return self.at_impl(0, textBoxPosition);
+}
+
+pub fn redacted_at(
+    self: @This(),
+    comptime buffer_size: usize,
+    textBoxPosition: rl.Vector2,
+) void {
+    return if (buffer_size == 0)
+        @compileError("Buffer size for redacted text must be non-zero")
+    else
+        self.at_impl(buffer_size, textBoxPosition);
+}
+
+fn at_impl(
+    self: @This(),
+    comptime buffer_size: usize,
+    textBoxPosition: rl.Vector2,
+) void {
+    const textBox = rl.Rectangle.init(
+        textBoxPosition.x,
+        textBoxPosition.y,
+        textBoxSize.x,
+        textBoxSize.y,
+    );
     var mouseOnText = false;
     if (rl.checkCollisionPointRec(rl.getMousePosition(), textBox)) {
         mouseOnText = true;
@@ -59,9 +86,18 @@ pub fn at(self: @This(), textBoxPosition: rl.Vector2, _: bool) void {
         );
     }
 
-    // TODO: Fix redacted drawing buffer
-    // const redactedBuffer = if (!redacted) self.content else (.{'*'} ** self.position) ++ .{0};
-    rl.drawText(self.content, @intFromFloat(textBoxPosition.x + 5), @intFromFloat(textBoxPosition.y + 8), config.textFontSize, rl.Color.white);
+    const is_redacted = buffer_size != 0;
+    var redaction: [buffer_size:0]u8 = .{0} ** buffer_size;
+    if (is_redacted)
+        @memset(redaction[0..@min(self.content.len, buffer_size)], '*');
+
+    rl.drawText(
+        if (is_redacted) &redaction else self.content,
+        @intFromFloat(textBoxPosition.x + 5),
+        @intFromFloat(textBoxPosition.y + 8),
+        config.textFontSize,
+        rl.Color.white,
+    );
 
     // TODO: Fix blinking cursor
     // if (mouseOnText) {
