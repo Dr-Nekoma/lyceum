@@ -44,6 +44,7 @@
             env = zig2nix.outputs.zig-env.${system} {};
             system-triple = env.lib.zigTripleFromString system;
           in {
+            devenv-up = self.devShells.${system}.default.config.procfileScript;
             # docs = pkgs.stdenv.mkDerivation {
             #   name = "docs";
             #   src = ./.;
@@ -137,6 +138,7 @@
                   erlfmt
                   just
                   rebar3
+                  dbeaver
                 ] ++ lib.optionals stdenv.isLinux (linuxPkgs) ++ lib.optionals stdenv.isDarwin darwinPkgs;
 
                 languages.erlang = {
@@ -157,7 +159,7 @@
                 '';
 
                 services.postgres = {
-                  package = pkgs.postgresql_15.withPackages (p: with p; []);
+                  package = pkgs.postgresql_15.withPackages (p: with p; [p.periods]);
                   enable = true;
                   initialDatabases = [ { name = "mmo"; } ];
                   port = 5432;

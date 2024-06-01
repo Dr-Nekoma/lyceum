@@ -33,3 +33,6 @@ extprg
 # Nix
 result
 .devenv
+
+# Mac
+src/.DS_Store
