@@ -118,7 +118,7 @@ pub const GameState = struct {
             .content = &gameState.menu.login.username,
             .position = &gameState.menu.login.usernamePosition,
         };
-        usernameText.at(usernameBoxPosition, false);
+        usernameText.at(usernameBoxPosition);
 
         const passwordLabelPositionY =
             usernameBoxPosition.y + text.textBoxSize.y + 2 * config.menuButtonsPadding;
@@ -138,7 +138,7 @@ pub const GameState = struct {
             .content = &gameState.menu.login.password,
             .position = &gameState.menu.login.passwordPosition,
         };
-        passwordText.at(passwordBoxPosition, true);
+        passwordText.redacted_at(Menu.Login.bufferSize, passwordBoxPosition);
 
         const buttonPosition: rl.Vector2 = .{
             .x = usernameBoxPosition.x,
