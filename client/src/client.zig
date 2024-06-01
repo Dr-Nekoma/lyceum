@@ -153,18 +153,6 @@ pub const GameState = struct {
     }
 
     pub fn joinGameScene(gameState: *@This()) !void {
-        // const message1 = rl.textFormat("You tried to login with credentials %s and %s", .{&gameState.menu.login.username, &gameState.menu.login.password});
-        // const message1Size = rl.measureText(message1, config.buttonFontSize);
-        // const message1SizeFloat: f32 = @floatFromInt(message1Size);
-        // const message1PositionX: i32 = @intFromFloat(gameState.width / 2 - message1SizeFloat / 2);
-        // const message1PositionY: i32 = @intFromFloat(gameState.height / 2);
-        // const message2 = "Game is not implemented yet!";
-        // const message2Size = rl.measureText(message2, config.buttonFontSize);
-        // const message2SizeFloat: f32 = @floatFromInt(message2Size);
-        // const message2PositionX: i32 = @intFromFloat(gameState.width / 2 - message2SizeFloat / 2);
-        // const message2PositionY: i32 = @intFromFloat(gameState.height / 2 + config.buttonFontSize + config.menuButtonsPadding);
-        // rl.drawText(message1, message1PositionX, message1PositionY, config.buttonFontSize, rl.Color.white);
-        // rl.drawText(message2, message2PositionX, message2PositionY, config.buttonFontSize, rl.Color.white);
 
         // TODO: Add a timeout for login
         try erl.send_payload(gameState.node, .{
