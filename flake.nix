@@ -113,7 +113,7 @@
             xorg.libXcursor
             xorg.libXi
             xorg.libXi
-            libGL            
+            libGL
           ];
           darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
             CoreFoundation
