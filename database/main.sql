@@ -12,6 +12,16 @@ CREATE TABLE "map"(
        PRIMARY KEY("name")
 );
 
+CREATE TABLE "object"(
+       "map_name" VARCHAR(16) NOT NULL, 
+       "name" VARCHAR(16) NOT NULL,
+       "x_position" SMALLINT NOT NULL,
+       "y_position" SMALLINT NOT NULL,
+       "z_position" SMALLINT NOT NULL,       
+       FOREIGN KEY ("map_name") REFERENCES "map"("name"),	
+       PRIMARY KEY("map_name")
+);
+
 CREATE TABLE "character"(
        "name" VARCHAR(18) NOT NULL,
        "e-mail" TEXT NOT NULL,
@@ -36,7 +46,7 @@ CREATE TABLE "character_stats"(
 CREATE TABLE "character_position"(
        "name" VARCHAR(18) NOT NULL,
        "username" VARCHAR(32) NOT NULL,
-       "x_position" DECIMAL(4, 2) NOT NULL,
+       "x_position" SMALLINT NOT NULL,
        "y_position" SMALLINT NOT NULL,
        "map_name" VARCHAR(64) NOT NULL,
        FOREIGN KEY ("name", "username") REFERENCES "character"("name", "username"),
