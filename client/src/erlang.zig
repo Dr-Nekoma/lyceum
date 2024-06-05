@@ -154,41 +154,50 @@ pub fn send_payload(ec: *LNode, message: Payload) !void {
 pub const MapExample = struct {
     x: i32,
     y: i32,
-}
+};
 
-pub const AtomExample = enum {
-    something,
-    anything
-}
+pub const AtomExample = enum { something, anything };
 
-pub const TupleExample = union(enum) {
-    something: AtomExample,
-    anything: AtomExample
-}
+pub const TupleExample = union(enum) { something: AtomExample, anything: AtomExample };
 
 pub const Mock = struct {
-    a: i32; // Range check
-    b: [:0]const u8;
+    a: i32, // Range check
+    b: [:0]const u8,
     c: MapExample,
     d: []const u8,
     e: AtomExample,
     f: TupleExample,
-}
+};
 
 pub fn receive_string(buf: *ei.ei_x_buff, index: *i32, allocator: std.mem.Allocator) ![:0]const u8 {
     var string_length: i32 = undefined;
     var ty: i32 = undefined;
-    try erlang_validate(error.deconding_string_length, ei.ei_get_type(buf.buff, &index, &ty, &string_length));
+    try erlang_validate(error.decoding_string_length, ei.ei_get_type(buf.buff, index, &ty, &string_length));
 
     if (ty != ei.ERL_STRING_EXT)
         return error.message_is_not_string;
 
     const ustring_length: u32 = @bitCast(string_length);
 
-    const allocator = std.heap.c_allocator;
     const string_buffer = try allocator.alloc(u8, ustring_length);
     try erlang_validate(error.decoding_string, ei.ei_decode_string(buf.buff, &index, string_buffer.ptr));
     return string_buffer;
+}
+
+pub fn receive_atom(buf: *ei.ei_x_buff, index: *i32, allocator: std.mem.Allocator) ![:0]const u8 {
+    // FIXME: deduplicate
+    var atom_length: i32 = undefined;
+    var ty: i32 = undefined;
+    try erlang_validate(error.decoding_atom_length, ei.ei_get_type(buf.buff, index, &ty, &atom_length));
+
+    if (ty != ei.ERL_STRING_EXT)
+        return error.message_is_not_atom;
+
+    const uatom_length: u32 = @bitCast(atom_length);
+
+    const atom_buffer = try allocator.alloc(u8, uatom_length);
+    try erlang_validate(error.decoding_atom, ei.ei_decode_atom(buf.buff, index, atom_buffer.ptr));
+    return atom_buffer;
 }
 
 // Here is a sketch of an idea
@@ -196,7 +205,8 @@ pub fn receive_string(buf: *ei.ei_x_buff, index: *i32, allocator: std.mem.Alloca
 //              .keys = ["this", "that"]}
 // TODO: Try to make a nice system just like for sending
 // TODO: Do proper error handling in receive_message
-pub fn receive_message(allocator: std.mem.Allocator, comptime T: type) !T {
+pub fn receive_message(comptime T: type, allocator: std.mem.Allocator, ec: *LNode) !T {
+    var msg: ei.erlang_msg = undefined;
     var buf: ei.ei_x_buff = undefined;
     var index: i32 = 0;
     try erlang_validate(error.create_new_decode_buff, ei.ei_x_new(&buf));
@@ -210,11 +220,11 @@ pub fn receive_message(allocator: std.mem.Allocator, comptime T: type) !T {
         }
         break;
     }
-    
+
     var value: T = undefined;
     switch (@typeInfo(T)) {
         .Struct => {
-            inline for (meta.fields(T)) |struct_field| {
+            inline for (std.meta.fields(T)) |struct_field| {
                 switch (@typeInfo(struct_field.type)) {
                     .Int => {
                         if (struct_field.default_value != null) {
@@ -254,21 +264,22 @@ pub fn receive_message(allocator: std.mem.Allocator, comptime T: type) !T {
             if (arity != 2) {
                 return error.wrong_arity_for_tuple;
             }
-
-            const tuple_name = try receive_string(&buf, &index, allocator);
-            const tuple_value = try receive_message(allocator, T);
-           
-        }
-    }    
+            const tuple_name = try receive_atom(&buf, &index, allocator);
+            // loop over fields to see if the name matches any of them
+            // if none match, fail
+            // instead of T, pass the type of the field that we matched
+            const tuple_value = try receive_message(T, allocator, ec);
+        },
+    }
 }
 
-pub fn receive_message(ec: *LNode) ![]u8 {
+pub fn old_receive_message(ec: *LNode) ![]u8 {
     var msg: ei.erlang_msg = undefined;
     var index: i32 = 0;
     var version: i32 = undefined;
     var arity: i32 = 0;
     var pid: ei.erlang_pid = undefined;
-    
+
     _ = ei.ei_decode_version(buf.buff, &index, &version);
     _ = ei.ei_decode_tuple_header(buf.buff, &index, &arity);
     if (arity != 2) {
