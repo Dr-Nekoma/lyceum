@@ -224,21 +224,22 @@ pub fn receive_message(comptime T: type, allocator: std.mem.Allocator, ec: *LNod
     var value: T = undefined;
     switch (@typeInfo(T)) {
         .Struct => {
-            inline for (std.meta.fields(T)) |struct_field| {
-                switch (@typeInfo(struct_field.type)) {
-                    .Int => {
-                        if (struct_field.default_value != null) {
-                            var anyopaque_pointer: *anyopaque = @constCast(struct_field.default_value.?);
-                            var x = @ptrCast(*const u32, @alignCast(4, anyopaque_pointer));
-                            struct_field.name = x;
-                            std.debug.print("default value {any}\n", .{x});
-                        }
-                    },
-                    else => @compileError("TODO!!\n"),
-                }
-                try deserializeInto(&@field(value, struct_field.name));
-            }
-            return value;
+            //            inline for (std.meta.fields(T)) |struct_field| {
+            //                switch (@typeInfo(struct_field.type)) {
+            //                    //                    .Int =>
+            //                    //                    {
+            //                    //                        if (struct_field.default_value != null) {
+            //                    //                            var anyopaque_pointer: *anyopaque = @constCast(struct_field.default_value.?);
+            //                    //                            var x: *const u32 = @ptrCast(@alignCast(4, anyopaque_pointer));
+            //                    //                            struct_field.name = x;
+            //                    //                            std.debug.print("default value {any}\n", .{x});
+            //                    //                        }
+            //                    //                    },
+            //                    else => @compileError("TODO!!\n"),
+            //                }
+            //                try deserializeInto(&@field(value, struct_field.name));
+            //            }
+            return error.no_structs_implemented;
         },
         .Int => |item| {
             // TODO: eventually arbitrarily sized integers.
@@ -247,7 +248,6 @@ pub fn receive_message(comptime T: type, allocator: std.mem.Allocator, ec: *LNod
             } else {
                 try erlang_validate(error.decoding_unsigned_integer, ei.decode_ulong(buf.buff, &index, &value));
             }
-            return value;
         },
         .Enum => |item| {
             try erlang_validate(error.decoding_atom, ei.decode_atom(buf.buff, &index, &value));
@@ -260,34 +260,48 @@ pub fn receive_message(comptime T: type, allocator: std.mem.Allocator, ec: *LNod
         },
         .Union => |item| {
             var arity: i32 = 0;
-            try erlang_validate(error.decoding_tuple, ei.ei_decode_tuple_header(buf.buff, &index, &arity));
+            try erlang_validate(
+                error.decoding_tuple,
+                ei.ei_decode_tuple_header(buf.buff, &index, &arity),
+            );
             if (arity != 2) {
                 return error.wrong_arity_for_tuple;
             }
             const tuple_name = try receive_atom(&buf, &index, allocator);
+            const name: [:0]const u8, const Tagged_Value: type = blk: {
+                for (item.fields) |field| {
+                    if (std.mem.eql(u8, field.name, tuple_name)) {
+                        break :blk .{ field.name, field.type };
+                    }
+                }
+                break :blk null;
+            } orelse return error.unknown_tuple_tag;
             // loop over fields to see if the name matches any of them
             // if none match, fail
             // instead of T, pass the type of the field that we matched
-            const tuple_value = try receive_message(T, allocator, ec);
+            const tuple_value = try receive_message(Tagged_Value, allocator, ec);
+            value = @unionInit(T, name, tuple_value);
         },
     }
+    return value;
 }
 
-pub fn old_receive_message(ec: *LNode) ![]u8 {
-    var msg: ei.erlang_msg = undefined;
-    var index: i32 = 0;
-    var version: i32 = undefined;
-    var arity: i32 = 0;
-    var pid: ei.erlang_pid = undefined;
-
-    _ = ei.ei_decode_version(buf.buff, &index, &version);
-    _ = ei.ei_decode_tuple_header(buf.buff, &index, &arity);
-    if (arity != 2) {
-        return error.got_wrong_message;
-    }
-    _ = ei.ei_decode_pid(buf.buff, &index, &pid);
-
-    _ = ei.ei_decode_string(buf.buff, &index, string_buffer.ptr);
-
-    return string_buffer;
+pub fn old_receive_message(_: *LNode) ![]u8 {
+    //    var msg: ei.erlang_msg = undefined;
+    //    var index: i32 = 0;
+    //    var version: i32 = undefined;
+    //    var arity: i32 = 0;
+    //    var pid: ei.erlang_pid = undefined;
+    //
+    //    _ = ei.ei_decode_version(buf.buff, &index, &version);
+    //    _ = ei.ei_decode_tuple_header(buf.buff, &index, &arity);
+    //    if (arity != 2) {
+    //        return error.got_wrong_message;
+    //    }
+    //    _ = ei.ei_decode_pid(buf.buff, &index, &pid);
+    //
+    //    _ = ei.ei_decode_string(buf.buff, &index, string_buffer.ptr);
+    //
+    //    return string_buffer;
+    unreachable;
 }
