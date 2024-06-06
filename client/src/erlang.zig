@@ -337,9 +337,9 @@ inline fn receive_array(comptime T: type, comptime item: std.builtin.Type.Array,
         ei.ei_decode_list_header(deserializer.buf.buff, deserializer.index, &size),
     );
     if (item.len != size) return error.wrong_array_size;
-    for (value) |*elem| {
-        elem.* = try internal_receive_message(item.child, allocator, deserializer);
-    }
+    for (0..value.len) |idx| {
+        value[idx] = try internal_receive_message(item.child, allocator, deserializer);        
+    } 
     try erlang_validate(
         error.decoding_list,
         ei.ei_decode_list_header(deserializer.buf.buff, deserializer.index, &size),
@@ -347,7 +347,6 @@ inline fn receive_array(comptime T: type, comptime item: std.builtin.Type.Array,
     if (size != 0) return error.decoded_improper_list;
     return value;
 }
-// fn receive_struct(comptime T: type, allocator: std.mem.Allocator, deserializer: Deserializer)
 
 fn internal_receive_message(comptime T: type, allocator: std.mem.Allocator, deserializer: Deserializer) !T {
     var value: T = undefined;
