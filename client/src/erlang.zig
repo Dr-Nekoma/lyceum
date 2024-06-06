@@ -164,9 +164,10 @@ pub const Mock = struct {
     a: i32, // Range check
     b: [:0]const u8,
     c: MapExample,
-    d: []const u8,
+    d: []const i32,
     e: AtomExample,
     f: TupleExample,
+    g: [4]i32,
 };
 
 pub fn receive_string(buf: *ei.ei_x_buff, index: *i32, allocator: std.mem.Allocator) ![:0]const u8 {
@@ -200,11 +201,10 @@ pub fn receive_atom(buf: *ei.ei_x_buff, index: *i32, allocator: std.mem.Allocato
     return atom_buffer;
 }
 
-// Here is a sketch of an idea
-// .{ .map = .{ .size = 2,
-//              .keys = ["this", "that"]}
-// TODO: Try to make a nice system just like for sending
-// TODO: Do proper error handling in receive_message
+pub fn with_pid(comptime T: type) type {
+    return std.meta.Tuple(&.{ ei.erlang_pid, T });
+}
+
 pub fn receive_message(comptime T: type, allocator: std.mem.Allocator, ec: *LNode) !T {
     var msg: ei.erlang_msg = undefined;
     var buf: ei.ei_x_buff = undefined;
@@ -222,24 +222,42 @@ pub fn receive_message(comptime T: type, allocator: std.mem.Allocator, ec: *LNod
     }
 
     var value: T = undefined;
-    switch (@typeInfo(T)) {
-        .Struct => {
-            //            inline for (std.meta.fields(T)) |struct_field| {
-            //                switch (@typeInfo(struct_field.type)) {
-            //                    //                    .Int =>
-            //                    //                    {
-            //                    //                        if (struct_field.default_value != null) {
-            //                    //                            var anyopaque_pointer: *anyopaque = @constCast(struct_field.default_value.?);
-            //                    //                            var x: *const u32 = @ptrCast(@alignCast(4, anyopaque_pointer));
-            //                    //                            struct_field.name = x;
-            //                    //                            std.debug.print("default value {any}\n", .{x});
-            //                    //                        }
-            //                    //                    },
-            //                    else => @compileError("TODO!!\n"),
-            //                }
-            //                try deserializeInto(&@field(value, struct_field.name));
-            //            }
-            return error.no_structs_implemented;
+    if (T == [:0]const u8) {
+        value = try receive_string(buf.buff, &index, allocator);
+    } else if (T == ei.erlang_pid) {
+        value = try erlang_validate(
+            error.invalid_pid,
+            ei.ei_decode_pid(buf.buff, &index, &value),
+        );
+    } else switch (@typeInfo(T)) {
+        .Struct => |item| {
+            var size: i32 = 0;
+            if (item.is_tuple) {
+                try erlang_validate(
+                    error.decoding_tuple,
+                    ei.ei_decode_tuple_header(buf.buff, &index, &size),
+                );
+                if (item.len != size) return error.wrong_tuple_size;
+                inline for (value) |*elem| {
+                    elem.* = try receive_message(item.child, allocator, ec);
+                }
+            } else {
+                try erlang_validate(
+                    error.decoding_map,
+                    ei.ei_decode_map_header(buf.buff, &index, &size),
+                );
+                const fields = std.meta.fields(T);
+                if (size != fields.len) return error.wrong_number_of_map_entries;
+                for (0..size) |_| {
+                    const key = try receive_atom(buf.buff, &index, allocator);
+                    inline for (fields) |field| {
+                        if (std.mem.eql(u8, field.name, key)) {
+                            const current_field = &@field(value, field.name);
+                            current_field.* = try receive_message(field.type, allocator, ec);
+                        }
+                    }
+                }
+            }
         },
         .Int => |item| {
             // TODO: eventually arbitrarily sized integers.
@@ -276,11 +294,59 @@ pub fn receive_message(comptime T: type, allocator: std.mem.Allocator, ec: *LNod
                 }
                 break :blk null;
             } orelse return error.unknown_tuple_tag;
-            // loop over fields to see if the name matches any of them
-            // if none match, fail
-            // instead of T, pass the type of the field that we matched
             const tuple_value = try receive_message(Tagged_Value, allocator, ec);
             value = @unionInit(T, name, tuple_value);
+        },
+        .Pointer => |item| {
+            if (item.size != .Slice)
+                return error.unsupported_pointer_type;
+            var size: i32 = 0;
+            try erlang_validate(
+                error.decoding_list,
+                ei.ei_decode_list_header(buf.buff, &index, &size),
+            );
+            const has_sentinel = item.sentinel == null;
+            if (size == 0 and !has_sentinel) {
+                value = &.{};
+            } else {
+                const slice_buffer = if (has_sentinel)
+                    try allocator.allocSentinel(
+                        item.child,
+                        size,
+                        item.sentinel.?,
+                    )
+                else
+                    try allocator.alloc(
+                        item.child,
+                        size,
+                    );
+                errdefer allocator.free(slice_buffer);
+                for (slice_buffer) |*elem| {
+                    elem.* = try receive_message(item.child, allocator, ec);
+                }
+                try erlang_validate(
+                    error.decoding_list,
+                    ei.ei_decode_list_header(buf.buff, &index, &size),
+                );
+                if (size != 0) return error.decoded_improper_list;
+                value = slice_buffer;
+            }
+        },
+        .Array => |item| {
+            var size: i32 = 0;
+            try erlang_validate(
+                error.decoding_list,
+                ei.ei_decode_list_header(buf.buff, &index, &size),
+            );
+            if (item.len != size) return error.wrong_array_size;
+            for (value) |*elem| {
+                elem.* = try receive_message(item.child, allocator, ec);
+            }
+            try erlang_validate(
+                error.decoding_list,
+                ei.ei_decode_list_header(buf.buff, &index, &size),
+            );
+            if (size != 0) return error.decoded_improper_list;
         },
     }
     return value;
