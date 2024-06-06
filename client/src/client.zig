@@ -44,6 +44,7 @@ pub const GameState = struct {
     height: f32,
     menu: Menu = .{},
     node: *erl.LNode,
+    allocator: std.mem.Allocator = std.heap.c_allocator,
 
     pub fn init(width: f32, height: f32, node: *erl.LNode) !GameState {
         if (width < 0) return error.negative_width;
@@ -138,7 +139,7 @@ pub const GameState = struct {
             .content = &gameState.menu.login.password,
             .position = &gameState.menu.login.passwordPosition,
         };
-        passwordText.redacted_at(Menu.Login.bufferSize, passwordBoxPosition);
+        passwordText.at(passwordBoxPosition);
 
         const buttonPosition: rl.Vector2 = .{
             .x = usernameBoxPosition.x,
@@ -162,8 +163,9 @@ pub const GameState = struct {
             },
         });
         // TODO: Add loading animation to wait for response
-        const msg: []const u8 = try erl.old_receive_message(gameState.node);
-        std.debug.print("{s}", .{msg});
+        const return_type = erl.with_pid(std.meta.Tuple(&.{ [:0]const u8, i64, std.meta.Tuple(&.{ i64, erl.User_Login_Response }) }));
+        const msg = try erl.receive_message(return_type, gameState.allocator, gameState.node);
+        std.debug.print("{}", .{msg.@"1"});
         gameState.scene = .nothing;
     }
 };

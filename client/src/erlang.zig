@@ -30,7 +30,10 @@ pub const User_Login = struct {
     password: [:0]const u8,
 };
 
-pub const User_Login_Response = [:0]const u8;
+pub const User_Login_Response = struct {
+    label: i64,
+    something: [:0]const u8,
+};
 
 pub const Payload = union(Action) {
     user_registry: User_Registry,
@@ -166,7 +169,7 @@ pub fn receive_atom_string(deserializer: Deserializer, allocator: std.mem.Alloca
     var ty: i32 = undefined;
     try erlang_validate(error.decoding_atom_string_length, ei.ei_get_type(deserializer.buf.buff, deserializer.index, &ty, &length));
 
-    if (ty != ei.ERL_STRING_EXT)
+    if (ty != ei.ERL_STRING_EXT and ty != ei.ERL_ATOM_EXT)
         return error.message_is_not_atom_or_string;
 
     const u_length: u32 = @bitCast(length);
@@ -231,16 +234,26 @@ inline fn receive_struct(comptime T: type, comptime item: std.builtin.Type.Struc
             ei.ei_decode_map_header(deserializer.buf.buff, deserializer.index, &size),
         );
         const fields = std.meta.fields(T);
+        var present_fields: [fields.len]bool = .{false} ** fields.len;
         if (size != fields.len) return error.wrong_number_of_map_entries;
-        for (0..size) |_| {
+        for (0..@as(u32, @bitCast(size))) |_| {
             const key = try receive_atom(deserializer, allocator);
-            inline for (fields) |field| {
+            inline for (0.., fields) |idx, field| {
                 if (std.mem.eql(u8, field.name, key)) {
                     const current_field = &@field(value, field.name);
                     current_field.* = try internal_receive_message(field.type, allocator, deserializer);
+                    present_fields[idx] = true;
                 }
             }
         }
+        var should_error = false;
+        inline for (0.., present_fields) |idx, presence| {
+            if (!presence) {
+                std.debug.print("Missing Field in Struct {s}: {s}\n", .{ @typeName(T), fields[idx].name });
+                should_error = true;
+            }
+        }
+        if (should_error) return error.missing_field_in_struct;
     }
     return value;
 }
@@ -249,9 +262,9 @@ inline fn receive_int(comptime T: type, comptime item: std.builtin.Type.Int, des
     // TODO: eventually arbitrarily sized integers.
     var value: T = undefined;
     if (item.signedness == .signed) {
-        try erlang_validate(error.decoding_signed_integer, ei.decode_long(deserializer.buf.buff, deserializer.index, &value));
+        try erlang_validate(error.decoding_signed_integer, ei.ei_decode_long(deserializer.buf.buff, deserializer.index, &value));
     } else {
-        try erlang_validate(error.decoding_unsigned_integer, ei.decode_ulong(deserializer.buf.buff, deserializer.index, &value));
+        try erlang_validate(error.decoding_unsigned_integer, ei.ei_decode_ulong(deserializer.buf.buff, deserializer.index, &value));
     }
     return value;
 }
@@ -308,12 +321,12 @@ inline fn receive_pointer(comptime T: type, comptime item: std.builtin.Type.Poin
                 item.child,
                 size,
                 item.sentinel.?,
-        )
+            )
         else
             try allocator.alloc(
                 item.child,
                 size,
-        );
+            );
         errdefer allocator.free(slice_buffer);
         for (slice_buffer) |*elem| {
             elem.* = try internal_receive_message(item.child, allocator, deserializer);
@@ -338,8 +351,8 @@ inline fn receive_array(comptime T: type, comptime item: std.builtin.Type.Array,
     );
     if (item.len != size) return error.wrong_array_size;
     for (0..value.len) |idx| {
-        value[idx] = try internal_receive_message(item.child, allocator, deserializer);        
-    } 
+        value[idx] = try internal_receive_message(item.child, allocator, deserializer);
+    }
     try erlang_validate(
         error.decoding_list,
         ei.ei_decode_list_header(deserializer.buf.buff, deserializer.index, &size),
@@ -359,22 +372,22 @@ fn internal_receive_message(comptime T: type, allocator: std.mem.Allocator, dese
         );
     } else switch (@typeInfo(T)) {
         .Struct => |item| {
-            value = try receive_struct(T, item, allocator, deserializer);  
+            value = try receive_struct(T, item, allocator, deserializer);
         },
         .Int => |item| {
-            value = try receive_int(T, item, deserializer);  
+            value = try receive_int(T, item, deserializer);
         },
         .Enum => |item| {
-            value = try receive_enum(T, item, allocator, deserializer);  
+            value = try receive_enum(T, item, allocator, deserializer);
         },
         .Union => |item| {
-            value = try receive_union(T, item, allocator, deserializer);  
+            value = try receive_union(T, item, allocator, deserializer);
         },
         .Pointer => |item| {
-            value = try receive_pointer(T, item, allocator, deserializer); 
-        },             
+            value = try receive_pointer(T, item, allocator, deserializer);
+        },
         .Array => |item| {
-            value = try receive_array(T, item, deserializer);  
+            value = try receive_array(T, item, allocator, deserializer);
         },
         else => {
             @compileError("Unsupported type in deserialization");
