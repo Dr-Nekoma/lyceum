@@ -30,11 +30,7 @@ pub const User_Login = struct {
     password: [:0]const u8,
 };
 
-pub const User_Enum = enum {
-    test1,
-    test2,
-    test3
-};
+pub const User_Enum = enum { test1, test2, test3 };
 
 pub const User_Union = union(User_Enum) {
     test1: i64,
@@ -299,7 +295,7 @@ inline fn receive_int(comptime T: type, comptime item: std.builtin.Type.Int, des
 inline fn receive_enum(comptime T: type, comptime item: std.builtin.Type.Enum, allocator: std.mem.Allocator, deserializer: Deserializer) !T {
     const name = try receive_atom(deserializer, allocator);
     inline for (item.fields) |field| {
-        if (std.mem.eql(u8, field.name, name)) {            
+        if (std.mem.eql(u8, field.name, name)) {
             return std.meta.stringToEnum(T, name) orelse error.invalid_tag_to_enum;
         }
     }
@@ -325,7 +321,6 @@ inline fn receive_union(comptime T: type, comptime item: std.builtin.Type.Union,
         }
     }
     return error.unknown_tuple_tag;
-
 }
 
 inline fn receive_pointer(comptime T: type, comptime item: std.builtin.Type.Pointer, allocator: std.mem.Allocator, deserializer: Deserializer) !T {
@@ -391,7 +386,7 @@ inline fn receive_bool(comptime T: type, deserializer: Deserializer) !T {
     var value: T = undefined;
     var bool_value: i32 = 0;
     try erlang_validate(
-        error.decoding_boolean,        
+        error.decoding_boolean,
         ei.ei_decode_boolean(deserializer.buf.buff, deserializer.index, &bool_value),
     );
     if (bool_value == 0) {
