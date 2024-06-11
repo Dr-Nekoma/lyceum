@@ -163,7 +163,7 @@ pub const GameState = struct {
             },
         });
         // TODO: Add loading animation to wait for response
-        const return_type = erl.with_pid(std.meta.Tuple(&.{ [:0]const u8, i64, std.meta.Tuple(&.{ i64, erl.User_Login_Response }) }));
+        const return_type = erl.with_pid(std.meta.Tuple(&.{ [:0]const u8, i64, std.meta.Tuple(&.{ i64, i64 }) }));
         const msg = try erl.receive_message(return_type, gameState.allocator, gameState.node);
         std.debug.print("{}", .{msg.@"1"});
         gameState.scene = .nothing;

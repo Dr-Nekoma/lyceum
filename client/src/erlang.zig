@@ -30,21 +30,6 @@ pub const User_Login = struct {
     password: [:0]const u8,
 };
 
-pub const User_Enum = enum { test1, test2, test3 };
-
-pub const User_Union = union(User_Enum) {
-    test1: i64,
-    test2: [2]i64,
-    test3: []const bool,
-};
-
-pub const User_Login_Response = struct {
-    label: ?i64,
-    something: [:0]const u8,
-    another: User_Enum,
-    wtf: User_Union,
-};
-
 pub const Payload = union(Action) {
     user_registry: User_Registry,
     user_login: User_Login,
