@@ -19,6 +19,11 @@ pub const Action = enum {
     debug,
 };
 
+pub const Erlang_Response = union(enum) {
+    ok: void,
+    @"error": [:0]const u8,
+};
+
 pub const User_Registry = struct {
     username: [:0]const u8,
     email: [:0]const u8,
@@ -186,6 +191,12 @@ pub fn with_pid(comptime T: type) type {
     return std.meta.Tuple(&.{ ei.erlang_pid, T });
 }
 
+pub fn receive_simple_response(allocator: std.mem.Allocator, ec: *LNode) !Erlang_Response {
+    const simple_type = with_pid(Erlang_Response);
+    const response = try receive_message(simple_type, allocator, ec);
+    return response.@"1";
+}
+
 pub fn receive_message(comptime T: type, allocator: std.mem.Allocator, ec: *LNode) !T {
     var msg: ei.erlang_msg = undefined;
     var buf: ei.ei_x_buff = undefined;
@@ -290,19 +301,45 @@ inline fn receive_enum(comptime T: type, comptime item: std.builtin.Type.Enum, a
 inline fn receive_union(comptime T: type, comptime item: std.builtin.Type.Union, allocator: std.mem.Allocator, deserializer: Deserializer) !T {
     var value: T = undefined;
     var arity: i32 = 0;
+    var typ: i32 = 0;
+    var _v: i32 = undefined;
     try erlang_validate(
-        error.decoding_tuple,
-        ei.ei_decode_tuple_header(deserializer.buf.buff, deserializer.index, &arity),
+        error.decoding_get_type,
+        ei.ei_get_type(deserializer.buf.buff, deserializer.index, &typ, &_v),
     );
-    if (arity != 2) {
-        return error.wrong_arity_for_tuple;
-    }
-    const tuple_name = try receive_atom(deserializer, allocator);
-    inline for (item.fields) |field| {
-        if (std.mem.eql(u8, field.name, tuple_name)) {
-            const tuple_value = try internal_receive_message(field.type, allocator, deserializer);
-            value = @unionInit(T, field.name, tuple_value);
-            return value;
+    if (typ == ei.ERL_ATOM_EXT) {
+        const enum_type = std.meta.Tag(T);
+        const tuple_name = try receive_enum(enum_type, @typeInfo(enum_type).Enum, allocator, deserializer);
+        switch (tuple_name) {
+            inline else => |name| {
+                inline for (item.fields) |field| {
+                    if (std.mem.eql(u8, field.name, @tagName(name))) {
+                        if(field.type == void) {
+                            value = @unionInit(T, field.name, {});
+                            break;
+                        } else {
+                            unreachable;
+                        }
+                    }
+                }
+            }
+        }
+        return value;
+    } else {
+        try erlang_validate(
+            error.decoding_tuple,
+            ei.ei_decode_tuple_header(deserializer.buf.buff, deserializer.index, &arity),
+        );
+        if (arity != 2) {
+            return error.wrong_arity_for_tuple;
+        }
+        const tuple_name = try receive_atom(deserializer, allocator);
+        inline for (item.fields) |field| {
+            if (std.mem.eql(u8, field.name, tuple_name)) {
+                const tuple_value = try internal_receive_message(field.type, allocator, deserializer);
+                value = @unionInit(T, field.name, tuple_value);
+                return value;
+            }
         }
     }
     return error.unknown_tuple_tag;
@@ -412,6 +449,9 @@ fn internal_receive_message(comptime T: type, allocator: std.mem.Allocator, dese
         },
         .Bool => {
             value = try receive_bool(T, deserializer);
+        },
+        .Void => {
+            @compileError("Void is not supported for deserialization");
         },
         else => {
             @compileError("Unsupported type in deserialization");
