@@ -99,7 +99,7 @@ pub const GameState = struct {
         userLoginButton(gameState);
     }
 
-    pub fn loginScene(gameState: *@This()) void {
+    pub fn loginScene(gameState: *@This()) !void {
         const buttonSize = gameState.menuButtonSize();
         const usernameBoxPosition: rl.Vector2 = .{
             .x = (gameState.width / 2) - (buttonSize.x / 2),
@@ -150,19 +150,20 @@ pub const GameState = struct {
             buttonPosition,
             buttonSize,
             config.ColorPalette.primary,
-        )) gameState.scene = .game_spawn;
+        )) {
+            // TODO: Add loading animation to wait for response
+            // TODO: Add a timeout for login
+            try erl.send_payload(gameState.node, .{
+                .user_login = .{
+                    .username = &gameState.menu.login.username,
+                    .password = &gameState.menu.login.password,
+                },
+            });
+            gameState.scene = .game_spawn;
+        }
     }
 
     pub fn joinGameScene(gameState: *@This()) !void {
-
-        // TODO: Add a timeout for login
-        try erl.send_payload(gameState.node, .{
-            .user_login = .{
-                .username = &gameState.menu.login.username,
-                .password = &gameState.menu.login.password,
-            },
-        });
-        // TODO: Add loading animation to wait for response
         const msg = try erl.receive_simple_response(gameState.allocator, gameState.node);
         std.debug.print("{}", .{msg});
         gameState.scene = .nothing;
@@ -200,7 +201,7 @@ pub fn main() anyerror!void {
                 gameState.scene = .nothing;
             },
             .user_login => {
-                GameState.loginScene(&gameState);
+                try GameState.loginScene(&gameState);
             },
             .game_spawn => {
                 try GameState.joinGameScene(&gameState);
