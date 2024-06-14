@@ -164,7 +164,7 @@ pub const GameState = struct {
         });
         // TODO: Add loading animation to wait for response
         const msg = try erl.receive_simple_response(gameState.allocator, gameState.node);
-        std.debug.print("{}", .{msg.@"1"});
+        std.debug.print("{}", .{msg});
         gameState.scene = .nothing;
     }
 };

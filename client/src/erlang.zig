@@ -307,8 +307,8 @@ inline fn receive_union(comptime T: type, comptime item: std.builtin.Type.Union,
         error.decoding_get_type,
         ei.ei_get_type(deserializer.buf.buff, deserializer.index, &typ, &_v),
     );
+    const enum_type = std.meta.Tag(T);
     if (typ == ei.ERL_ATOM_EXT) {
-        const enum_type = std.meta.Tag(T);
         const tuple_name = try receive_enum(enum_type, @typeInfo(enum_type).Enum, allocator, deserializer);
         switch (tuple_name) {
             inline else => |name| {
@@ -321,7 +321,7 @@ inline fn receive_union(comptime T: type, comptime item: std.builtin.Type.Union,
                         value = name;
                         break;
                     }
-                }
+                } else return error.invalid_union_tag;
             },
         }
         return value;
@@ -333,13 +333,21 @@ inline fn receive_union(comptime T: type, comptime item: std.builtin.Type.Union,
         if (arity != 2) {
             return error.wrong_arity_for_tuple;
         }
-        const tuple_name = try receive_atom(deserializer, allocator);
-        inline for (item.fields) |field| {
-            if (std.mem.eql(u8, field.name, tuple_name)) {
-                const tuple_value = try internal_receive_message(field.type, allocator, deserializer);
-                value = @unionInit(T, field.name, tuple_value);
-                return value;
-            }
+        const tuple_name = try receive_enum(enum_type, @typeInfo(enum_type).Enum, allocator, deserializer);
+        switch (tuple_name) {
+            inline else => |name| {
+                inline for (item.fields) |field| {
+                    if (field.type != void and comptime std.mem.eql(
+                        u8,
+                        field.name,
+                        @tagName(name),
+                    )) {
+                        const tuple_value = try internal_receive_message(field.type, allocator, deserializer);
+                        value = @unionInit(T, field.name, tuple_value);
+                        break;
+                    }
+                } else return error.failed_to_receive_payload;
+            },
         }
     }
     return error.unknown_tuple_tag;
