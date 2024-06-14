@@ -313,16 +313,16 @@ inline fn receive_union(comptime T: type, comptime item: std.builtin.Type.Union,
         switch (tuple_name) {
             inline else => |name| {
                 inline for (item.fields) |field| {
-                    if (std.mem.eql(u8, field.name, @tagName(name))) {
-                        if(field.type == void) {
-                            value = @unionInit(T, field.name, {});
-                            break;
-                        } else {
-                            unreachable;
-                        }
+                    if (field.type == void and comptime std.mem.eql(
+                        u8,
+                        field.name,
+                        @tagName(name),
+                    )) {
+                        value = name;
+                        break;
                     }
                 }
-            }
+            },
         }
         return value;
     } else {
