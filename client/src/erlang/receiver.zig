@@ -4,38 +4,38 @@ pub const ei = @cImport({
 const std = @import("std");
 const erl = @import("config.zig");
 
-pub const Deserializer = struct {
-    buf: *ei.ei_x_buff,
-    index: *i32,
-    ec: *erl.Node,
-};
+buf: *ei.ei_x_buff,
+index: *i32,
+ec: *erl.Node,
+allocator: std.mem.Allocator,
 
 // TODO: Try to make the simplest possible example using something like this to report to zig repo
 //pub fn receive_atom_string(deserializer: Deserializer, allocator: std.mem.Allocator, erlang_fun: fn ([*:0]const u8, *i32, [*:0]u8) callconv(.C) c_int) ![:0]const u8 {
-fn receive_atom_string(deserializer: Deserializer, allocator: std.mem.Allocator, erlang_fun: fn ([*c]const u8, [*c]c_int, [*c]u8) callconv(.C) c_int) ![:0]const u8 {
+fn receive_atom_string(self: @This(), erlang_fun: fn ([*c]const u8, [*c]c_int, [*c]u8) callconv(.C) c_int) ![:0]const u8 {
     var length: i32 = undefined;
     var ty: i32 = undefined;
-    try erl.validate(error.decoding_atom_string_length, ei.ei_get_type(deserializer.buf.buff, deserializer.index, &ty, &length));
+    try erl.validate(error.decoding_atom_string_length, ei.ei_get_type(self.buf.buff, self.index, &ty, &length));
 
     if (ty != ei.ERL_STRING_EXT and ty != ei.ERL_ATOM_EXT)
         return error.message_is_not_atom_or_string;
 
-    const u_length: u32 = @bitCast(length);
+    const u_length = @intCast(length);
 
-    const buffer = try allocator.allocSentinel(u8, u_length, 0);
-    try erl.validate(error.decoding_atom, erlang_fun(deserializer.buf.buff, deserializer.index, buffer.ptr));
+    const buffer = try self.allocator.allocSentinel(u8, u_length, 0);
+    errdefer self.allocator.free(buffer);
+    try erl.validate(error.decoding_atom, erlang_fun(self.buf.buff, self.index, buffer.ptr));
     return buffer;
 }
 
-fn receive_string(deserializer: Deserializer, allocator: std.mem.Allocator) ![:0]const u8 {
-    return receive_atom_string(deserializer, allocator, ei.ei_decode_string);
+fn receive_string(self: @This()) ![:0]const u8 {
+    return receive_atom_string(self, ei.ei_decode_string);
 }
 
-fn receive_atom(deserializer: Deserializer, allocator: std.mem.Allocator) ![:0]const u8 {
-    return receive_atom_string(deserializer, allocator, ei.ei_decode_atom);
+fn receive_atom(self: @This()) ![:0]const u8 {
+    return receive_atom_string(self, ei.ei_decode_atom);
 }
 
-pub fn run_with_pid(comptime T: type) type {
+pub fn With_Pid(comptime T: type) type {
     return std.meta.Tuple(&.{ ei.erlang_pid, T });
 }
 
@@ -45,6 +45,7 @@ pub fn run(comptime T: type, allocator: std.mem.Allocator, ec: *erl.Node) !T {
     var index: i32 = 0;
 
     try erl.validate(error.create_new_decode_buff, ei.ei_x_new(&buf));
+    defer _ = ei.ei_x_free(&buf);
 
     while (true) {
         const got: i32 = ei.ei_xreceive_msg(ec.fd, &msg, &buf);
@@ -57,44 +58,46 @@ pub fn run(comptime T: type, allocator: std.mem.Allocator, ec: *erl.Node) !T {
     }
 
     try erl.validate(error.decoding_version, ei.ei_decode_version(buf.buff, &index, null));
-    return internal_receive_message(T, allocator, .{
+    return internal_receive_message(@This(){
         .buf = &buf,
         .index = &index,
         .ec = ec,
-    });
+        .allocator = allocator,
+    }, T);
 }
 
-inline fn receive_struct(comptime T: type, comptime item: std.builtin.Type.Struct, allocator: std.mem.Allocator, deserializer: Deserializer) !T {
+inline fn receive_struct(self: @This(), comptime T: type, comptime item: std.builtin.Type.Struct) !T {
     var value: T = undefined;
     var size: i32 = 0;
     if (item.is_tuple) {
         try erl.validate(
             error.decoding_tuple,
-            ei.ei_decode_tuple_header(deserializer.buf.buff, deserializer.index, &size),
+            ei.ei_decode_tuple_header(self.buf.buff, self.index, &size),
         );
         if (item.fields.len != size) return error.wrong_tuple_size;
         inline for (&value) |*elem| {
-            elem.* = try internal_receive_message(@TypeOf(elem.*), allocator, deserializer);
+            elem.* = try internal_receive_message(self, @TypeOf(elem.*));
         }
     } else {
         try erl.validate(
             error.decoding_map,
-            ei.ei_decode_map_header(deserializer.buf.buff, deserializer.index, &size),
+            ei.ei_decode_map_header(self.buf.buff, self.index, &size),
         );
         const fields = std.meta.fields(T);
         var present_fields: [fields.len]bool = .{false} ** fields.len;
         var counter: u32 = 0;
         if (size > fields.len) return error.too_many_map_entries;
-        for (0..@as(u32, @bitCast(size))) |_| {
-            const key = try receive_atom(deserializer, allocator);
+        for (0..@intCast(size)) |_| {
+            const key = try receive_atom(self);
+            // TODO: There's probably a way to avoid this loop
             inline for (0.., fields) |idx, field| {
                 if (std.mem.eql(u8, field.name, key)) {
                     const current_field = &@field(value, field.name);
                     const field_type = @typeInfo(field.type);
                     if (field_type == .Optional) {
-                        current_field.* = try internal_receive_message(field_type.Optional.child, allocator, deserializer);
+                        current_field.* = try internal_receive_message(self, field_type.Optional.child);
                     } else {
-                        current_field.* = try internal_receive_message(field.type, allocator, deserializer);
+                        current_field.* = try internal_receive_message(self, field.type);
                     }
                     present_fields[idx] = true;
                     counter += 1;
@@ -119,20 +122,21 @@ inline fn receive_struct(comptime T: type, comptime item: std.builtin.Type.Struc
     return value;
 }
 
-inline fn receive_int(comptime T: type, comptime item: std.builtin.Type.Int, deserializer: Deserializer) !T {
+inline fn receive_int(self: @This(), comptime T: type, comptime item: std.builtin.Type.Int) !T {
     // TODO: eventually arbitrarily sized integers.
     var value: T = undefined;
     if (item.signedness == .signed) {
-        try erl.validate(error.decoding_signed_integer, ei.ei_decode_long(deserializer.buf.buff, deserializer.index, &value));
+        try erl.validate(error.decoding_signed_integer, ei.ei_decode_long(self.buf.buff, self.index, &value));
     } else {
-        try erl.validate(error.decoding_unsigned_integer, ei.ei_decode_ulong(deserializer.buf.buff, deserializer.index, &value));
+        try erl.validate(error.decoding_unsigned_integer, ei.ei_decode_ulong(self.buf.buff, self.index, &value));
     }
     return value;
 }
 
-inline fn receive_enum(comptime T: type, comptime item: std.builtin.Type.Enum, allocator: std.mem.Allocator, deserializer: Deserializer) !T {
-    const name = try receive_atom(deserializer, allocator);
-    inline for (item.fields) |field| {
+inline fn receive_enum(self: @This(), comptime T: type, comptime item: std.builtin.Type.Enum) !T {
+    const name = try receive_atom(self);
+    defer _ = ei.ei_x_free(&name);
+    for (item.fields) |field| {
         if (std.mem.eql(u8, field.name, name)) {
             return std.meta.stringToEnum(T, name) orelse error.invalid_tag_to_enum;
         }
@@ -140,18 +144,18 @@ inline fn receive_enum(comptime T: type, comptime item: std.builtin.Type.Enum, a
     return error.could_not_decode_enum;
 }
 
-inline fn receive_union(comptime T: type, comptime item: std.builtin.Type.Union, allocator: std.mem.Allocator, deserializer: Deserializer) !T {
+inline fn receive_union(self: @This(), comptime T: type, comptime item: std.builtin.Type.Union) !T {
     var value: T = undefined;
     var arity: i32 = 0;
     var typ: i32 = 0;
     var _v: i32 = undefined;
     try erl.validate(
         error.decoding_get_type,
-        ei.ei_get_type(deserializer.buf.buff, deserializer.index, &typ, &_v),
+        ei.ei_get_type(self.buf.buff, self.index, &typ, &_v),
     );
     const enum_type = std.meta.Tag(T);
     if (typ == ei.ERL_ATOM_EXT) {
-        const tuple_name = try receive_enum(enum_type, @typeInfo(enum_type).Enum, allocator, deserializer);
+        const tuple_name = try receive_enum(self, enum_type, @typeInfo(enum_type).Enum);
         switch (tuple_name) {
             inline else => |name| {
                 inline for (item.fields) |field| {
@@ -170,12 +174,12 @@ inline fn receive_union(comptime T: type, comptime item: std.builtin.Type.Union,
     } else {
         try erl.validate(
             error.decoding_tuple,
-            ei.ei_decode_tuple_header(deserializer.buf.buff, deserializer.index, &arity),
+            ei.ei_decode_tuple_header(self.buf.buff, self.index, &arity),
         );
         if (arity != 2) {
             return error.wrong_arity_for_tuple;
         }
-        const tuple_name = try receive_enum(enum_type, @typeInfo(enum_type).Enum, allocator, deserializer);
+        const tuple_name = try receive_enum(self, enum_type, @typeInfo(enum_type).Enum);
         switch (tuple_name) {
             inline else => |name| {
                 inline for (item.fields) |field| {
@@ -184,7 +188,7 @@ inline fn receive_union(comptime T: type, comptime item: std.builtin.Type.Union,
                         field.name,
                         @tagName(name),
                     )) {
-                        const tuple_value = try internal_receive_message(field.type, allocator, deserializer);
+                        const tuple_value = try internal_receive_message(self, field.type);
                         value = @unionInit(T, field.name, tuple_value);
                         break;
                     }
@@ -195,38 +199,39 @@ inline fn receive_union(comptime T: type, comptime item: std.builtin.Type.Union,
     return error.unknown_tuple_tag;
 }
 
-inline fn receive_pointer(comptime T: type, comptime item: std.builtin.Type.Pointer, allocator: std.mem.Allocator, deserializer: Deserializer) !T {
+inline fn receive_pointer(self: @This(), comptime T: type, comptime item: std.builtin.Type.Pointer) !T {
     var value: T = undefined;
     if (item.size != .Slice)
         return error.unsupported_pointer_type;
     var size: i32 = 0;
     try erl.validate(
         error.decoding_list_in_pointer_1,
-        ei.ei_decode_list_header(deserializer.buf.buff, deserializer.index, &size),
+        ei.ei_decode_list_header(self.buf.buff, self.index, &size),
     );
     const has_sentinel = item.sentinel != null;
     if (size == 0 and !has_sentinel) {
         value = &.{};
     } else {
-        const usize_size: u32 = @bitCast(size);
+        const usize_size = @intCast(size);
         const slice_buffer = if (has_sentinel)
-            try allocator.allocSentinel(
+            try self.allocator.allocSentinel(
                 item.child,
                 usize_size,
                 item.sentinel.?,
             )
         else
-            try allocator.alloc(
+            try self.allocator.alloc(
                 item.child,
                 usize_size,
             );
-        errdefer allocator.free(slice_buffer);
+        errdefer self.allocator.free(slice_buffer);
+        // TODO: We should deallocate the children
         for (slice_buffer) |*elem| {
-            elem.* = try internal_receive_message(item.child, allocator, deserializer);
+            elem.* = try internal_receive_message(self, item.child);
         }
         try erl.validate(
             error.decoding_list_in_pointer_2,
-            ei.ei_decode_list_header(deserializer.buf.buff, deserializer.index, &size),
+            ei.ei_decode_list_header(self.buf.buff, self.index, &size),
         );
         if (size != 0) return error.decoded_improper_list;
         value = slice_buffer;
@@ -235,70 +240,65 @@ inline fn receive_pointer(comptime T: type, comptime item: std.builtin.Type.Poin
     return value;
 }
 
-inline fn receive_array(comptime T: type, comptime item: std.builtin.Type.Array, allocator: std.mem.Allocator, deserializer: Deserializer) !T {
+inline fn receive_array(self: @This(), comptime T: type, comptime item: std.builtin.Type.Array) !T {
     var value: T = undefined;
     var size: i32 = 0;
     try erl.validate(
         error.decoding_list_in_array_1,
-        ei.ei_decode_list_header(deserializer.buf.buff, deserializer.index, &size),
+        ei.ei_decode_list_header(self.buf.buff, self.index, &size),
     );
     if (item.len != size) return error.wrong_array_size;
+    // TODO: We should deallocate the children
     for (0..value.len) |idx| {
-        value[idx] = try internal_receive_message(item.child, allocator, deserializer);
+        value[idx] = try internal_receive_message(self, item.child);
     }
     try erl.validate(
         error.decoding_list_in_array_2,
-        ei.ei_decode_list_header(deserializer.buf.buff, deserializer.index, &size),
+        ei.ei_decode_list_header(self.buf.buff, self.index, &size),
     );
     if (size != 0) return error.decoded_improper_list;
     return value;
 }
 
-inline fn receive_bool(comptime T: type, deserializer: Deserializer) !T {
-    var value: T = undefined;
+inline fn receive_bool(self: @This()) !T {
     var bool_value: i32 = 0;
     try erl.validate(
         error.decoding_boolean,
-        ei.ei_decode_boolean(deserializer.buf.buff, deserializer.index, &bool_value),
+        ei.ei_decode_boolean(self.buf.buff, self.index, &bool_value),
     );
-    if (bool_value == 0) {
-        value = false;
-    } else {
-        value = true;
-    }
-    return value;
+    return bool_value != 0;
 }
 
-fn internal_receive_message(comptime T: type, allocator: std.mem.Allocator, deserializer: Deserializer) !T {
+fn internal_receive_message(self: @This(), comptime T: type) !T {
     var value: T = undefined;
     if (T == [:0]const u8) {
-        value = try receive_string(deserializer, allocator);
+        value = try receive_string(self);
     } else if (T == ei.erlang_pid) {
         try erl.validate(
             error.invalid_pid,
-            ei.ei_decode_pid(deserializer.buf.buff, deserializer.index, &value),
+            ei.ei_decode_pid(self.buf.buff, self.index, &value),
         );
     } else switch (@typeInfo(T)) {
         .Struct => |item| {
-            value = try receive_struct(T, item, allocator, deserializer);
+            value = try receive_struct(self, T, item);
         },
         .Int => |item| {
-            value = try receive_int(T, item, deserializer);
+            value = try receive_int(self, T, item);
         },
         .Enum => |item| {
-            value = try receive_enum(T, item, allocator, deserializer);
+            value = try receive_enum(self, T, item);
         },
         .Union => |item| {
-            value = try receive_union(T, item, allocator, deserializer);
+            value = try receive_union(self, T, item);
         },
         .Pointer => |item| {
-            value = try receive_pointer(T, item, allocator, deserializer);
+            value = try receive_pointer(self, T, item);
         },
         .Array => |item| {
-            value = try receive_array(T, item, allocator, deserializer);
+            value = try receive_array(self, T, item);
         },
         .Bool => {
-            value = try receive_bool(T, deserializer);
+            value = try receive_bool(self, T);
         },
         .Void => {
             @compileError("Void is not supported for deserialization");
