@@ -9,12 +9,20 @@
 
 -export([start/2, stop/1, main/1, handle_message/1]).
 
--include("user_registry.hrl").
--include("user_login.hrl").
+database_connect() ->
+    {ok, Connection} =
+	epgsql:connect(#{host => "localhost",
+			 username => "admin",
+			 password => "admin",
+			 database => "mmo",
+			 timeout => 4000
+			}),
+    Connection.
 
+    %% ok = epgsql:close(Connection).
 %% TODO: We shall remove the cookie given that this is a public game, lmao
 start(_, _) ->
-    Connection = user_handler:database_connect(),
+    Connection = database_connect(),
     Pid = spawn(?MODULE, handle_message, [Connection]),
     erlang:register(lyceum_server, Pid),
     {ok, Pid}.
@@ -23,17 +31,25 @@ handle_message(Connection) ->
     receive
 	{Pid, #{action := registration, username := Username, email := Email, password := Password}} ->
 	    io:format("This user now exists: ~p", [Username]),
-	    user_handler:insert_user(#user_registry{username = Username, 
-						    password = Password,
-						    email = Email},
-				    Connection),
+	    user:insert_user(#{username => Username, 
+			  password => Password,
+			  email => Email},
+			Connection),
 	    Response = "I registered " ++ Username,
 	    Pid ! {self(), Response};
 	{Pid, #{action := login, username := Username, password := Password}} ->
 	    io:format("This user logged: ~p", [Username]),
-	    user_handler:check_user(#user_login{username = Username, 
-						password = Password},
-				    Connection),
+	    user:check_user(#{username => Username, 
+			       password => Password},
+			     Connection),
+	    Response = "I found " ++ Username,
+	    Pid ! {self(), Response};
+	{Pid, #{action := character_creation, username := Username, email := Email, password := Password}} ->
+	    io:format("This character logged: ~p", [Username]),
+	    character:create(#{username => Username, 
+			       password => Password,
+			       email => Email},
+			     Connection),
 	    Response = "I found " ++ Username,
 	    Pid ! {self(), ok};
         {Pid, Value} ->
