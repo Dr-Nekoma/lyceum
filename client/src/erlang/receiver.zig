@@ -19,7 +19,7 @@ fn receive_atom_string(self: @This(), erlang_fun: fn ([*c]const u8, [*c]c_int, [
     if (ty != ei.ERL_STRING_EXT and ty != ei.ERL_ATOM_EXT)
         return error.message_is_not_atom_or_string;
 
-    const u_length = @intCast(length);
+    const u_length: u32 = @intCast(length);
 
     const buffer = try self.allocator.allocSentinel(u8, u_length, 0);
     errdefer self.allocator.free(buffer);
@@ -135,8 +135,8 @@ inline fn receive_int(self: @This(), comptime T: type, comptime item: std.builti
 
 inline fn receive_enum(self: @This(), comptime T: type, comptime item: std.builtin.Type.Enum) !T {
     const name = try receive_atom(self);
-    defer _ = ei.ei_x_free(&name);
-    for (item.fields) |field| {
+    errdefer self.allocator.free(name);
+    inline for (item.fields) |field| {
         if (std.mem.eql(u8, field.name, name)) {
             return std.meta.stringToEnum(T, name) orelse error.invalid_tag_to_enum;
         }
@@ -212,7 +212,7 @@ inline fn receive_pointer(self: @This(), comptime T: type, comptime item: std.bu
     if (size == 0 and !has_sentinel) {
         value = &.{};
     } else {
-        const usize_size = @intCast(size);
+        const usize_size: u32 = @intCast(size);
         const slice_buffer = if (has_sentinel)
             try self.allocator.allocSentinel(
                 item.child,
@@ -260,7 +260,7 @@ inline fn receive_array(self: @This(), comptime T: type, comptime item: std.buil
     return value;
 }
 
-inline fn receive_bool(self: @This()) !T {
+inline fn receive_bool(self: @This()) !bool {
     var bool_value: i32 = 0;
     try erl.validate(
         error.decoding_boolean,

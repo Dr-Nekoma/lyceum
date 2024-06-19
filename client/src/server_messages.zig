@@ -65,7 +65,7 @@ pub fn send_payload(ec: *erl.Node, message: Payload) !void {
 }
 
 pub fn receive_simple_response(allocator: std.mem.Allocator, ec: *erl.Node) !Erlang_Response {
-    const simple_type = receiver.run_with_pid(Erlang_Response);
+    const simple_type = receiver.With_Pid(Erlang_Response);
     const response = try receiver.run(simple_type, allocator, ec);
     return response.@"1";
 }
