@@ -44,14 +44,10 @@ handle_message(Connection) ->
 			     Connection),
 	    Response = "I found " ++ Username,
 	    Pid ! {self(), Response};
-	{Pid, #{action := character_creation, username := Username, email := Email, password := Password}} ->
-	    io:format("This character logged: ~p", [Username]),
-	    character:create(#{username => Username, 
-			       password => Password,
-			       email => Email},
-			     Connection),
-	    Response = "I found " ++ Username,
-	    Pid ! {self(), ok};
+	{Pid, #{action := character_creation} = Character_Map} ->
+	    io:format("This character logged"),
+	    character:create(Character_Map, Connection),
+	    Pid ! {self(), "I created a character"};
         {Pid, Value} ->
 	    io:format("Yo, we received something ~p ", [Value]),
 	    Pid ! {self(), "Yo bruh, I got you xD"}
