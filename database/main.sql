@@ -1,4 +1,4 @@
-CREATE SCHEMA lyceum
+CREATE SCHEMA lyceum;
 
 CREATE TABLE lyceum.user(
        username VARCHAR(32) NOT NULL,
@@ -88,8 +88,10 @@ CREATE TABLE lyceum.character_position(
 );
 
 CREATE VIEW lyceum.view_character AS
+EXPLAIN
 SELECT * FROM lyceum.character
 NATURAL JOIN lyceum.character_stats
+NATURAL JOIN lyceum.character_position;
 
 CREATE OR REPLACE FUNCTION lyceum.view_character_insert() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -98,6 +100,9 @@ BEGIN
 
     INSERT INTO lyceum.character_stats(name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith)
     VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.constitution, NEW.wisdom, NEW.strength, NEW.endurance, NEW.intelligence, NEW.faith);
+
+    INSERT INTO lyceum.character_position(name, e_mail, username, x_position, y_position, map_name)
+    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.x_position, NEW.y_position, NEW.map_name);
 
     RETURN NEW;
 END
