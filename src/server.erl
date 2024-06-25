@@ -35,7 +35,7 @@ handle_message(Connection) ->
 						password = Password},
 				    Connection),
 	    Response = "I found " ++ Username,
-	    Pid ! {self(), Response};
+	    Pid ! {self(), ok};
         {Pid, Value} ->
 	    io:format("Yo, we received something ~p ", [Value]),
 	    Pid ! {self(), "Yo bruh, I got you xD"}

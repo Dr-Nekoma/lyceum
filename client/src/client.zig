@@ -1,4 +1,7 @@
-const erl = @import("erlang.zig");
+const erl = @import("erlang/config.zig");
+const sender = @import("erlang/sender.zig");
+const receiver = @import("erlang/receiver.zig");
+const messages = @import("server_messages.zig");
 const std = @import("std");
 const rl = @import("raylib");
 const config = @import("config.zig");
@@ -43,9 +46,10 @@ pub const GameState = struct {
     width: f32,
     height: f32,
     menu: Menu = .{},
-    node: *erl.LNode,
+    node: *erl.Node,
+    allocator: std.mem.Allocator = std.heap.c_allocator,
 
-    pub fn init(width: f32, height: f32, node: *erl.LNode) !GameState {
+    pub fn init(width: f32, height: f32, node: *erl.Node) !GameState {
         if (width < 0) return error.negative_width;
         if (height < 0) return error.negative_height;
         return .{
@@ -98,7 +102,7 @@ pub const GameState = struct {
         userLoginButton(gameState);
     }
 
-    pub fn loginScene(gameState: *@This()) void {
+    pub fn loginScene(gameState: *@This()) !void {
         const buttonSize = gameState.menuButtonSize();
         const usernameBoxPosition: rl.Vector2 = .{
             .x = (gameState.width / 2) - (buttonSize.x / 2),
@@ -138,7 +142,7 @@ pub const GameState = struct {
             .content = &gameState.menu.login.password,
             .position = &gameState.menu.login.passwordPosition,
         };
-        passwordText.redacted_at(Menu.Login.bufferSize, passwordBoxPosition);
+        passwordText.at(passwordBoxPosition);
 
         const buttonPosition: rl.Vector2 = .{
             .x = usernameBoxPosition.x,
@@ -149,21 +153,22 @@ pub const GameState = struct {
             buttonPosition,
             buttonSize,
             config.ColorPalette.primary,
-        )) gameState.scene = .game_spawn;
+        )) {
+            // TODO: Add loading animation to wait for response
+            // TODO: Add a timeout for login
+            try messages.send_payload(gameState.node, .{
+                .user_login = .{
+                    .username = &gameState.menu.login.username,
+                    .password = &gameState.menu.login.password,
+                },
+            });
+            gameState.scene = .game_spawn;
+        }
     }
 
     pub fn joinGameScene(gameState: *@This()) !void {
-
-        // TODO: Add a timeout for login
-        try erl.send_payload(gameState.node, .{
-            .user_login = .{
-                .username = &gameState.menu.login.username,
-                .password = &gameState.menu.login.password,
-            },
-        });
-        // TODO: Add loading animation to wait for response
-        const msg: []const u8 = try erl.receive_message(gameState.node);
-        std.debug.print("{s}", .{msg});
+        const msg = try messages.receive_simple_response(gameState.allocator, gameState.node);
+        std.debug.print("{}", .{msg});
         gameState.scene = .nothing;
     }
 };
@@ -171,7 +176,7 @@ pub const GameState = struct {
 pub fn main() anyerror!void {
     const connection_status = erl.ei.ei_init();
     if (connection_status != 0) return error.ei_init_failed;
-    var node: erl.LNode = try erl.prepare_connection();
+    var node: erl.Node = try erl.prepare_connection();
     erl.establish_connection(&node) catch |error_value| {
         try print_connect_server_error(error_value);
         std.process.exit(2);
@@ -199,7 +204,7 @@ pub fn main() anyerror!void {
                 gameState.scene = .nothing;
             },
             .user_login => {
-                GameState.loginScene(&gameState);
+                try GameState.loginScene(&gameState);
             },
             .game_spawn => {
                 try GameState.joinGameScene(&gameState);
