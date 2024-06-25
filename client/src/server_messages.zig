@@ -14,6 +14,22 @@ pub const Erlang_Response = union(enum) {
     @"error": [:0]const u8,
 };
 
+pub const Erlang_Character = struct {
+    name: [:0]const u8,
+    constitution: i64,
+    wisdom: i64,
+    endurance: i64,
+    strength: i64,
+    intelligence: i64,
+    faith: i64,    
+};
+
+pub const Erlang_Characters = union(enum) {
+    ok: []const Erlang_Character,
+    empty: void,
+    @"error": [:0]const u8,
+};
+
 pub const User_Registry = struct {
     username: [:0]const u8,
     email: [:0]const u8,
@@ -69,3 +85,10 @@ pub fn receive_simple_response(allocator: std.mem.Allocator, ec: *erl.Node) !Erl
     const response = try receiver.run(simple_type, allocator, ec);
     return response.@"1";
 }
+
+pub fn receive_characters_list(allocator: std.mem.Allocator, ec: *erl.Node) !Erlang_Characters {
+    const characters_type = receiver.With_Pid(Erlang_Characters);
+    const response = try receiver.run(characters_type, allocator, ec);
+    return response.@"1";
+}
+

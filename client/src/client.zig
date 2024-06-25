@@ -41,6 +41,7 @@ pub const GameState = struct {
         user_login,
         nothing,
         game_spawn,
+        game_character_selection,
     };
     scene: Scene,
     width: f32,
@@ -48,6 +49,16 @@ pub const GameState = struct {
     menu: Menu = .{},
     node: *erl.Node,
     allocator: std.mem.Allocator = std.heap.c_allocator,
+    current_character: messages.Erlang_Character = .{
+        .name = "Lemos",
+        .constitution = 10,
+        .wisdom = 10,
+        .endurance = 10,
+        .strength = 10,
+        .intelligence = 10,
+        .faith = 10,    
+    },
+    // character_list: []const Erlang,
 
     pub fn init(width: f32, height: f32, node: *erl.Node) !GameState {
         if (width < 0) return error.negative_width;
@@ -67,6 +78,13 @@ pub const GameState = struct {
         };
     }
 
+    fn characterButtonSize(gameState: *const @This()) rl.Vector2 {
+        return .{
+            .x = gameState.width / 6,
+            .y = gameState.height / 10,
+        };
+    }
+
     fn userRegistryButton(gameState: *@This()) void {
         const buttonSize = gameState.menuButtonSize();
         const buttonPosition: rl.Vector2 = .{
@@ -79,6 +97,54 @@ pub const GameState = struct {
             buttonSize,
             config.ColorPalette.primary,
         )) gameState.scene = .user_registry;
+    }
+
+    pub fn characterSelectionScene(gameState: *@This()) !void {
+        // TODO: This should not be the current character. Waiting for the Erlang Server
+        const characters: []const messages.Erlang_Character =
+            &.{gameState.current_character,
+               .{
+                   .name = "Magueta",
+                   .constitution = 2,
+                   .wisdom = 8,
+                   .endurance = 4,
+                   .strength = 4,
+                   .intelligence = 8,
+                   .faith = 10,    
+                },};
+        
+        const buttonSize = gameState.characterButtonSize();
+        const characterButtonX = (gameState.width / 10) + (buttonSize.x / 2) - 20 * config.menuButtonsPadding;
+        const characterButtonY = (gameState.height / 10) + (buttonSize.y / 2) - 25 * config.menuButtonsPadding;
+        var buttonPosition: rl.Vector2 = .{
+            .x = characterButtonX,
+            .y = characterButtonY + buttonSize.y + config.menuButtonsPadding,
+        };
+
+        var texturePosition: rl.Vector2 = .{
+                .x = buttonPosition.x,
+                .y = characterButtonY + buttonSize.y + 20 * config.menuButtonsPadding,
+            };
+        
+        for (characters) |character| {
+            if (button.at(
+                character.name,
+                buttonPosition,
+                buttonSize,
+                config.ColorPalette.primary,
+            )) {
+                gameState.current_character = character;
+                gameState.scene = .nothing;
+                break;
+            }
+            const image: rl.Image = rl.loadImage("../assets/teapot.png");
+            const texture: rl.Texture2D = rl.loadTextureFromImage(image);          // Image converted to texture, GPU memory (VRAM)
+
+            rl.drawTextureEx(texture, texturePosition, 0.0, 0.5, rl.Color.white);
+
+            buttonPosition.x += buttonSize.x + 10 * config.menuButtonsPadding;
+            texturePosition.x = buttonPosition.x;
+        }
     }
 
     fn userLoginButton(gameState: *@This()) void {
@@ -165,11 +231,33 @@ pub const GameState = struct {
             gameState.scene = .game_spawn;
         }
     }
-
+    
     pub fn joinGameScene(gameState: *@This()) !void {
         const msg = try messages.receive_simple_response(gameState.allocator, gameState.node);
-        std.debug.print("{}", .{msg});
-        gameState.scene = .nothing;
+        switch (msg) {
+            .ok => {
+                // TODO: Wait for Erlang Server to be ready
+                // gameState.character_list = try messages.receive_characters_list(gameState.allocator, gameState.node);
+                const maybe_characters: messages.Erlang_Characters = .{ .ok = &.{gameState.current_character}};
+                switch (maybe_characters) {
+                    .ok => {
+                        gameState.scene = .game_character_selection;
+                    },
+                    .empty => {
+                        std.debug.print("There are no characters for this user bruh xD", .{});
+                        gameState.scene = .nothing;                
+                    },
+                    .@"error" => |error_msg| {
+                        std.debug.print("ERROR IN SERVER: {s}", .{error_msg});
+                        gameState.scene = .nothing;                
+                    }
+                }
+            },
+            .@"error" => |error_msg| {
+                std.debug.print("ERROR IN SERVER: {s}", .{error_msg});
+                gameState.scene = .nothing;                
+            }
+        }
     }
 };
 
@@ -208,6 +296,9 @@ pub fn main() anyerror!void {
             },
             .game_spawn => {
                 try GameState.joinGameScene(&gameState);
+            },
+            .game_character_selection => {
+                try GameState.characterSelectionScene(&gameState);
             },
             .nothing => {
                 GameState.mainMenu(&gameState);
