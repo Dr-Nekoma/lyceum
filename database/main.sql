@@ -88,7 +88,6 @@ CREATE TABLE lyceum.character_position(
 );
 
 CREATE VIEW lyceum.view_character AS
-EXPLAIN
 SELECT * FROM lyceum.character
 NATURAL JOIN lyceum.character_stats
 NATURAL JOIN lyceum.character_position;
