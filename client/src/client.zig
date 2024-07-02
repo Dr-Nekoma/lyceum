@@ -56,9 +56,9 @@ pub const GameState = struct {
         .endurance = 10,
         .strength = 10,
         .intelligence = 10,
-        .faith = 10,    
+        .faith = 10,
     },
-    // character_list: []const Erlang,
+    character_list: []const messages.Character = &.{},
 
     pub fn init(width: f32, height: f32, node: *erl.Node) !GameState {
         if (width < 0) return error.negative_width;
@@ -80,7 +80,7 @@ pub const GameState = struct {
 
     fn characterButtonSize(gameState: *const @This()) rl.Vector2 {
         return .{
-            .x = gameState.width / 6,
+            .x = gameState.width / 4,
             .y = gameState.height / 10,
         };
     }
@@ -99,51 +99,59 @@ pub const GameState = struct {
         )) gameState.scene = .user_registry;
     }
 
-    pub fn characterSelectionScene(gameState: *@This()) !void {
-        // TODO: This should not be the current character. Waiting for the Erlang Server
-        const characters: []const messages.Erlang_Character =
-            &.{gameState.current_character,
-               .{
-                   .name = "Magueta",
-                   .constitution = 2,
-                   .wisdom = 8,
-                   .endurance = 4,
-                   .strength = 4,
-                   .intelligence = 8,
-                   .faith = 10,    
-                },};
-        
-        const buttonSize = gameState.characterButtonSize();
-        const characterButtonX = (gameState.width / 10) + (buttonSize.x / 2) - 20 * config.menuButtonsPadding;
-        const characterButtonY = (gameState.height / 10) + (buttonSize.y / 2) - 25 * config.menuButtonsPadding;
-        var buttonPosition: rl.Vector2 = .{
+    fn emptyCharacterScene(gameState: *@This()) !void {
+        const buttonSize = gameState.menuButtonSize();
+        const characterButtonX = (gameState.width / 2) - (buttonSize.x / 2);
+        const characterButtonY = (gameState.height / 2) - (buttonSize.y / 2);
+        const buttonPosition: rl.Vector2 = .{
             .x = characterButtonX,
-            .y = characterButtonY + buttonSize.y + config.menuButtonsPadding,
+            .y = characterButtonY,
+        };
+
+        if (button.at(
+            "+",
+            buttonPosition,
+            buttonSize,
+            config.ColorPalette.primary,
+        )) {
+            gameState.scene = .nothing;
+        }
+    }
+
+    pub fn characterSelectionScene(gameState: *@This()) !void {
+        const buttonSize = gameState.characterButtonSize();
+        const characterButtonY = (gameState.height / 10) - (buttonSize.y / 2);
+        var buttonPosition: rl.Vector2 = .{
+            .x = buttonSize.x / 4.0,
+            .y = characterButtonY,
         };
 
         var texturePosition: rl.Vector2 = .{
-                .x = buttonPosition.x,
-                .y = characterButtonY + buttonSize.y + 20 * config.menuButtonsPadding,
-            };
-        
-        for (characters) |character| {
-            if (button.at(
-                character.name,
-                buttonPosition,
-                buttonSize,
-                config.ColorPalette.primary,
-            )) {
-                gameState.current_character = character;
-                gameState.scene = .nothing;
-                break;
+            .x = buttonPosition.x + buttonSize.x / 2 - 150,
+            .y = buttonPosition.y + buttonSize.y * 1.5,
+        };
+
+        if (gameState.character_list.len != 0) {
+            for (gameState.character_list) |character| {
+                if (button.at(
+                    character.character_data.name,
+                    buttonPosition,
+                    buttonSize,
+                    config.ColorPalette.primary,
+                )) {
+                    gameState.current_character = character.character_data;
+                    gameState.scene = .nothing;
+                    break;
+                }
+
+                rl.drawTextureEx(character.equipment_data, texturePosition, 0.0, 1, rl.Color.white);
+
+                buttonPosition.x += 5.0 * buttonSize.x / 4.0;
+                texturePosition.x += 5.0 * buttonSize.x / 4.0;
             }
-            const image: rl.Image = rl.loadImage("../assets/teapot.png");
-            const texture: rl.Texture2D = rl.loadTextureFromImage(image);          // Image converted to texture, GPU memory (VRAM)
-
-            rl.drawTextureEx(texture, texturePosition, 0.0, 0.5, rl.Color.white);
-
-            buttonPosition.x += buttonSize.x + 10 * config.menuButtonsPadding;
-            texturePosition.x = buttonPosition.x;
+        } else {
+            std.debug.print("There are no characters for this user bruh xD", .{});
+            try emptyCharacterScene(gameState);
         }
     }
 
@@ -231,32 +239,57 @@ pub const GameState = struct {
             gameState.scene = .game_spawn;
         }
     }
-    
+
     pub fn joinGameScene(gameState: *@This()) !void {
         const msg = try messages.receive_simple_response(gameState.allocator, gameState.node);
         switch (msg) {
             .ok => {
                 // TODO: Wait for Erlang Server to be ready
                 // gameState.character_list = try messages.receive_characters_list(gameState.allocator, gameState.node);
-                const maybe_characters: messages.Erlang_Characters = .{ .ok = &.{gameState.current_character}};
+                // TODO: This should not be the current character. Waiting for the Erlang Server
+                const maybe_characters: messages.Erlang_Characters = .{ .ok = &.{} };
+                // const maybe_characters: messages.Erlang_Characters = .{ .ok =
+                //     &.{gameState.current_character,
+                //        .{
+                //            .name = "Magueta",
+                //            .constitution = 2,
+                //            .wisdom = 8,
+                //            .endurance = 4,
+                //            .strength = 4,
+                //            .intelligence = 8,
+                //            .faith = 10,
+                // }}};
                 switch (maybe_characters) {
-                    .ok => {
+                    .ok => |erlang_characters| {
+
+                        // TODO: Discover how to make this work
+                        // const teapotEmbed = @embedFile("../assets/teapot.png");
+                        // const teapotLoaded = rl.loadImageFromMemory(".png", teapotEmbed, teapotEmbed.len);
+
+                        const teapotImage = rl.loadImage("./assets/teapot.png");
+
+                        var characters = std.ArrayList(messages.Character).init(gameState.allocator);
+
+                        for (erlang_characters) |character| {
+                            try characters.append(.{
+                                .character_data = character,
+                                .equipment_data = rl.loadTextureFromImage(teapotImage),
+                            });
+                        }
+
+                        gameState.character_list = characters.items;
                         gameState.scene = .game_character_selection;
-                    },
-                    .empty => {
-                        std.debug.print("There are no characters for this user bruh xD", .{});
-                        gameState.scene = .nothing;                
                     },
                     .@"error" => |error_msg| {
                         std.debug.print("ERROR IN SERVER: {s}", .{error_msg});
-                        gameState.scene = .nothing;                
-                    }
+                        gameState.scene = .nothing;
+                    },
                 }
             },
             .@"error" => |error_msg| {
                 std.debug.print("ERROR IN SERVER: {s}", .{error_msg});
-                gameState.scene = .nothing;                
-            }
+                gameState.scene = .nothing;
+            },
         }
     }
 };

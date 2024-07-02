@@ -1,5 +1,6 @@
 const erl = @import("erlang/config.zig");
 const std = @import("std");
+const rl = @import("raylib");
 const sender = @import("erlang/sender.zig");
 const receiver = @import("erlang/receiver.zig");
 
@@ -21,12 +22,16 @@ pub const Erlang_Character = struct {
     endurance: i64,
     strength: i64,
     intelligence: i64,
-    faith: i64,    
+    faith: i64,
+};
+
+pub const Character = struct {
+    character_data: Erlang_Character,
+    equipment_data: rl.Texture2D,
 };
 
 pub const Erlang_Characters = union(enum) {
     ok: []const Erlang_Character,
-    empty: void,
     @"error": [:0]const u8,
 };
 
@@ -91,4 +96,3 @@ pub fn receive_characters_list(allocator: std.mem.Allocator, ec: *erl.Node) !Erl
     const response = try receiver.run(characters_type, allocator, ec);
     return response.@"1";
 }
-
