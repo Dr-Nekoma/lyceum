@@ -11,7 +11,7 @@ create(#{name := Name,
 	 endurance := Endurance,
 	 intelligence := Intelligence,
 	 faith := Faith}, Connection) ->
-    Query = "INSERT INTO lyceum.view_character (\"name\",  \"e-mail\", \"username\", \"constitution\", \"wisdom\", \"strength\", \"endurance\", \"intelligence\", \"faith\") \
+    Query = "INSERT INTO lyceum.view_character (name,  e-mail, username, constitution, wisdom, strength, endurance, intelligence, faith) \
              VALUES ($1::VARCHAR(18), $2::TEXT, $3::VARCHAR(32), $4::SMALLINT, $5::SMALLINT, $6::SMALLINT, $7::SMALLINT, $8::SMALLINT, $9::SMALLINT)",
     {ok, _, _} = epgsql:equery(Connection, Query, [Name, Username, Email, Constitution, Wisdom, Strength, Endurance, Intelligence, Faith]).
 
