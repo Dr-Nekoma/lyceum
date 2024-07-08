@@ -25,7 +25,7 @@ CREATE TABLE lyceum.tile(
        x_position SMALLINT NOT NULL,
        y_position SMALLINT NOT NULL,
        PRIMARY KEY(map_name, kind, x_position, y_position),
-       FOREIGN KEY (map_name) REFERENCES map(name)
+       FOREIGN KEY (map_name) REFERENCES lyceum.map(name)
 );
 
 CREATE TABLE lyceum.object(
@@ -38,19 +38,22 @@ CREATE TABLE lyceum.object(
 );
 
 CREATE OR REPLACE FUNCTION map_object_overlap() RETURNS trigger AS $map_object_overlap$
-       DECLARE
-	garbage FOR SELECT kind FROM tile WHERE x_position = NEW.x_position AND y_position = NEW.y_position
-       BEGIN
-	IF NEW.name = 'TREE' THEN
-	   CASE WHEN garbage = 'WATER' OR garbage = 'ROCK' THEN RAISE EXCEPTION '''TREE'' cannot be defined in tiles that are not ''GRASS'' or ''SAND''.';
-	   ELSE RETURN NEW;
-	   END;
-	END IF;
-	RETURN NEW;
-       END;
+DECLARE 
+    kind TEXT;
+BEGIN
+    SELECT kind INTO kind FROM tile WHERE x_position = NEW.x_position AND y_position = NEW.y_position;
+
+    IF NEW.name = 'TREE' THEN
+        IF kind <> 'GRASS' AND kind <> 'SAND' THEN
+            RAISE EXCEPTION '''TREE'' cannot be defined in tiles that are not ''GRASS'' or ''SAND''.';
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
 $map_object_overlap$ LANGUAGE plpgsql;
 
-CREATE TRIGGER map_object_overlap BEFORE INSERT OR UPDATE ON object
+CREATE TRIGGER map_object_overlap BEFORE INSERT OR UPDATE ON lyceum.object
 FOR EACH ROW EXECUTE FUNCTION map_object_overlap();
 
 CREATE TABLE lyceum.character(
@@ -151,7 +154,7 @@ CREATE TABLE lyceum.equipment(
        PRIMARY KEY(name, kind)
 );
 
-CREATE OR REPLACE FUNCTION lyceum.check_equipment_position_compatibility(use EQUIPMENT_USE, kind EQUIPMENT_KIND) RETURNS BOOL AS $$
+CREATE OR REPLACE FUNCTION lyceum.check_equipment_position_compatibility(use lyceum.EQUIPMENT_USE, kind lyceum.EQUIPMENT_KIND) RETURNS BOOL AS $$
 BEGIN
     RETURN CASE 
         WHEN use = kind THEN true
