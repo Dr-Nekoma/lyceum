@@ -108,11 +108,11 @@ pub const GameState = struct {
         var current_character: messages.Erlang_Character = .{
             .name = .{0} ** 18,
         };
-        var currentTextPosition = .{
+        var currentTextPosition: rl.Vector2 = .{
             .x = 50,
             .y = 150,
         };
-        const textSize = .{
+        const textSize: rl.Vector2 = .{
             .x = 25,
             .y = 25,
         };
@@ -129,7 +129,7 @@ pub const GameState = struct {
                     .textSize = textSize,
                     .textColor = rl.Color.white,
                 };
-                _ = try attributeComp.at();
+                try attributeComp.at();
                 currentTextPosition.y += textSize.y + fieldPadding;
             } else {
                 const nameBoxPosition: rl.Vector2 = .{
