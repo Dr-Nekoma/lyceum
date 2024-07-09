@@ -16,13 +16,13 @@ pub const Erlang_Response = union(enum) {
 };
 
 pub const Erlang_Character = struct {
-    name: [:0]const u8,
-    constitution: i64,
-    wisdom: i64,
-    endurance: i64,
-    strength: i64,
-    intelligence: i64,
-    faith: i64,
+    name: [18:0]u8,
+    constitution: u32 = 0,
+    wisdom: u32 = 0,
+    endurance: u32 = 0,
+    strength: u32 = 0,
+    intelligence: u32 = 0,
+    faith: u32 = 0,
 };
 
 pub const Character = struct {

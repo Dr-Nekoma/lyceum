@@ -26,13 +26,13 @@ pub fn at(
     if (isSelected and rl.isMouseButtonPressed(.mouse_button_left)) {
         self.current.* = @intFromFloat(((mousePosition.x - innerButtonArea.x) / innerButtonArea.width) * float_ceiling);
     }
-    const boundaryPosition: rl.Vector2 = . {
+    const boundaryPosition: rl.Vector2 = .{
         .x = innerButtonArea.x,
         .y = innerButtonArea.y,
     };
     const float_current: f32 = @floatFromInt(self.current.*);
     const boundarySize: rl.Vector2 = .{
-        .x = (float_current / float_ceiling) * innerButtonArea.width ,
+        .x = (float_current / float_ceiling) * innerButtonArea.width,
         .y = innerButtonArea.height,
     };
     rl.drawRectangleV(self.position, self.size, self.outterColor);

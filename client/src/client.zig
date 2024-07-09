@@ -5,7 +5,9 @@ const messages = @import("server_messages.zig");
 const std = @import("std");
 const rl = @import("raylib");
 const config = @import("config.zig");
+const attribute = @import("components/attribute.zig");
 const button = @import("components/button.zig");
+const slider = @import("components/slider.zig");
 const text = @import("components/text.zig");
 
 pub fn print_connect_server_error(message: anytype) !void {
@@ -49,16 +51,17 @@ pub const GameState = struct {
     menu: Menu = .{},
     node: *erl.Node,
     allocator: std.mem.Allocator = std.heap.c_allocator,
-    current_character: messages.Erlang_Character = .{
-        .name = "Lemos",
-        .constitution = 10,
-        .wisdom = 10,
-        .endurance = 10,
-        .strength = 10,
-        .intelligence = 10,
-        .faith = 10,
-    },
+    // current_character: messages.Erlang_Character = .{
+    //     .name = "Lemos",
+    //     .constitution = 10,
+    //     .wisdom = 10,
+    //     .endurance = 10,
+    //     .strength = 10,
+    //     .intelligence = 10,
+    //     .faith = 10,
+    // },
     character_list: []const messages.Character = &.{},
+    test_value: usize = 0,
 
     pub fn init(width: f32, height: f32, node: *erl.Node) !GameState {
         if (width < 0) return error.negative_width;
@@ -99,58 +102,92 @@ pub const GameState = struct {
         )) gameState.scene = .user_registry;
     }
 
+    // TODO: add limit for total number of points when creating a character
+    // TODO: add create button available to click when character is valid
     fn emptyCharacterScene(gameState: *@This()) !void {
-        const buttonSize = gameState.menuButtonSize();
-        const characterButtonX = (gameState.width / 2) - (buttonSize.x / 2);
-        const characterButtonY = (gameState.height / 2) - (buttonSize.y / 2);
-        const buttonPosition: rl.Vector2 = .{
-            .x = characterButtonX,
-            .y = characterButtonY,
+        var current_character: messages.Erlang_Character = .{
+            .name = .{0} ** 18,
         };
+        var currentTextPosition = .{
+            .x = 50,
+            .y = 150,
+        };
+        const textSize = .{
+            .x = 25,
+            .y = 25,
+        };
+        const fieldPadding = 25;
+        inline for (std.meta.fields(messages.Erlang_Character)) |field| {
+            if (comptime !std.mem.eql(u8, field.name, "name")) {
+                const attributeComp = attribute{
+                    .current = &@field(current_character, field.name),
+                    .text = field.name,
+                    .textPosition = .{
+                        .x = currentTextPosition.x,
+                        .y = currentTextPosition.y,
+                    },
+                    .textSize = textSize,
+                    .textColor = rl.Color.white,
+                };
+                _ = try attributeComp.at();
+                currentTextPosition.y += textSize.y + fieldPadding;
+            } else {
+                const nameBoxPosition: rl.Vector2 = .{
+                    .x = 50,
+                    .y = 50,
+                };
+                const nameLabelPositionY =
+                    nameBoxPosition.y - config.buttonFontSize - 2 * config.menuButtonsPadding;
 
-        if (button.at(
-            "+",
-            buttonPosition,
-            buttonSize,
-            config.ColorPalette.primary,
-        )) {
-            gameState.scene = .nothing;
+                rl.drawText(
+                    "Name:",
+                    @intFromFloat(nameBoxPosition.x),
+                    @intFromFloat(nameLabelPositionY),
+                    config.buttonFontSize,
+                    rl.Color.white,
+                );
+                const nameText = text{
+                    .content = &current_character.name,
+                    .position = &gameState.test_value,
+                };
+                nameText.at(nameBoxPosition);
+            }
         }
     }
 
     pub fn characterSelectionScene(gameState: *@This()) !void {
-        const buttonSize = gameState.characterButtonSize();
-        const characterButtonY = (gameState.height / 10) - (buttonSize.y / 2);
-        var buttonPosition: rl.Vector2 = .{
-            .x = buttonSize.x / 4.0,
-            .y = characterButtonY,
-        };
+        // const buttonSize = gameState.characterButtonSize();
+        // const characterButtonY = (gameState.height / 10) - (buttonSize.y / 2);
+        // var buttonPosition: rl.Vector2 = .{
+        //     .x = buttonSize.x / 4.0,
+        //     .y = characterButtonY,
+        // };
 
-        var texturePosition: rl.Vector2 = .{
-            .x = buttonPosition.x + buttonSize.x / 2 - 150,
-            .y = buttonPosition.y + buttonSize.y * 1.5,
-        };
+        // var texturePosition: rl.Vector2 = .{
+        //     .x = buttonPosition.x + buttonSize.x / 2 - 150,
+        //     .y = buttonPosition.y + buttonSize.y * 1.5,
+        // };
 
         if (gameState.character_list.len != 0) {
-            for (gameState.character_list) |character| {
-                if (button.at(
-                    character.character_data.name,
-                    buttonPosition,
-                    buttonSize,
-                    config.ColorPalette.primary,
-                )) {
-                    gameState.current_character = character.character_data;
-                    gameState.scene = .nothing;
-                    break;
-                }
+            // for (gameState.character_list) |character| {
+            //     if (button.at(
+            //         character.character_data.name,
+            //         buttonPosition,
+            //         buttonSize,
+            //         config.ColorPalette.primary,
+            //     )) {
+            //         // gameState.current_character = character.character_data;
+            //         gameState.scene = .nothing;
+            //         break;
+            //     }
 
-                rl.drawTextureEx(character.equipment_data, texturePosition, 0.0, 1, rl.Color.white);
+            //     rl.drawTextureEx(character.equipment_data, texturePosition, 0.0, 1, rl.Color.white);
 
-                buttonPosition.x += 5.0 * buttonSize.x / 4.0;
-                texturePosition.x += 5.0 * buttonSize.x / 4.0;
-            }
+            //     buttonPosition.x += 5.0 * buttonSize.x / 4.0;
+            //     texturePosition.x += 5.0 * buttonSize.x / 4.0;
+            // }
         } else {
-            std.debug.print("There are no characters for this user bruh xD", .{});
+            // std.debug.print("There are no characters for this user bruh xD", .{});
             try emptyCharacterScene(gameState);
         }
     }
