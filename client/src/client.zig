@@ -51,15 +51,9 @@ pub const GameState = struct {
     menu: Menu = .{},
     node: *erl.Node,
     allocator: std.mem.Allocator = std.heap.c_allocator,
-    // current_character: messages.Erlang_Character = .{
-    //     .name = "Lemos",
-    //     .constitution = 10,
-    //     .wisdom = 10,
-    //     .endurance = 10,
-    //     .strength = 10,
-    //     .intelligence = 10,
-    //     .faith = 10,
-    // },
+    current_character: messages.Erlang_Character = .{
+        .name = .{0} ** 18,
+    },
     character_list: []const messages.Character = &.{},
     test_value: usize = 0,
 
@@ -105,9 +99,6 @@ pub const GameState = struct {
     // TODO: add limit for total number of points when creating a character
     // TODO: add create button available to click when character is valid
     fn emptyCharacterScene(gameState: *@This()) !void {
-        var current_character: messages.Erlang_Character = .{
-            .name = .{0} ** 18,
-        };
         var currentTextPosition: rl.Vector2 = .{
             .x = 50,
             .y = 150,
@@ -120,7 +111,7 @@ pub const GameState = struct {
         inline for (std.meta.fields(messages.Erlang_Character)) |field| {
             if (comptime !std.mem.eql(u8, field.name, "name")) {
                 const attributeComp = attribute{
-                    .current = &@field(current_character, field.name),
+                    .current = &@field(gameState.current_character, field.name),
                     .text = field.name,
                     .textPosition = .{
                         .x = currentTextPosition.x,
@@ -147,7 +138,7 @@ pub const GameState = struct {
                     rl.Color.white,
                 );
                 const nameText = text{
-                    .content = &current_character.name,
+                    .content = &gameState.current_character.name,
                     .position = &gameState.test_value,
                 };
                 nameText.at(nameBoxPosition);
