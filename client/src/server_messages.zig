@@ -69,6 +69,14 @@ fn send_user_login(ec: *erl.Node, message: User_Login) !void {
     } });
 }
 
+fn send_character_list(ec: *erl.Node, message: User_Login) !void {
+    return sender.run_with_self(ec, .{ .map = &.{
+        .{ .{ .atom = "action" }, .{ .atom = "character_list" } },
+        .{ .{ .atom = "username" }, .{ .string = message.username } },
+        .{ .{ .atom = "password" }, .{ .string = message.password } },
+    } });
+}
+
 pub fn send_payload(ec: *erl.Node, message: Payload) !void {
     switch (message) {
         .user_registry => |item| {
@@ -76,6 +84,9 @@ pub fn send_payload(ec: *erl.Node, message: Payload) !void {
         },
         .user_login => |item| {
             try send_user_login(ec, item);
+        },
+        .character_list => |item| {
+            try send_character_list(ec, item);
         },
         .debug => |item| {
             try sender.run_with_self(ec, .{

@@ -42,8 +42,9 @@ pub const GameState = struct {
         user_registry,
         user_login,
         nothing,
-        game_spawn,
-        game_character_selection,
+        spawn,
+        character_selection,
+        character_list,
     };
     scene: Scene,
     width: f32,
@@ -147,36 +148,37 @@ pub const GameState = struct {
     }
 
     pub fn characterSelectionScene(gameState: *@This()) !void {
-        // const buttonSize = gameState.characterButtonSize();
-        // const characterButtonY = (gameState.height / 10) - (buttonSize.y / 2);
-        // var buttonPosition: rl.Vector2 = .{
-        //     .x = buttonSize.x / 4.0,
-        //     .y = characterButtonY,
-        // };
+        const buttonSize = gameState.characterButtonSize();
+        const characterButtonY = (gameState.height / 10) - (buttonSize.y / 2);
+        var buttonPosition: rl.Vector2 = .{
+            .x = buttonSize.x / 4.0,
+            .y = characterButtonY,
+        };
 
-        // var texturePosition: rl.Vector2 = .{
-        //     .x = buttonPosition.x + buttonSize.x / 2 - 150,
-        //     .y = buttonPosition.y + buttonSize.y * 1.5,
-        // };
+        var texturePosition: rl.Vector2 = .{
+            .x = buttonPosition.x + buttonSize.x / 2 - 150,
+            .y = buttonPosition.y + buttonSize.y * 1.5,
+        };
 
         if (gameState.character_list.len != 0) {
-            // for (gameState.character_list) |character| {
-            //     if (button.at(
-            //         character.character_data.name,
-            //         buttonPosition,
-            //         buttonSize,
-            //         config.ColorPalette.primary,
-            //     )) {
-            //         // gameState.current_character = character.character_data;
-            //         gameState.scene = .nothing;
-            //         break;
-            //     }
+            // TODO: Make pagination for 3 characters at a time
+            for (gameState.character_list) |character| {
+                if (button.at(
+                    character.character_data.name,
+                    buttonPosition,
+                    buttonSize,
+                    config.ColorPalette.primary,
+                )) {
+                    gameState.current_character = character.character_data;
+                    gameState.scene = .nothing;
+                    break;
+                }
 
-            //     rl.drawTextureEx(character.equipment_data, texturePosition, 0.0, 1, rl.Color.white);
+                rl.drawTextureEx(character.equipment_data, texturePosition, 0.0, 1, rl.Color.white);
 
-            //     buttonPosition.x += 5.0 * buttonSize.x / 4.0;
-            //     texturePosition.x += 5.0 * buttonSize.x / 4.0;
-            // }
+                buttonPosition.x += 5.0 * buttonSize.x / 4.0;
+                texturePosition.x += 5.0 * buttonSize.x / 4.0;
+            }
         } else {
             // std.debug.print("There are no characters for this user bruh xD", .{});
             try emptyCharacterScene(gameState);
@@ -272,21 +274,13 @@ pub const GameState = struct {
         const msg = try messages.receive_simple_response(gameState.allocator, gameState.node);
         switch (msg) {
             .ok => {
-                // TODO: Wait for Erlang Server to be ready
-                // gameState.character_list = try messages.receive_characters_list(gameState.allocator, gameState.node);
-                // TODO: This should not be the current character. Waiting for the Erlang Server
-                const maybe_characters: messages.Erlang_Characters = .{ .ok = &.{} };
-                // const maybe_characters: messages.Erlang_Characters = .{ .ok =
-                //     &.{gameState.current_character,
-                //        .{
-                //            .name = "Magueta",
-                //            .constitution = 2,
-                //            .wisdom = 8,
-                //            .endurance = 4,
-                //            .strength = 4,
-                //            .intelligence = 8,
-                //            .faith = 10,
-                // }}};
+                try messages.send_payload(gameState.node, .{
+                    .character_list = .{
+                        .username = &gameState.menu.login.username,
+                        .password = &gameState.menu.login.password,
+                    },
+                });
+                const maybe_characters = try messages.receive_characters_list(gameState.allocator, gameState.node);
                 switch (maybe_characters) {
                     .ok => |erlang_characters| {
 

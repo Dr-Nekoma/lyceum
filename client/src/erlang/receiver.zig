@@ -295,6 +295,7 @@ fn internal_receive_message(self: @This(), comptime T: type) !T {
             value = try receive_pointer(self, T, item);
         },
         .Array => |item| {
+            // TODO: We need to address strings as arrays
             value = try receive_array(self, T, item);
         },
         .Bool => {
