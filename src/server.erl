@@ -44,6 +44,10 @@ handle_message(Connection) ->
 			     Connection),
 	    Response = "I found " ++ Username,
 	    Pid ! {self(), Response};
+	{Pid, #{action := character_list, username := Username, password := Password}} ->
+	    io:format("Querying user's characters..."),
+	    Characters = character:player_characters({Username, Password}, Connection),
+	    Pid ! {self(), {ok, Characters}};
 	{Pid, #{action := character_creation} = Character_Map} ->
 	    io:format("This character logged"),
 	    character:create(Character_Map, Connection),
