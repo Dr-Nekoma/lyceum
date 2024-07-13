@@ -23,6 +23,6 @@ VALUES
 ('Blood-Reaver''s Gauntlet', 'Fashioned from crude iron in the crucible of barbarian rites, this gauntlet bears primal insignias and the echoes of ancient battles. It is said that those who don this gauntlet unleash the untamed fury of ancestral warriors, their strikes echoing the relentless tide of bloodshed from when the barbarians were feared by the Joniens.', 'ARMS');
 
 -- Insert into lyceum.character_equipment
-INSERT INTO lyceum.character_equipment (name, e_mail, username, "equiped?", equipment_name, use, kind)
-VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'),
-       ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Blood-Reaver''s Gauntlet', 'ARMS', 'ARMS');
+INSERT INTO lyceum.character_equipment (name, e_mail, username, is_equiped, equipment_name, use, kind)
+VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::lyceum.equipment_kind),
+       ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Blood-Reaver''s Gauntlet', 'ARMS'::lyceum.equipment_use, 'ARMS'::lyceum.equipment_kind);
