@@ -23,14 +23,14 @@ pub const Login_Response = union(enum) {
 
 pub const Erlang_Character = struct {
     name: [:0]const u8 = "",
-    constitution: i64 = 0,
-    wisdom: i64 = 0,
-    endurance: i64 = 0,
-    strength: i64 = 0,
-    intelligence: i64 = 0,
-    faith: i64 = 0,
-    x_position: i64 = 0,
-    y_position: i64 = 0,
+    constitution: u8 = 0,
+    wisdom: u8 = 0,
+    endurance: u8 = 0,
+    strength: u8 = 0,
+    intelligence: u8 = 0,
+    faith: u8 = 0,
+    x_position: u64 = 0,
+    y_position: u64 = 0,
     map_name: [:0]const u8 = "",
 };
 

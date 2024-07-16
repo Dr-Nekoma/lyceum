@@ -123,15 +123,23 @@ inline fn receive_struct(self: @This(), comptime T: type, comptime item: std.bui
 }
 
 inline fn receive_int(self: @This(), comptime T: type, comptime item: std.builtin.Type.Int) !T {
-    // TODO: eventually arbitrarily sized integers. It will be a pain because you have to use GMP lib.
-    // @compileLog(std.fmt.comptimePrint("Inside Int: {}, {}", .{T, item}));
     var value: T = undefined;
     if (item.signedness == .signed) {
-        try erl.validate(error.decoding_signed_integer, ei.ei_decode_long(self.buf.buff, self.index, &value));
+        var aux: i64 = undefined;
+        try erl.validate(error.decoding_signed_integer, ei.ei_decode_long(self.buf.buff, self.index, &aux));
+        if (std.math.maxInt(T) <= aux and std.math.minInt(T) <= aux) {
+            value = @intCast(aux);
+            return value;
+        }
     } else {
-        try erl.validate(error.decoding_unsigned_integer, ei.ei_decode_ulong(self.buf.buff, self.index, &value));
+        var aux: u64 = undefined;
+        try erl.validate(error.decoding_unsigned_integer, ei.ei_decode_ulong(self.buf.buff, self.index, &aux));
+        if (std.math.maxInt(T) <= aux) {
+            value = @intCast(aux);
+            return value;
+        }
     }
-    return value;
+    return error.out_of_bounds;
 }
 
 inline fn receive_enum(self: @This(), comptime T: type, comptime item: std.builtin.Type.Enum) !T {
