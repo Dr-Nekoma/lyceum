@@ -14,7 +14,7 @@ INSERT INTO lyceum.character_stats (name, e_mail, username, constitution, wisdom
 VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 100, 110, 95, 120, 105, 100);
 
 INSERT INTO lyceum.character_position (name, e_mail, username, x_position, y_position, map_name)
-VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 10.5, 20, 'CASTLE_HALL');
+VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 10, 20, 'CASTLE_HALL');
 
 -- Insert into lyceum.equipment
 INSERT INTO lyceum.equipment (name, description, kind)

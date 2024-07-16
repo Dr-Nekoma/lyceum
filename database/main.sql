@@ -82,7 +82,7 @@ CREATE TABLE lyceum.character_position(
        name VARCHAR(18) NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
        username VARCHAR(32) NOT NULL,
-       x_position DECIMAL(4, 2) NOT NULL,
+       x_position SMALLINT NOT NULL,
        y_position SMALLINT NOT NULL,
        map_name VARCHAR(64) NOT NULL,
        FOREIGN KEY (name, username, e_mail) REFERENCES lyceum.character(name, username, e_mail),
