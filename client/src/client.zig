@@ -96,6 +96,15 @@ pub const GameState = struct {
         )) gameState.scene = .user_registry;
     }
 
+    fn isDifferent(string: [:0]const u8, forbiddens: []const [:0]const u8) bool {
+        for (forbiddens) |forbidden| {
+            if (std.mem.eql(u8, string, forbidden)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // TODO: add limit for total number of points when creating a character
     // TODO: add create button available to click when character is valid
     fn emptyCharacterScene(gameState: *@This()) !void {
@@ -109,7 +118,7 @@ pub const GameState = struct {
         };
         const fieldPadding = 25;
         inline for (std.meta.fields(messages.Erlang_Character)) |field| {
-            if (comptime (!std.mem.eql(u8, field.name, "name") and !std.mem.eql(u8, field.name, "map_name"))) {
+            if (comptime isDifferent(field.name, &.{ "name", "map_name", "x_position", "y_position" })) {
                 var mutable_name: [:0]u8 = try gameState.allocator.allocSentinel(u8, field.name.len, 0);
                 std.mem.copyForwards(u8, mutable_name, field.name);
                 mutable_name[0] = std.ascii.toUpper(mutable_name[0]);
@@ -125,7 +134,7 @@ pub const GameState = struct {
                 };
                 try attributeComp.at();
                 currentTextPosition.y += textSize.y + fieldPadding;
-            } else {
+            } else if (std.mem.eql(u8, field.name, "name")) {
                 const nameBoxPosition: rl.Vector2 = .{
                     .x = 50,
                     .y = 50,
@@ -146,6 +155,8 @@ pub const GameState = struct {
                 };
                 nameText.at(nameBoxPosition);
                 gameState.current_character.name = gameState.menu.character_name;
+            } else {
+                std.debug.print("Not editable: .{s}\n", .{field.name});
             }
         }
     }
@@ -332,6 +343,7 @@ pub fn main() anyerror!void {
 
     var gameState = try GameState.init(800, 450, &node);
     gameState.menu = .{ .character_name = try gameState.allocator.allocSentinel(u8, config.nameSize, 0) };
+    @memset(gameState.menu.character_name, 0);
 
     rl.setConfigFlags(.flag_window_resizable);
     rl.initWindow(@intFromFloat(gameState.width), @intFromFloat(gameState.height), "Lyceum");

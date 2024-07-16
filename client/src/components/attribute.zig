@@ -3,8 +3,9 @@ const config = @import("../config.zig");
 const button = @import("button.zig");
 const std = @import("std");
 
-ceiling: i64 = 999,
-current: *i64,
+// TODO: Move this to another file to have proper generic types for each field
+ceiling: u16 = 999,
+current: *u8,
 
 text: [:0]const u8,
 textPosition: rl.Vector2,
