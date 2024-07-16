@@ -8,13 +8,16 @@ VALUES ('CASTLE_HALL'), ('CASTLE_YARD');
 
 -- Insert into lyceum.character and related tables
 INSERT INTO lyceum.character (name, e_mail, username)
-VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta');
+VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta'),
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta');
 
 INSERT INTO lyceum.character_stats (name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith)
-VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 100, 110, 95, 120, 105, 100);
+VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 100, 110, 95, 120, 105, 100),
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 60, 110, 55, 150, 150, 50);
 
 INSERT INTO lyceum.character_position (name, e_mail, username, x_position, y_position, map_name)
-VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 10, 20, 'CASTLE_HALL');
+VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 10, 20, 'CASTLE_HALL'),
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 15, 15, 'CASTLE_HALL');
 
 -- Insert into lyceum.equipment
 INSERT INTO lyceum.equipment (name, description, kind)
@@ -25,4 +28,5 @@ VALUES
 -- Insert into lyceum.character_equipment
 INSERT INTO lyceum.character_equipment (name, e_mail, username, is_equiped, equipment_name, use, kind)
 VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::lyceum.equipment_kind),
-       ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Blood-Reaver''s Gauntlet', 'ARMS'::lyceum.equipment_use, 'ARMS'::lyceum.equipment_kind);
+       ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Blood-Reaver''s Gauntlet', 'ARMS'::lyceum.equipment_use, 'ARMS'::lyceum.equipment_kind),
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::lyceum.equipment_kind);
