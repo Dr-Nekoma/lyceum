@@ -33,7 +33,9 @@ pub const Menu = struct {
         };
         currentScreenMode: ScreenMode = .windowed,
     };
+    character_name: [:0]u8,
     login: Login = .{},
+    email: [:0]const u8 = "",
     config: Configuration = .{},
 };
 
@@ -44,17 +46,14 @@ pub const GameState = struct {
         nothing,
         spawn,
         character_selection,
-        character_list,
     };
     scene: Scene,
     width: f32,
     height: f32,
-    menu: Menu = .{},
+    menu: Menu = undefined,
     node: *erl.Node,
     allocator: std.mem.Allocator = std.heap.c_allocator,
-    current_character: messages.Erlang_Character = .{
-        .name = .{0} ** 18,
-    },
+    current_character: messages.Erlang_Character = .{},
     character_list: []const messages.Character = &.{},
     test_value: usize = 0,
 
@@ -110,10 +109,13 @@ pub const GameState = struct {
         };
         const fieldPadding = 25;
         inline for (std.meta.fields(messages.Erlang_Character)) |field| {
-            if (comptime !std.mem.eql(u8, field.name, "name")) {
+            if (comptime (!std.mem.eql(u8, field.name, "name") and !std.mem.eql(u8, field.name, "map_name"))) {
+                var mutable_name: [:0]u8 = try gameState.allocator.allocSentinel(u8, field.name.len, 0);
+                std.mem.copyForwards(u8, mutable_name, field.name);
+                mutable_name[0] = std.ascii.toUpper(mutable_name[0]);
                 const attributeComp = attribute{
                     .current = &@field(gameState.current_character, field.name),
-                    .text = field.name,
+                    .text = mutable_name,
                     .textPosition = .{
                         .x = currentTextPosition.x,
                         .y = currentTextPosition.y,
@@ -139,10 +141,11 @@ pub const GameState = struct {
                     rl.Color.white,
                 );
                 const nameText = text{
-                    .content = &gameState.current_character.name,
+                    .content = gameState.menu.character_name,
                     .position = &gameState.test_value,
                 };
                 nameText.at(nameBoxPosition);
+                gameState.current_character.name = gameState.menu.character_name;
             }
         }
     }
@@ -266,20 +269,22 @@ pub const GameState = struct {
                     .password = &gameState.menu.login.password,
                 },
             });
-            gameState.scene = .game_spawn;
+            gameState.scene = .spawn;
         }
     }
 
     pub fn joinGameScene(gameState: *@This()) !void {
-        const msg = try messages.receive_simple_response(gameState.allocator, gameState.node);
+        const msg = try messages.receive_login_response(gameState.allocator, gameState.node);
         switch (msg) {
-            .ok => {
+            .ok => |email| {
+                gameState.menu.email = email;
                 try messages.send_payload(gameState.node, .{
                     .character_list = .{
                         .username = &gameState.menu.login.username,
-                        .password = &gameState.menu.login.password,
+                        .email = gameState.menu.email,
                     },
                 });
+                std.debug.print("We asked for characters", .{});
                 const maybe_characters = try messages.receive_characters_list(gameState.allocator, gameState.node);
                 switch (maybe_characters) {
                     .ok => |erlang_characters| {
@@ -300,7 +305,7 @@ pub const GameState = struct {
                         }
 
                         gameState.character_list = characters.items;
-                        gameState.scene = .game_character_selection;
+                        gameState.scene = .character_selection;
                     },
                     .@"error" => |error_msg| {
                         std.debug.print("ERROR IN SERVER: {s}", .{error_msg});
@@ -326,6 +331,7 @@ pub fn main() anyerror!void {
     };
 
     var gameState = try GameState.init(800, 450, &node);
+    gameState.menu = .{ .character_name = try gameState.allocator.allocSentinel(u8, config.nameSize, 0) };
 
     rl.setConfigFlags(.flag_window_resizable);
     rl.initWindow(@intFromFloat(gameState.width), @intFromFloat(gameState.height), "Lyceum");
@@ -349,10 +355,10 @@ pub fn main() anyerror!void {
             .user_login => {
                 try GameState.loginScene(&gameState);
             },
-            .game_spawn => {
+            .spawn => {
                 try GameState.joinGameScene(&gameState);
             },
-            .game_character_selection => {
+            .character_selection => {
                 try GameState.characterSelectionScene(&gameState);
             },
             .nothing => {

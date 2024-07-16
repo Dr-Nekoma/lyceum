@@ -3,8 +3,8 @@ const config = @import("../config.zig");
 const button = @import("button.zig");
 const std = @import("std");
 
-ceiling: u32 = 999,
-current: *u32,
+ceiling: i64 = 999,
+current: *i64,
 
 text: [:0]const u8,
 textPosition: rl.Vector2,

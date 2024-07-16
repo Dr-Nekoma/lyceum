@@ -123,7 +123,8 @@ inline fn receive_struct(self: @This(), comptime T: type, comptime item: std.bui
 }
 
 inline fn receive_int(self: @This(), comptime T: type, comptime item: std.builtin.Type.Int) !T {
-    // TODO: eventually arbitrarily sized integers.
+    // TODO: eventually arbitrarily sized integers. It will be a pain because you have to use GMP lib.
+    // @compileLog(std.fmt.comptimePrint("Inside Int: {}, {}", .{T, item}));
     var value: T = undefined;
     if (item.signedness == .signed) {
         try erl.validate(error.decoding_signed_integer, ei.ei_decode_long(self.buf.buff, self.index, &value));
@@ -190,7 +191,7 @@ inline fn receive_union(self: @This(), comptime T: type, comptime item: std.buil
                     )) {
                         const tuple_value = try internal_receive_message(self, field.type);
                         value = @unionInit(T, field.name, tuple_value);
-                        break;
+                        return value;
                     }
                 } else return error.failed_to_receive_payload;
             },
@@ -295,7 +296,6 @@ fn internal_receive_message(self: @This(), comptime T: type) !T {
             value = try receive_pointer(self, T, item);
         },
         .Array => |item| {
-            // TODO: We need to address strings as arrays
             value = try receive_array(self, T, item);
         },
         .Bool => {
