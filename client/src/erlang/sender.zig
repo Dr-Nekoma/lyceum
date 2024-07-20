@@ -29,7 +29,7 @@ fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
 
     return if (Data == *const ei.erlang_pid or Data == *ei.erlang_pid)
         erl.validate(
-            error.encode_pid,
+            error.could_not_encode_pid,
             ei.ei_x_encode_pid(buf, data),
         )
     else if (Data == ei.erlang_pid)
@@ -39,13 +39,13 @@ fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
         Data == []u8 or
         Data == [:0]u8)
         erl.validate(
-            error.encode_binary,
+            error.could_not_encode_binary,
             // I think we should lean towards binaries over strings
             ei.ei_x_encode_binary_len(buf, data.ptr, data.len),
         )
     else switch (@typeInfo(Data)) {
         .Bool => erl.validate(
-            error.encode_bool,
+            error.could_not_encode_bool,
             ei.ei_x_encode_boolean(buf, @intFromBool(data)),
         ),
         .ComptimeInt => fancy_send(
@@ -58,12 +58,12 @@ fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
             @compileError("unsupported integer size")
         else if (info.signedness == .signed)
             erl.validate(
-                error.encode_int,
+                error.could_not_encode_int,
                 ei.ei_x_encode_longlong(buf, data),
             )
         else
             erl.validate(
-                error.encode_uint,
+                error.could_not_encode_uint,
                 ei.ei_x_encode_ulonglong(buf, data),
             ),
 
@@ -71,13 +71,13 @@ fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
             @compileError("unsupported float size")
         else
             erl.validate(
-                error.encode_float,
+                error.could_not_encode_float,
                 ei.ei_x_encode_double(buf, data),
             ),
         .Enum, .EnumLiteral => blk: {
             const name = @tagName(data);
             break :blk erl.validate(
-                error.encode_atom,
+                error.could_not_encode_atom,
                 ei.ei_x_encode_atom_len(buf, name.ptr, name.len),
             );
         },
