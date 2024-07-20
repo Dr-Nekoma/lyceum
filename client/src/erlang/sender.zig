@@ -26,30 +26,72 @@ pub const Erlang_Data = union(enum) {
 
 fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
     const Data = @TypeOf(data);
-    const payload: Erlang_Data =
-        if (Data == *const ei.erlang_pid or Data == *ei.erlang_pid)
-        .{ .pid = data }
-    else switch (@typeInfo(Data)) {
-        .Bool => .{ .atom = if (data) "true" else "false" },
-        .Int => |info| if (65 <= info.bits)
-            @compileError("unsupported integer size")
-        else
-            .{ .int = if (info.signedness == .signed)
-                .{ .ei64 = data }
-            else
-                .{ .eu64 = data } },
-        .Enum, .EnumLiteral => .{ .atom = @tagName(data) },
-        .Type,
-        .Void,
-        .NoReturn,
-        .Fn,
-        .Opaque,
-        .Frame,
-        .AnyFrame,
-        .Vector,
-        => @compileError("unsupported type"),
-    };
-    try send_erlang_data(buf, payload);
+
+    if (Data == *const ei.erlang_pid or Data == *ei.erlang_pid) {
+        try erl.validate(
+            error.encode_pid,
+            ei.ei_x_encode_pid(buf, data),
+        );
+    } else if (Data == ei.erlang_pid) {
+        try erl.validate(
+            error.encode_pid,
+            ei.ei_x_encode_pid(buf, &data),
+        );
+    } else if (Data == []const u8 or
+        Data == [:0]const u8 or
+        Data == []u8 or
+        Data == [:0]u8)
+    {
+        try erl.validate(
+            error.encode_binary,
+            // I think we should lean towards binaries over strings
+            ei.ei_x_encode_binary_len(buf, data.ptr, data.len),
+        );
+    } else switch (@typeInfo(Data)) {
+        .Bool => try erl.validate(
+            error.encode_bool,
+            ei.ei_x_encode_boolean(buf, @intFromBool(data)),
+        ),
+        .ComptimeInt => try fancy_send(
+            buf,
+            // not sure if this conditional actually compiles
+            @as(if (0 <= data) u64 else i64, data),
+        ),
+        .ComptimeFloat => try fancy_send(buf, @as(f64, data)),
+        .Int => |info| {
+            if (65 <= info.bits) {
+                @compileError("unsupported integer size");
+            } else if (info.signedness == .signed) {
+                try erl.validate(
+                    error.encode_int,
+                    ei.ei_x_encode_longlong(buf, data),
+                );
+            } else {
+                try erl.validate(
+                    error.encode_uint,
+                    ei.ei_x_encode_ulonglong(buf, data),
+                );
+            }
+        },
+        .Float => |info| {
+            if (65 <= info.bits) {
+                @compileError("unsupported float size");
+            } else try erl.validate(
+                error.encode_float,
+                ei.ei_x_encode_double(buf, data),
+            );
+        },
+        .Enum, .EnumLiteral => {
+            const name = @tagName(data);
+            try erl.validate(
+                error.encode_atom,
+                ei.ei_x_encode_atom_len(buf, name.ptr, name.len),
+            );
+        },
+        .Pointer, .Array, .Struct, .Union => unreachable, // TODO
+        .NoReturn => unreachable, // there are no actual values of this type
+        else => @compileError("unsupported type"),
+    }
 }
 
 // TODO: Use metaprogramming to use this as intermediate or not even
