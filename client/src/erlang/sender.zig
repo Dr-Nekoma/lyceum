@@ -24,6 +24,34 @@ pub const Erlang_Data = union(enum) {
     number: Number,
 };
 
+fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
+    const Data = @TypeOf(data);
+    const payload: Erlang_Data =
+        if (Data == *const ei.erlang_pid or Data == *ei.erlang_pid)
+        .{ .pid = data }
+    else switch (@typeInfo(Data)) {
+        .Bool => .{ .atom = if (data) "true" else "false" },
+        .Int => |info| if (65 <= info.bits)
+            @compileError("unsupported integer size")
+        else
+            .{ .int = if (info.signedness == .signed)
+                .{ .ei64 = data }
+            else
+                .{ .eu64 = data } },
+        .Enum, .EnumLiteral => .{ .atom = @tagName(data) },
+        .Type,
+        .Void,
+        .NoReturn,
+        .Fn,
+        .Opaque,
+        .Frame,
+        .AnyFrame,
+        .Vector,
+        => @compileError("unsupported type"),
+    };
+    try send_erlang_data(buf, payload);
+}
+
 // TODO: Use metaprogramming to use this as intermediate or not even
 // It will be symetrical with receiver
 fn send_erlang_data(buf: *ei.ei_x_buff, data: Erlang_Data) !void {
@@ -72,10 +100,10 @@ fn send_erlang_data(buf: *ei.ei_x_buff, data: Erlang_Data) !void {
     }
 }
 
-pub fn run(ec: *erl.Node, data: Erlang_Data) !void {
+pub fn run(ec: *erl.Node, data: anytype) !void {
     var buf: ei.ei_x_buff = undefined;
     try erl.validate(error.new_with_version, ei.ei_x_new_with_version(&buf));
-    try send_erlang_data(&buf, data);
+    try fancy_send(&buf, data);
     try erl.validate(error.reg_send_failed, ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(erl.process_name), buf.buff, buf.index));
 }
 
