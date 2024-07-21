@@ -134,54 +134,7 @@ pub fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
     };
 }
 
-// TODO: Use metaprogramming to use this as intermediate or not even
-// It will be symetrical with receiver
-fn send_erlang_data(buf: *ei.ei_x_buff, data: Erlang_Data) !void {
-    switch (data) {
-        .atom => |item| {
-            try erl.validate(error.encode_atom, ei.ei_x_encode_atom(buf, item.ptr));
-        },
-        .tuple => |items| {
-            try erl.validate(error.encode_tuple_header, ei.ei_x_encode_tuple_header(buf, @bitCast(items.len)));
-            for (items) |elem| {
-                try send_erlang_data(buf, elem);
-            }
-        },
-        .list => |items| {
-            try erl.validate(error.encode_list_header, ei.ei_x_encode_list_header(buf, @bitCast(items.len)));
-            for (items) |elem| {
-                try send_erlang_data(buf, elem);
-            }
-        },
-        .pid => |pid| {
-            try erl.validate(error.encode_pid, ei.ei_x_encode_pid(buf, pid));
-        },
-        .map => |entries| {
-            try erl.validate(error.encode_map_header, ei.ei_x_encode_map_header(buf, @bitCast(entries.len)));
-            for (entries) |entry| {
-                for (entry) |value| {
-                    try send_erlang_data(buf, value);
-                }
-            }
-        },
-        .string => |str| {
-            try erl.validate(error.encode_string, ei.ei_x_encode_string(buf, str.ptr));
-        },
-        .number => |number| {
-            switch (number) {
-                inline else => |value| {
-                    const number_type = @typeInfo(@TypeOf(value)).Int;
-                    if (number_type.signedness == .signed) {
-                        try erl.validate(error.encode_number, ei.ei_x_encode_long(buf, @intCast(value)));
-                    } else {
-                        try erl.validate(error.encode_number, ei.ei_x_encode_ulong(buf, @intCast(value)));
-                    }
-                },
-            }
-        },
-    }
-}
-
+// FIXME: rewrite the things below this to make sense
 pub fn run(ec: *erl.Node, data: anytype) !void {
     var buf: ei.ei_x_buff = undefined;
     try erl.validate(error.new_with_version, ei.ei_x_new_with_version(&buf));
