@@ -9,14 +9,33 @@ on:
 permissions:
   contents: read
 
+env:
+  PGHOST: localhost
+  PGPORT: 5432
+  PGPASSWORD: sekryt
+  PGUSER: lyceum_ci
+  PGDATABASE: mmo
+
 jobs:
 
   build:
     name: Build and Test
     runs-on: ubuntu-latest
 
-    #container:
-    #  image: erlang:22.0.7
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: ${{ env.PGPASSWORD }}
+          POSTGRES_USER: ${{ env.PGUSER }}
+          POSTGRES_DATABASE: ${{ env.PGDATABASE }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
       - name: Checkout

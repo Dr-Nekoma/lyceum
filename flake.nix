@@ -153,6 +153,11 @@
 
                 env = mkEnvVars pkgs erlangLatest erlangLibs raylib;
 
+                scripts = {
+                  build.exec = "just build";
+                  server.exec = "just server";
+                };
+
                 enterShell = ''
                   echo "Starting Erlang environment..."
                   rebar3 get-deps
