@@ -24,7 +24,53 @@ pub const Erlang_Data = union(enum) {
     number: Number,
 };
 
-fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
+inline fn fancy_send_pointer(buf: *ei.ei_x_buff, data: anytype) !void {
+    const Data = @TypeOf(data);
+    const info = switch (@typeInfo(Data)) {
+        .Pointer => |info| info,
+        else => @compileError("not a pointer type"),
+    };
+    switch (info.size) {
+        .Many, .C => @compileError("unsupported pointer size"),
+        .Slice => {
+            try erl.validate(
+                error.could_not_encode_list_header,
+                ei.ei_x_encode_list_header(buf, @bitCast(data.len)),
+            );
+            for (data) |item| try fancy_send(buf, item);
+            try erl.validate(
+                error.could_not_encode_list_tail,
+                ei.ei_x_encode_list_header(buf, 0),
+            );
+        },
+        .One => {
+            // Fixme
+            const Child = info.child;
+            switch (@typeInfo(Child)) {
+                .Bool,
+                .Int,
+                .Float,
+                .Enum,
+                .Pointer,
+                // not sure if these are actually reachable
+                .EnumLiteral,
+                .ComptimeInt,
+                .ComptimeFloat,
+                => {
+                    try fancy_send(buf, data.*);
+                },
+                .Array => |array_info| {
+                    try fancy_send(buf, @as([]const array_info.child, data));
+                },
+                .Union, .Struct => unreachable, // TODO
+                .NoReturn => unreachable,
+                else => @compileError("unsupported type"),
+            }
+        },
+    }
+}
+
+pub fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
     const Data = @TypeOf(data);
 
     return if (Data == *const ei.erlang_pid or Data == *ei.erlang_pid)
@@ -82,8 +128,8 @@ fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
             );
         },
         .Array, .Struct, .Union => fancy_send(buf, &data),
-        .Pointer => unreachable, // TODO
-        .NoReturn => unreachable, // there are no actual values of this type
+        .Pointer => fancy_send_pointer(buf, data),
+        .NoReturn => unreachable,
         else => @compileError("unsupported type"),
     };
 }
