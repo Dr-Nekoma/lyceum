@@ -2,6 +2,7 @@ pub const ei = @cImport({
     @cInclude("ei.h");
 });
 const erl = @import("config.zig");
+const std = @import("std");
 
 pub const Number = union(enum) {
     eu8: u8,
@@ -56,13 +57,38 @@ inline fn fancy_send_pointer(buf: *ei.ei_x_buff, data: anytype) !void {
                 .EnumLiteral,
                 .ComptimeInt,
                 .ComptimeFloat,
-                => {
-                    try fancy_send(buf, data.*);
+                => try fancy_send(buf, data.*),
+                .Array => |array_info| try fancy_send(
+                    buf,
+                    @as([]const array_info.child, data),
+                ),
+                .Union => |union_info| switch (@as(union_info.tag_type, data)) {
+                    inline else => |tag| {
+                        inline for (union_info.fields) |field| {
+                            if (comptime std.mem.eql(
+                                u8,
+                                field.name,
+                                @tagName(tag),
+                            )) {
+                                const send_tuple: bool = field.type != void;
+                                if (send_tuple) {
+                                    try erl.validate(
+                                        error.could_not_encode_tuple,
+                                        ei.ei_x_encode_tuple_header(buf, 2),
+                                    );
+                                }
+                                try fancy_send(buf, tag);
+                                if (send_tuple) {
+                                    try fancy_send(buf, switch (data) {
+                                        tag => |payload| payload,
+                                        else => unreachable,
+                                    });
+                                }
+                            }
+                        }
+                    },
                 },
-                .Array => |array_info| {
-                    try fancy_send(buf, @as([]const array_info.child, data));
-                },
-                .Union, .Struct => unreachable, // TODO
+                .Struct => unreachable, // TODO
                 .NoReturn => unreachable,
                 else => @compileError("unsupported type"),
             }
