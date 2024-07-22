@@ -25,7 +25,7 @@ pub const Erlang_Data = union(enum) {
     number: Number,
 };
 
-inline fn fancy_send_pointer(buf: *ei.ei_x_buff, data: anytype) !void {
+inline fn send_pointer(buf: *ei.ei_x_buff, data: anytype) !void {
     const Data = @TypeOf(data);
     const info = switch (@typeInfo(Data)) {
         .Pointer => |info| info,
@@ -38,7 +38,7 @@ inline fn fancy_send_pointer(buf: *ei.ei_x_buff, data: anytype) !void {
                 error.could_not_encode_list_header,
                 ei.ei_x_encode_list_header(buf, @bitCast(data.len)),
             );
-            for (data) |item| try fancy_send(buf, item);
+            for (data) |item| try send(buf, item);
             try erl.validate(
                 error.could_not_encode_list_tail,
                 ei.ei_x_encode_list_header(buf, 0),
@@ -57,8 +57,8 @@ inline fn fancy_send_pointer(buf: *ei.ei_x_buff, data: anytype) !void {
                 .EnumLiteral,
                 .ComptimeInt,
                 .ComptimeFloat,
-                => try fancy_send(buf, data.*),
-                .Array => |array_info| try fancy_send(
+                => try send(buf, data.*),
+                .Array => |array_info| try send(
                     buf,
                     @as([]const array_info.child, data),
                 ),
@@ -77,9 +77,9 @@ inline fn fancy_send_pointer(buf: *ei.ei_x_buff, data: anytype) !void {
                                         ei.ei_x_encode_tuple_header(buf, 2),
                                     );
                                 }
-                                try fancy_send(buf, tag);
+                                try send(buf, tag);
                                 if (send_tuple) {
-                                    try fancy_send(buf, switch (data) {
+                                    try send(buf, switch (data) {
                                         tag => |payload| payload,
                                         else => unreachable,
                                     });
@@ -96,7 +96,7 @@ inline fn fancy_send_pointer(buf: *ei.ei_x_buff, data: anytype) !void {
     }
 }
 
-pub fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
+pub fn send(buf: *ei.ei_x_buff, data: anytype) !void {
     const Data = @TypeOf(data);
 
     return if (Data == *const ei.erlang_pid or Data == *ei.erlang_pid)
@@ -105,7 +105,7 @@ pub fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
             ei.ei_x_encode_pid(buf, data),
         )
     else if (Data == ei.erlang_pid)
-        fancy_send(buf, &data)
+        send(buf, &data)
     else if (Data == []const u8 or
         Data == [:0]const u8 or
         Data == []u8 or
@@ -120,12 +120,12 @@ pub fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
             error.could_not_encode_bool,
             ei.ei_x_encode_boolean(buf, @intFromBool(data)),
         ),
-        .ComptimeInt => fancy_send(
+        .ComptimeInt => send(
             buf,
             // not sure if this conditional actually compiles
             @as(if (0 <= data) u64 else i64, data),
         ),
-        .ComptimeFloat => fancy_send(buf, @as(f64, data)),
+        .ComptimeFloat => send(buf, @as(f64, data)),
         .Int => |info| if (65 <= info.bits)
             @compileError("unsupported integer size")
         else if (info.signedness == .signed)
@@ -153,8 +153,8 @@ pub fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
                 ei.ei_x_encode_atom_len(buf, name.ptr, name.len),
             );
         },
-        .Array, .Struct, .Union => fancy_send(buf, &data),
-        .Pointer => fancy_send_pointer(buf, data),
+        .Array, .Struct, .Union => send(buf, &data),
+        .Pointer => send_pointer(buf, data),
         .NoReturn => unreachable,
         else => @compileError("unsupported type"),
     };
@@ -164,7 +164,7 @@ pub fn fancy_send(buf: *ei.ei_x_buff, data: anytype) !void {
 pub fn run(ec: *erl.Node, data: anytype) !void {
     var buf: ei.ei_x_buff = undefined;
     try erl.validate(error.new_with_version, ei.ei_x_new_with_version(&buf));
-    try fancy_send(&buf, data);
+    try send(&buf, data);
     try erl.validate(error.reg_send_failed, ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(erl.process_name), buf.buff, buf.index));
 }
 
