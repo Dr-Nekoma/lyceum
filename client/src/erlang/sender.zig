@@ -25,17 +25,29 @@ pub const Erlang_Data = union(enum) {
     number: Number,
 };
 
-inline fn send_pointer(buf: *ei.ei_x_buff, data: anytype) !void {
+pub const Error = error{
+    could_not_encode_pid,
+    could_not_encode_binary,
+    could_not_encode_map,
+    could_not_encode_atom,
+    could_not_encode_tuple,
+    could_not_encode_int,
+    could_not_encode_uint,
+    could_not_encode_list_head,
+    could_not_encode_list_tail,
+};
+
+inline fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
     const Data = @TypeOf(data);
     const info = switch (@typeInfo(Data)) {
         .Pointer => |info| info,
         else => @compileError("not a pointer type"),
     };
     switch (info.size) {
-        .Many, .C => @compileError("unsupported pointer size"),
+        .Many => @compileError("unsupported pointer size"),
         .Slice => {
             try erl.validate(
-                error.could_not_encode_list_header,
+                error.could_not_encode_list_head,
                 ei.ei_x_encode_list_header(buf, @bitCast(data.len)),
             );
             for (data) |item| try send(buf, item);
@@ -44,8 +56,8 @@ inline fn send_pointer(buf: *ei.ei_x_buff, data: anytype) !void {
                 ei.ei_x_encode_list_header(buf, 0),
             );
         },
-        .One => {
-            // Fixme
+        .One, .C => {
+            // arbitrarily assume that C pointers are single-item
             const Child = info.child;
             switch (@typeInfo(Child)) {
                 .Bool,
@@ -62,7 +74,13 @@ inline fn send_pointer(buf: *ei.ei_x_buff, data: anytype) !void {
                     buf,
                     @as([]const array_info.child, data),
                 ),
-                .Union => |union_info| switch (@as(union_info.tag_type, data)) {
+                .Union => |union_info| switch (@as(
+                    if (union_info.tag_type) |tag_type|
+                        tag_type
+                    else
+                        @compileError("untagged unions are unsupported"),
+                    data.*,
+                )) {
                     inline else => |tag| {
                         inline for (union_info.fields) |field| {
                             if (comptime std.mem.eql(
@@ -79,16 +97,64 @@ inline fn send_pointer(buf: *ei.ei_x_buff, data: anytype) !void {
                                 }
                                 try send(buf, tag);
                                 if (send_tuple) {
-                                    try send(buf, switch (data) {
-                                        tag => |payload| payload,
-                                        else => unreachable,
-                                    });
+                                    try send(buf, @field(data, @tagName(tag)));
                                 }
                             }
                         }
                     },
                 },
-                .Struct => unreachable, // TODO
+                .Struct => |struct_info| if (struct_info.is_tuple) {
+                    try erl.validate(
+                        error.could_not_encode_tuple,
+                        ei.ei_x_encode_tuple_header(buf, struct_info.fields.len),
+                    );
+                    comptime var i = 0;
+                    inline while (i < struct_info.fields.len) : (i += 1) {
+                        try send(buf, @field(
+                            data,
+                            std.fmt.comptimePrint("{}", .{i}),
+                        ));
+                    }
+                } else {
+                    const mandatory_fields = comptime blk: {
+                        var count = 0;
+                        for (struct_info.fields) |field| {
+                            const field_info = @typeInfo(field.type);
+                            if (field_info != .Optional) count += 1;
+                        }
+                        break :blk count;
+                    };
+                    var present_fields: usize = mandatory_fields;
+                    inline for (struct_info.fields) |field| {
+                        const field_info = @typeInfo(field.type);
+                        const payload = @field(data, field.name);
+                        if (field_info == .Optional) {
+                            if (payload != null) {
+                                present_fields += 1;
+                            }
+                        }
+                    }
+                    try erl.validate(
+                        error.could_not_encode_map,
+                        ei.ei_x_encode_map_header(buf, @bitCast(present_fields)),
+                    );
+                    inline for (struct_info.fields) |field| {
+                        const payload = @field(data, field.name);
+                        if (@typeInfo(@TypeOf(payload)) != .Optional or
+                            payload != null)
+                        {
+                            try erl.validate(
+                                error.could_not_encode_atom,
+                                ei.ei_x_encode_atom_len(
+                                    buf,
+                                    field.name.ptr,
+                                    @intCast(field.name.len),
+                                ),
+                            );
+                            try send(buf, payload);
+                        }
+                    }
+                },
                 .NoReturn => unreachable,
                 else => @compileError("unsupported type"),
             }
@@ -96,10 +162,13 @@ inline fn send_pointer(buf: *ei.ei_x_buff, data: anytype) !void {
     }
 }
 
-pub fn send(buf: *ei.ei_x_buff, data: anytype) !void {
+pub fn send(buf: *ei.ei_x_buff, data: anytype) Error!void {
     const Data = @TypeOf(data);
 
-    return if (Data == *const ei.erlang_pid or Data == *ei.erlang_pid)
+    return if (Data == *const ei.erlang_pid or
+        Data == *ei.erlang_pid or
+        Data == [*c]const ei.erlang_pid or
+        Data == [*c]ei.erlang_pid)
         erl.validate(
             error.could_not_encode_pid,
             ei.ei_x_encode_pid(buf, data),
@@ -113,7 +182,7 @@ pub fn send(buf: *ei.ei_x_buff, data: anytype) !void {
         erl.validate(
             error.could_not_encode_binary,
             // I think we should lean towards binaries over strings
-            ei.ei_x_encode_binary_len(buf, data.ptr, data.len),
+            ei.ei_x_encode_binary(buf, data.ptr, @intCast(data.len)),
         )
     else switch (@typeInfo(Data)) {
         .Bool => erl.validate(
@@ -150,7 +219,7 @@ pub fn send(buf: *ei.ei_x_buff, data: anytype) !void {
             const name = @tagName(data);
             break :blk erl.validate(
                 error.could_not_encode_atom,
-                ei.ei_x_encode_atom_len(buf, name.ptr, name.len),
+                ei.ei_x_encode_atom_len(buf, name.ptr, @intCast(name.len)),
             );
         },
         .Array, .Struct, .Union => send(buf, &data),
