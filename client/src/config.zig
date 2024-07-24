@@ -9,4 +9,5 @@ pub const ColorPalette = struct {
     pub const primary = rl.Color.init(13, 25, 23, 255);
     pub const secondary = rl.Color.init(222, 222, 222, 255);
     pub const background = rl.Color.init(68, 105, 129, 255);
+    pub const disabled = rl.Color.init(86, 88, 92, 255);
 };
