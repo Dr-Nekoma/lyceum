@@ -1,25 +1,31 @@
 const messages = @import("../server_messages.zig");
 const rl = @import("raylib");
 const config = @import("../config.zig");
-const button = @import("../components/button.zig");
+const Button = @import("../components/button.zig");
 const text = @import("../components/text.zig");
 const GameState = @import("../game/state.zig");
 const menu = @import("main.zig");
+const std = @import("std");
 
 pub fn login(gameState: *GameState) !void {
-    const buttonSize = menu.stdButtonSize(gameState);
+    const buttonSize = Button.Sizes.medium(gameState);
     const usernameBoxPosition: rl.Vector2 = .{
-        .x = (gameState.width / 2) - (buttonSize.x / 2),
+        .x = gameState.width / 2,
         .y = (gameState.height / 2) - (buttonSize.y / 2),
     };
+    const usernameLabel = "User Name";
+    const usernameLabelSize: f32 = @floatFromInt(rl.measureText(usernameLabel, config.textFontSize));
+
+    const usernameLabelPositionX =
+        (gameState.width / 2) - (usernameLabelSize / 2);
     const usernameLabelPositionY =
         usernameBoxPosition.y - config.buttonFontSize - 2 * config.menuButtonsPadding;
 
     rl.drawText(
-        "User Name:",
-        @intFromFloat(usernameBoxPosition.x),
+        usernameLabel,
+        @intFromFloat(usernameLabelPositionX),
         @intFromFloat(usernameLabelPositionY),
-        config.buttonFontSize,
+        config.textFontSize,
         rl.Color.white,
     );
     const usernameText = text{
@@ -28,18 +34,23 @@ pub fn login(gameState: *GameState) !void {
     };
     usernameText.at(usernameBoxPosition);
 
+    const passwordLabel = "Password";
+    const passwordLabelSize: f32 = @floatFromInt(rl.measureText(passwordLabel, config.textFontSize));
+
+    const passwordLabelPositionX =
+        (gameState.width / 2) - (passwordLabelSize / 2);
     const passwordLabelPositionY =
         usernameBoxPosition.y + text.textBoxSize.y + 2 * config.menuButtonsPadding;
 
     const passwordBoxPosition: rl.Vector2 = .{
-        .x = usernameBoxPosition.x,
+        .x = gameState.width / 2,
         .y = passwordLabelPositionY + config.buttonFontSize + 2 * config.menuButtonsPadding,
     };
     rl.drawText(
-        "Password:",
-        @intFromFloat(passwordBoxPosition.x),
+        passwordLabel,
+        @intFromFloat(passwordLabelPositionX),
         @intFromFloat(passwordLabelPositionY),
-        config.buttonFontSize,
+        config.textFontSize,
         rl.Color.white,
     );
     const passwordText = text{
@@ -49,10 +60,13 @@ pub fn login(gameState: *GameState) !void {
     passwordText.at(passwordBoxPosition);
 
     const buttonPosition: rl.Vector2 = .{
-        .x = usernameBoxPosition.x,
-        .y = passwordBoxPosition.y + text.textBoxSize.y + 2 * config.menuButtonsPadding,
+        .x = (gameState.width / 2) - (buttonSize.x / 2),
+        .y = passwordBoxPosition.y + text.textBoxSize.y + 5 * config.menuButtonsPadding,
     };
-    if (button.at(
+    const loginButton = Button.Clickable{
+        .disabled = !(passwordText.position.* > 0 and usernameText.position.* > 0),
+    };
+    if (loginButton.at(
         "Login",
         buttonPosition,
         buttonSize,

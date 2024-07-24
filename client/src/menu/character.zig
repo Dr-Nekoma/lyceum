@@ -3,17 +3,10 @@ const std = @import("std");
 const rl = @import("raylib");
 const config = @import("../config.zig");
 const attribute = @import("../components/attribute.zig");
-const button = @import("../components/button.zig");
+const Button = @import("../components/button.zig");
 const text = @import("../components/text.zig");
 const assets = @import("../assets.zig");
 const GameState = @import("../game/state.zig");
-
-fn stdButtonSize(gameState: *const GameState) rl.Vector2 {
-    return .{
-        .x = gameState.width / 4,
-        .y = gameState.height / 10,
-    };
-}
 
 // TODO: add limit for total number of points when creating a character
 // TODO: add create button available to click when character is valid
@@ -81,11 +74,17 @@ fn isDifferent(string: [:0]const u8, forbiddens: []const [:0]const u8) bool {
 }
 
 pub fn selection(gameState: *GameState) !void {
-    const buttonSize = stdButtonSize(gameState);
+    const buttonSize = Button.Sizes.large(gameState);
     const characterButtonY = (gameState.height / 10) - (buttonSize.y / 2);
     var buttonPosition: rl.Vector2 = .{
         .x = buttonSize.x / 4.0,
         .y = characterButtonY,
+    };
+
+    const joinButtonSize = Button.Sizes.medium(gameState);
+    const joinButtonPosition: rl.Vector2 = .{
+        .x = (gameState.width / 2) - (joinButtonSize.x / 2),
+        .y = (gameState.height / 2) - (joinButtonSize.y / 2) + (gameState.height / 3),
     };
 
     var texturePosition: rl.Vector2 = .{
@@ -95,19 +94,33 @@ pub fn selection(gameState: *GameState) !void {
 
     if (gameState.character_list.len != 0) {
         // TODO: Make pagination for 3 characters at a time
-        for (gameState.character_list) |character| {
-            if (button.at(
+        const currentSelected = &gameState.menu.character_buttons.selected;
+        const joinButton = &gameState.menu.join_world_button;
+        for (0.., gameState.character_list) |index, character| {
+            var currentButton = gameState.menu.character_buttons.buttons[index];
+            currentButton.index = index;
+            if (Button.Selectable.at(
+                &currentButton,
                 character.character_data.name,
                 buttonPosition,
                 buttonSize,
                 config.ColorPalette.primary,
+                currentSelected.*,
             )) {
+                currentSelected.* = index;
                 gameState.current_character = character.character_data;
-                gameState.scene = .nothing;
-                break;
             }
 
             rl.drawTextureEx(character.equipment_data, texturePosition, 0.0, 1, rl.Color.white);
+            joinButton.*.disabled = currentSelected.* == null;
+            if (joinButton.*.at(
+                "Join Map",
+                joinButtonPosition,
+                joinButtonSize,
+                config.ColorPalette.primary,
+            )) {
+                gameState.scene = .nothing;
+            }
 
             buttonPosition.x += 5.0 * buttonSize.x / 4.0;
             texturePosition.x += 5.0 * buttonSize.x / 4.0;

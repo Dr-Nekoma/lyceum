@@ -1,6 +1,7 @@
 const rl = @import("raylib");
 const config = @import("../config.zig");
-const button = @import("../components/button.zig");
+const Button = @import("../components/button.zig");
+const Clickable = Button.Clickable{};
 const GameState = @import("../game/state.zig");
 
 pub const Menu = struct {
@@ -19,25 +20,20 @@ pub const Menu = struct {
         currentScreenMode: ScreenMode = .windowed,
     };
     character_name: [:0]u8,
+    character_buttons: Button.SelectableGroup = .{},
+    join_world_button: Button.Clickable = Button.Clickable{ .disabled = true },
     login: Login = .{},
     email: [:0]const u8 = "",
     config: Configuration = .{},
 };
 
-pub fn stdButtonSize(gameState: *const GameState) rl.Vector2 {
-    return .{
-        .x = gameState.width / 4,
-        .y = gameState.height / 8,
-    };
-}
-
 fn userRegistryButton(gameState: *GameState) void {
-    const buttonSize = stdButtonSize(gameState);
+    const buttonSize = Button.Sizes.extraLarge(gameState);
     const buttonPosition: rl.Vector2 = .{
         .x = (gameState.width / 2) - (buttonSize.x / 2),
         .y = (gameState.height / 2) - (buttonSize.y / 2),
     };
-    if (button.at(
+    if (Clickable.at(
         "Create User",
         buttonPosition,
         buttonSize,
@@ -46,14 +42,14 @@ fn userRegistryButton(gameState: *GameState) void {
 }
 
 fn userLoginButton(gameState: *GameState) void {
-    const buttonSize = stdButtonSize(gameState);
+    const buttonSize = Button.Sizes.extraLarge(gameState);
     const createUserButtonX = (gameState.width / 2) - (buttonSize.x / 2);
     const createUserButtonY = (gameState.height / 2) - (buttonSize.y / 2);
     const buttonPosition: rl.Vector2 = .{
         .x = createUserButtonX,
         .y = createUserButtonY + buttonSize.y + config.menuButtonsPadding,
     };
-    if (button.at(
+    if (Clickable.at(
         "Login",
         buttonPosition,
         buttonSize,
