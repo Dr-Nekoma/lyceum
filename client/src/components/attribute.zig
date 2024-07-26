@@ -41,7 +41,7 @@ pub fn at(
     };
 
     var buf: [3:0]u8 = .{ 0, 0, 0 };
-    _ = try std.fmt.bufPrint(&buf, "{}", .{self.current.*});
+    _ = std.fmt.bufPrint(&buf, "{}", .{self.current.*}) catch unreachable;
     const currentMessageSize: f32 = @floatFromInt(rl.measureText(&buf, config.buttonFontSize));
     const currentMessageX = minusPosition.x + padding + attrButtonSize.x;
     rl.drawText(

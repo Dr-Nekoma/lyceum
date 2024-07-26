@@ -22,7 +22,7 @@ fn emptyCharacter(gameState: *GameState) !void {
     const fieldPadding = 25;
     inline for (std.meta.fields(messages.Erlang_Character)) |field| {
         if (comptime isDifferent(field.name, &.{ "name", "map_name", "x_position", "y_position" })) {
-            var mutable_name: [:0]u8 = try gameState.allocator.allocSentinel(u8, field.name.len, 0);
+            const mutable_name: [:0]u8 = try gameState.allocator.allocSentinel(u8, field.name.len, 0);
             std.mem.copyForwards(u8, mutable_name, field.name);
             mutable_name[0] = std.ascii.toUpper(mutable_name[0]);
             const attributeComp = attribute{
@@ -112,8 +112,8 @@ pub fn selection(gameState: *GameState) !void {
             }
 
             rl.drawTextureEx(character.equipment_data, texturePosition, 0.0, 1, rl.Color.white);
-            joinButton.*.disabled = currentSelected.* == null;
-            if (joinButton.*.at(
+            joinButton.disabled = currentSelected.* == null;
+            if (joinButton.at(
                 "Join Map",
                 joinButtonPosition,
                 joinButtonSize,

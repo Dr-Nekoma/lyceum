@@ -141,7 +141,6 @@ inline fn receive_int(self: @This(), comptime T: type, comptime item: std.builti
         }
         return error.unsigned_out_of_bounds;
     }
-    unreachable;
 }
 
 inline fn receive_enum(self: @This(), comptime T: type, comptime item: std.builtin.Type.Enum) !T {
