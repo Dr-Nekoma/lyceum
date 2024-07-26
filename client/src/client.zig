@@ -1,12 +1,11 @@
 const erl = @import("erlang/config.zig");
-const sender = @import("erlang/sender.zig");
-const receiver = @import("erlang/receiver.zig");
-const messages = @import("server_messages.zig");
 const std = @import("std");
 const rl = @import("raylib");
 const config = @import("config.zig");
-const button = @import("components/button.zig");
-const text = @import("components/text.zig");
+const state = @import("game/state.zig");
+const user = @import("menu/user.zig");
+const character = @import("menu/character.zig");
+const mainMenu = @import("menu/main.zig");
 
 pub fn print_connect_server_error(message: anytype) !void {
     const stdout = std.io.getStdOut().writer();
@@ -15,163 +14,6 @@ pub fn print_connect_server_error(message: anytype) !void {
         .{message},
     );
 }
-
-pub const Menu = struct {
-    pub const Login = struct {
-        username: [bufferSize:0]u8 = .{0} ** bufferSize,
-        usernamePosition: usize = 0,
-        password: [bufferSize:0]u8 = .{0} ** bufferSize,
-        passwordPosition: usize = 0,
-        pub const bufferSize = 50;
-    };
-    pub const Configuration = struct {
-        pub const ScreenMode = enum {
-            windowed,
-            fullscreen,
-        };
-        currentScreenMode: ScreenMode = .windowed,
-    };
-    login: Login = .{},
-    config: Configuration = .{},
-};
-
-pub const GameState = struct {
-    pub const Scene = enum {
-        user_registry,
-        user_login,
-        nothing,
-        game_spawn,
-    };
-    scene: Scene,
-    width: f32,
-    height: f32,
-    menu: Menu = .{},
-    node: *erl.Node,
-    allocator: std.mem.Allocator = std.heap.c_allocator,
-
-    pub fn init(width: f32, height: f32, node: *erl.Node) !GameState {
-        if (width < 0) return error.negative_width;
-        if (height < 0) return error.negative_height;
-        return .{
-            .scene = .nothing,
-            .width = width,
-            .height = height,
-            .node = node,
-        };
-    }
-
-    fn menuButtonSize(gameState: *const @This()) rl.Vector2 {
-        return .{
-            .x = gameState.width / 4,
-            .y = gameState.height / 8,
-        };
-    }
-
-    fn userRegistryButton(gameState: *@This()) void {
-        const buttonSize = gameState.menuButtonSize();
-        const buttonPosition: rl.Vector2 = .{
-            .x = (gameState.width / 2) - (buttonSize.x / 2),
-            .y = (gameState.height / 2) - (buttonSize.y / 2),
-        };
-        if (button.at(
-            "Create User",
-            buttonPosition,
-            buttonSize,
-            config.ColorPalette.primary,
-        )) gameState.scene = .user_registry;
-    }
-
-    fn userLoginButton(gameState: *@This()) void {
-        const buttonSize = gameState.menuButtonSize();
-        const createUserButtonX = (gameState.width / 2) - (buttonSize.x / 2);
-        const createUserButtonY = (gameState.height / 2) - (buttonSize.y / 2);
-        const buttonPosition: rl.Vector2 = .{
-            .x = createUserButtonX,
-            .y = createUserButtonY + buttonSize.y + config.menuButtonsPadding,
-        };
-        if (button.at(
-            "Login",
-            buttonPosition,
-            buttonSize,
-            config.ColorPalette.primary,
-        )) gameState.scene = .user_login;
-    }
-
-    pub fn mainMenu(gameState: *@This()) void {
-        userRegistryButton(gameState);
-        userLoginButton(gameState);
-    }
-
-    pub fn loginScene(gameState: *@This()) !void {
-        const buttonSize = gameState.menuButtonSize();
-        const usernameBoxPosition: rl.Vector2 = .{
-            .x = (gameState.width / 2) - (buttonSize.x / 2),
-            .y = (gameState.height / 2) - (buttonSize.y / 2),
-        };
-        const usernameLabelPositionY =
-            usernameBoxPosition.y - config.buttonFontSize - 2 * config.menuButtonsPadding;
-
-        rl.drawText(
-            "User Name:",
-            @intFromFloat(usernameBoxPosition.x),
-            @intFromFloat(usernameLabelPositionY),
-            config.buttonFontSize,
-            rl.Color.white,
-        );
-        const usernameText = text{
-            .content = &gameState.menu.login.username,
-            .position = &gameState.menu.login.usernamePosition,
-        };
-        usernameText.at(usernameBoxPosition);
-
-        const passwordLabelPositionY =
-            usernameBoxPosition.y + text.textBoxSize.y + 2 * config.menuButtonsPadding;
-
-        const passwordBoxPosition: rl.Vector2 = .{
-            .x = usernameBoxPosition.x,
-            .y = passwordLabelPositionY + config.buttonFontSize + 2 * config.menuButtonsPadding,
-        };
-        rl.drawText(
-            "Password:",
-            @intFromFloat(passwordBoxPosition.x),
-            @intFromFloat(passwordLabelPositionY),
-            config.buttonFontSize,
-            rl.Color.white,
-        );
-        const passwordText = text{
-            .content = &gameState.menu.login.password,
-            .position = &gameState.menu.login.passwordPosition,
-        };
-        passwordText.at(passwordBoxPosition);
-
-        const buttonPosition: rl.Vector2 = .{
-            .x = usernameBoxPosition.x,
-            .y = passwordBoxPosition.y + text.textBoxSize.y + 2 * config.menuButtonsPadding,
-        };
-        if (button.at(
-            "Login",
-            buttonPosition,
-            buttonSize,
-            config.ColorPalette.primary,
-        )) {
-            // TODO: Add loading animation to wait for response
-            // TODO: Add a timeout for login
-            try messages.send_payload(gameState.node, .{
-                .user_login = .{
-                    .username = &gameState.menu.login.username,
-                    .password = &gameState.menu.login.password,
-                },
-            });
-            gameState.scene = .game_spawn;
-        }
-    }
-
-    pub fn joinGameScene(gameState: *@This()) !void {
-        const msg = try messages.receive_simple_response(gameState.allocator, gameState.node);
-        std.debug.print("{}", .{msg});
-        gameState.scene = .nothing;
-    }
-};
 
 pub fn main() anyerror!void {
     const connection_status = erl.ei.ei_init();
@@ -182,14 +24,16 @@ pub fn main() anyerror!void {
         std.process.exit(2);
     };
 
-    var gameState = try GameState.init(800, 450, &node);
+    var gameState = try state.init(800, 450, &node);
+    gameState.menu = .{ .character_name = try gameState.allocator.allocSentinel(u8, config.nameSize, 0) };
+    @memset(gameState.menu.character_name, 0);
 
     rl.setConfigFlags(.flag_window_resizable);
     rl.initWindow(@intFromFloat(gameState.width), @intFromFloat(gameState.height), "Lyceum");
     defer rl.closeWindow();
     rl.setTargetFPS(60);
 
-    GameState.mainMenu(&gameState);
+    mainMenu.spawn(&gameState);
     while (!rl.windowShouldClose()) {
         rl.beginDrawing();
         defer rl.endDrawing();
@@ -204,13 +48,16 @@ pub fn main() anyerror!void {
                 gameState.scene = .nothing;
             },
             .user_login => {
-                try GameState.loginScene(&gameState);
+                try user.login(&gameState);
             },
-            .game_spawn => {
-                try GameState.joinGameScene(&gameState);
+            .spawn => {
+                try character.join(&gameState);
+            },
+            .character_selection => {
+                try character.selection(&gameState);
             },
             .nothing => {
-                GameState.mainMenu(&gameState);
+                mainMenu.spawn(&gameState);
             },
         }
     }

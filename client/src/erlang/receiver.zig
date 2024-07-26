@@ -123,14 +123,24 @@ inline fn receive_struct(self: @This(), comptime T: type, comptime item: std.bui
 }
 
 inline fn receive_int(self: @This(), comptime T: type, comptime item: std.builtin.Type.Int) !T {
-    // TODO: eventually arbitrarily sized integers.
     var value: T = undefined;
     if (item.signedness == .signed) {
-        try erl.validate(error.decoding_signed_integer, ei.ei_decode_long(self.buf.buff, self.index, &value));
+        var aux: i64 = undefined;
+        try erl.validate(error.decoding_signed_integer, ei.ei_decode_long(self.buf.buff, self.index, &aux));
+        if (aux <= std.math.maxInt(T) and std.math.minInt(T) <= aux) {
+            value = @intCast(aux);
+            return value;
+        }
+        return error.signed_out_of_bounds;
     } else {
-        try erl.validate(error.decoding_unsigned_integer, ei.ei_decode_ulong(self.buf.buff, self.index, &value));
+        var aux: u64 = undefined;
+        try erl.validate(error.decoding_unsigned_integer, ei.ei_decode_ulong(self.buf.buff, self.index, &aux));
+        if (aux <= std.math.maxInt(T)) {
+            value = @intCast(aux);
+            return value;
+        }
+        return error.unsigned_out_of_bounds;
     }
-    return value;
 }
 
 inline fn receive_enum(self: @This(), comptime T: type, comptime item: std.builtin.Type.Enum) !T {
@@ -190,7 +200,7 @@ inline fn receive_union(self: @This(), comptime T: type, comptime item: std.buil
                     )) {
                         const tuple_value = try internal_receive_message(self, field.type);
                         value = @unionInit(T, field.name, tuple_value);
-                        break;
+                        return value;
                     }
                 } else return error.failed_to_receive_payload;
             },

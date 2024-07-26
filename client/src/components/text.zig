@@ -30,8 +30,9 @@ pub fn redacted_at(
 fn at_impl(
     self: @This(),
     comptime buffer_size: usize,
-    textBoxPosition: rl.Vector2,
+    initialTextBoxPosition: rl.Vector2,
 ) void {
+    const textBoxPosition: rl.Vector2 = .{ .x = initialTextBoxPosition.x - (textBoxSize.x / 2), .y = initialTextBoxPosition.y };
     const textBox = rl.Rectangle.init(
         textBoxPosition.x,
         textBoxPosition.y,

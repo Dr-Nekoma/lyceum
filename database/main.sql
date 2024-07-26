@@ -82,7 +82,7 @@ CREATE TABLE lyceum.character_position(
        name VARCHAR(18) NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
        username VARCHAR(32) NOT NULL,
-       x_position DECIMAL(4, 2) NOT NULL,
+       x_position SMALLINT NOT NULL,
        y_position SMALLINT NOT NULL,
        map_name VARCHAR(64) NOT NULL,
        FOREIGN KEY (name, username, e_mail) REFERENCES lyceum.character(name, username, e_mail),
@@ -141,7 +141,7 @@ CREATE TYPE lyceum.EQUIPMENT_USE AS ENUM(
        'TOP',
        'BOTTOM',
        'FEET',
-       'ARMS'
+       'ARMS',
        'LEFT_ARM',
        'RIGHT_ARM',
        'FINGER'
@@ -157,7 +157,7 @@ CREATE TABLE lyceum.equipment(
 CREATE OR REPLACE FUNCTION lyceum.check_equipment_position_compatibility(use lyceum.EQUIPMENT_USE, kind lyceum.EQUIPMENT_KIND) RETURNS BOOL AS $$
 BEGIN
     RETURN CASE 
-        WHEN use = kind THEN true
+        WHEN use::TEXT = kind::TEXT THEN true
         WHEN use = 'RIGHT_ARM' AND kind = 'ARMS' THEN true
         WHEN use = 'LEFT_ARM' AND kind = 'ARMS' THEN true
         ELSE false
