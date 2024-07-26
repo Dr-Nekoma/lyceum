@@ -4,13 +4,6 @@ const rl = @import("raylib");
 const sender = @import("erlang/sender.zig");
 const receiver = @import("erlang/receiver.zig");
 
-pub const Action = enum {
-    user_registry,
-    user_login,
-    character_list,
-    debug,
-};
-
 pub const Erlang_Response = union(enum) {
     ok: void,
     @"error": [:0]const u8,
@@ -60,55 +53,15 @@ pub const User_Characters_Request = struct {
     email: [:0]const u8,
 };
 
-pub const Payload = union(Action) {
-    user_registry: User_Registry,
-    user_login: User_Login,
+pub const Payload = union(enum) {
+    register: User_Registry,
+    login: User_Login,
     character_list: User_Characters_Request,
     debug: [:0]const u8,
 };
 
-fn send_user_registry(ec: *erl.Node, message: User_Registry) !void {
-    return sender.run_with_self(ec, .{ .map = &.{
-        .{ .{ .atom = "action" }, .{ .atom = "registration" } },
-        .{ .{ .atom = "email" }, .{ .string = message.email } },
-        .{ .{ .atom = "username" }, .{ .string = message.username } },
-        .{ .{ .atom = "password" }, .{ .string = message.password } },
-    } });
-}
-
-fn send_user_login(ec: *erl.Node, message: User_Login) !void {
-    return sender.run_with_self(ec, .{ .map = &.{
-        .{ .{ .atom = "action" }, .{ .atom = "login" } },
-        .{ .{ .atom = "username" }, .{ .string = message.username } },
-        .{ .{ .atom = "password" }, .{ .string = message.password } },
-    } });
-}
-
-fn send_character_list(ec: *erl.Node, message: User_Characters_Request) !void {
-    return sender.run_with_self(ec, .{ .map = &.{
-        .{ .{ .atom = "action" }, .{ .atom = "character_list" } },
-        .{ .{ .atom = "username" }, .{ .string = message.username } },
-        .{ .{ .atom = "email" }, .{ .string = message.email } },
-    } });
-}
-
 pub fn send_payload(ec: *erl.Node, message: Payload) !void {
-    switch (message) {
-        .user_registry => |item| {
-            try send_user_registry(ec, item);
-        },
-        .user_login => |item| {
-            try send_user_login(ec, item);
-        },
-        .character_list => |item| {
-            try send_character_list(ec, item);
-        },
-        .debug => |item| {
-            try sender.run_with_self(ec, .{
-                .atom = item,
-            });
-        },
-    }
+    try sender.run(ec, message);
 }
 
 pub fn receive_login_response(allocator: std.mem.Allocator, ec: *erl.Node) !Login_Response {

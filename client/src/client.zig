@@ -275,7 +275,7 @@ pub const GameState = struct {
             // TODO: Add loading animation to wait for response
             // TODO: Add a timeout for login
             try messages.send_payload(gameState.node, .{
-                .user_login = .{
+                .login = .{
                     .username = &gameState.menu.login.username,
                     .password = &gameState.menu.login.password,
                 },

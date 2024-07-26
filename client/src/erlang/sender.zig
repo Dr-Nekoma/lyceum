@@ -4,27 +4,6 @@ pub const ei = @cImport({
 const erl = @import("config.zig");
 const std = @import("std");
 
-pub const Number = union(enum) {
-    eu8: u8,
-    eu16: u16,
-    eu32: u32,
-    eu64: u64,
-    ei8: i8,
-    ei16: i16,
-    ei32: i32,
-    ei64: i64,
-};
-
-pub const Erlang_Data = union(enum) {
-    atom: [:0]const u8,
-    tuple: []const Erlang_Data,
-    pid: *const ei.erlang_pid,
-    map: []const [2]Erlang_Data,
-    string: [:0]const u8,
-    list: []const Erlang_Data,
-    number: Number,
-};
-
 pub const Error = error{
     could_not_encode_pid,
     could_not_encode_binary,
@@ -229,18 +208,9 @@ pub fn send(buf: *ei.ei_x_buff, data: anytype) Error!void {
     };
 }
 
-// FIXME: rewrite the things below this to make sense
 pub fn run(ec: *erl.Node, data: anytype) !void {
     var buf: ei.ei_x_buff = undefined;
     try erl.validate(error.new_with_version, ei.ei_x_new_with_version(&buf));
     try send(&buf, data);
     try erl.validate(error.reg_send_failed, ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(erl.process_name), buf.buff, buf.index));
-}
-
-pub fn run_with_self(ec: *erl.Node, data: Erlang_Data) !void {
-    return run(ec, .{ .tuple = &.{ .{ .pid = ei.ei_self(&ec.c_node) }, data } });
-}
-
-pub fn run_string(ec: *erl.Node, message: [:0]const u8) !void {
-    return run_with_self(ec, .{ .atom = message });
 }
