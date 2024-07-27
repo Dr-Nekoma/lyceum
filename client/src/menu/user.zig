@@ -80,6 +80,6 @@ pub fn login(gameState: *GameState) !void {
                 .password = &gameState.menu.login.password,
             },
         });
-        gameState.scene = .spawn;
+        gameState.scene = .join;
     }
 }
