@@ -13,9 +13,7 @@ fn checkExtension(filePath: [:0]const u8, extensions: []const [:0]const u8) bool
     return false;
 }
 
-fn fixFilePath(filePath: [:0]const u8) ![:0]const u8 {
-    const allocator: std.mem.Allocator = std.heap.c_allocator;
-
+fn fixFilePath(allocator: std.mem.Allocator, filePath: [:0]const u8) ![:0]const u8 {
     var fullFilePath: [:0]u8 = try allocator.allocSentinel(u8, base_filepath.len + filePath.len, 0);
 
     std.mem.copyForwards(u8, fullFilePath[0..], base_filepath);
@@ -25,7 +23,9 @@ fn fixFilePath(filePath: [:0]const u8) ![:0]const u8 {
 }
 
 pub fn image(imageFilePath: [:0]const u8) !rl.Image {
-    const fullFilePath = try fixFilePath(imageFilePath);
+    const allocator: std.mem.Allocator = std.heap.c_allocator;
+    const fullFilePath = try fixFilePath(allocator, imageFilePath);
+    defer allocator.free(fullFilePath);
     if (checkExtension(imageFilePath, &.{ ".png", ".jpg" })) {
         return rl.loadImage(fullFilePath);
     } else {
@@ -35,7 +35,9 @@ pub fn image(imageFilePath: [:0]const u8) !rl.Image {
 }
 
 pub fn model(modelFilePath: [:0]const u8) !rl.Model {
-    const fullFilePath = try fixFilePath(modelFilePath);
+    const allocator: std.mem.Allocator = std.heap.c_allocator;
+    const fullFilePath = try fixFilePath(allocator, modelFilePath);
+    defer allocator.free(fullFilePath);
     if (checkExtension(modelFilePath, &.{ ".glb", ".obj" })) {
         return rl.loadModel(fullFilePath);
     } else {
@@ -45,7 +47,9 @@ pub fn model(modelFilePath: [:0]const u8) !rl.Model {
 }
 
 pub fn texture(textureFilePath: [:0]const u8) !rl.Texture2D {
-    const fullFilePath = try fixFilePath(textureFilePath);
+    const allocator: std.mem.Allocator = std.heap.c_allocator;
+    const fullFilePath = try fixFilePath(allocator, textureFilePath);
+    defer allocator.free(fullFilePath);
     if (checkExtension(textureFilePath, &.{ ".png", ".jpg" })) {
         return rl.loadTexture(fullFilePath);
     } else {
