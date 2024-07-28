@@ -10,7 +10,7 @@ const GameState = @import("../game/state.zig");
 
 pub fn goToSpawn(gameState: *GameState) !void {
     // Source: https://free3d.com/3d-model/knight-low-poly-542752.html
-    const model = try assets.model("cavaleiro.glb");
+    const model = try assets.model("knight.glb");
     gameState.test_model = model;
     rl.disableCursor();
     gameState.scene = .spawn;
