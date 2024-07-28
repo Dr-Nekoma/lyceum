@@ -3,40 +3,45 @@ const std = @import("std");
 
 const base_filepath = "./assets/";
 
-// TODO: Check if file is actually image before loading with raylib
-// TODO: Make all these functions generic passing a lambda for the predicate as validation for each file type
-pub fn image(imageFilePath: [:0]const u8) !rl.Image {
-    const allocator: std.mem.Allocator = std.heap.c_allocator;
-
-    var fullFilePath: [:0]u8 = try allocator.allocSentinel(u8, base_filepath.len + imageFilePath.len, 0);
-    defer allocator.free(fullFilePath);
-
-    std.mem.copyForwards(u8, fullFilePath[0..], base_filepath);
-    std.mem.copyForwards(u8, fullFilePath[base_filepath.len..], imageFilePath);
-
-    return rl.loadImage(fullFilePath);
+fn checkExtension(extensions: []const [:0]const u8) (fn ([:0]const u8) bool) {
+    return struct {
+        fn check(filePath: [:0]const u8) bool {
+            const fileExtension = filePath[filePath.len - 4 ..];
+            for (extensions) |extension| {
+                if (std.mem.eql(u8, fileExtension, extension)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }.check;
 }
 
-pub fn model(modelFilePath: [:0]const u8) !rl.Model {
+fn load(comptime filePath: [:0]const u8, comptime T: type, loader: fn ([:0]const u8) T, predicate: fn ([:0]const u8) bool) !T {
     const allocator: std.mem.Allocator = std.heap.c_allocator;
 
-    var fullFilePath: [:0]u8 = try allocator.allocSentinel(u8, base_filepath.len + modelFilePath.len, 0);
+    var fullFilePath: [:0]u8 = try allocator.allocSentinel(u8, base_filepath.len + filePath.len, 0);
     defer allocator.free(fullFilePath);
 
     std.mem.copyForwards(u8, fullFilePath[0..], base_filepath);
-    std.mem.copyForwards(u8, fullFilePath[base_filepath.len..], modelFilePath);
+    std.mem.copyForwards(u8, fullFilePath[base_filepath.len..], filePath);
 
-    return rl.loadModel(fullFilePath);
+    if (predicate(fullFilePath)) {
+        return loader(fullFilePath);
+    } else {
+        std.debug.print("Error trying to load file: .{s}", .{fullFilePath});
+        return error.could_not_load_asset;
+    }
 }
 
-pub fn texture(textureFilePath: [:0]const u8) !rl.Texture2D {
-    const allocator: std.mem.Allocator = std.heap.c_allocator;
+pub fn image(comptime imageFilePath: [:0]const u8) !rl.Image {
+    return load(imageFilePath, rl.Image, rl.loadImage, checkExtension(&.{ ".png", ".jpg" }));
+}
 
-    var fullFilePath: [:0]u8 = try allocator.allocSentinel(u8, base_filepath.len + textureFilePath.len, 0);
-    defer allocator.free(fullFilePath);
+pub fn model(comptime modelFilePath: [:0]const u8) !rl.Model {
+    return load(modelFilePath, rl.Model, rl.loadModel, checkExtension(&.{ ".glb", ".obj" }));
+}
 
-    std.mem.copyForwards(u8, fullFilePath[0..], base_filepath);
-    std.mem.copyForwards(u8, fullFilePath[base_filepath.len..], textureFilePath);
-
-    return rl.loadTexture(fullFilePath);
+pub fn texture(comptime textureFilePath: [:0]const u8) !rl.Texture2D {
+    return load(textureFilePath, rl.Texture2D, rl.loadTexture, checkExtension(&.{ ".png", "jpg" }));
 }
