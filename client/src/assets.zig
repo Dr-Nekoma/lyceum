@@ -4,7 +4,7 @@ const std = @import("std");
 const base_filepath = "./assets/";
 
 fn checkExtension(filePath: [:0]const u8, extensions: []const [:0]const u8) bool {
-    const fileExtension = filePath[filePath.len - 4 ..];
+    const fileExtension = std.fs.path.extension(filePath);
     for (extensions) |extension| {
         if (std.mem.eql(u8, fileExtension, extension)) {
             return true;
@@ -13,18 +13,9 @@ fn checkExtension(filePath: [:0]const u8, extensions: []const [:0]const u8) bool
     return false;
 }
 
-fn fixFilePath(allocator: std.mem.Allocator, filePath: [:0]const u8) ![:0]const u8 {
-    var fullFilePath: [:0]u8 = try allocator.allocSentinel(u8, base_filepath.len + filePath.len, 0);
-
-    std.mem.copyForwards(u8, fullFilePath[0..], base_filepath);
-    std.mem.copyForwards(u8, fullFilePath[base_filepath.len..], filePath);
-
-    return fullFilePath;
-}
-
 pub fn image(imageFilePath: [:0]const u8) !rl.Image {
     const allocator: std.mem.Allocator = std.heap.c_allocator;
-    const fullFilePath = try fixFilePath(allocator, imageFilePath);
+    const fullFilePath = try std.fs.path.joinZ(allocator, &.{ base_filepath, imageFilePath });
     defer allocator.free(fullFilePath);
     if (checkExtension(imageFilePath, &.{ ".png", ".jpg" })) {
         return rl.loadImage(fullFilePath);
@@ -36,7 +27,7 @@ pub fn image(imageFilePath: [:0]const u8) !rl.Image {
 
 pub fn model(modelFilePath: [:0]const u8) !rl.Model {
     const allocator: std.mem.Allocator = std.heap.c_allocator;
-    const fullFilePath = try fixFilePath(allocator, modelFilePath);
+    const fullFilePath = try std.fs.path.joinZ(allocator, &.{ base_filepath, modelFilePath });
     defer allocator.free(fullFilePath);
     if (checkExtension(modelFilePath, &.{ ".glb", ".obj" })) {
         return rl.loadModel(fullFilePath);
@@ -48,7 +39,7 @@ pub fn model(modelFilePath: [:0]const u8) !rl.Model {
 
 pub fn texture(textureFilePath: [:0]const u8) !rl.Texture2D {
     const allocator: std.mem.Allocator = std.heap.c_allocator;
-    const fullFilePath = try fixFilePath(allocator, textureFilePath);
+    const fullFilePath = try std.fs.path.joinZ(allocator, &.{ base_filepath, textureFilePath });
     defer allocator.free(fullFilePath);
     if (checkExtension(textureFilePath, &.{ ".png", ".jpg" })) {
         return rl.loadTexture(fullFilePath);
