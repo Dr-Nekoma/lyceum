@@ -16,14 +16,11 @@ pub const Error = error{
     could_not_encode_list_tail,
 };
 
-inline fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
+fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
     const Data = @TypeOf(data);
-    const info = switch (@typeInfo(Data)) {
-        .Pointer => |info| info,
-        else => @compileError("not a pointer type"),
-    };
+    const info = @typeInfo(Data).Pointer;
     switch (info.size) {
-        .Many => @compileError("unsupported pointer size"),
+        .Many, .C => @compileError("unsupported pointer size"),
         .Slice => {
             try erl.validate(
                 error.could_not_encode_list_head,
@@ -35,8 +32,7 @@ inline fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
                 ei.ei_x_encode_list_header(buf, 0),
             );
         },
-        .One, .C => {
-            // arbitrarily assume that C pointers are single-item
+        .One => {
             const Child = info.child;
             switch (@typeInfo(Child)) {
                 .Bool,
@@ -141,7 +137,7 @@ inline fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
     }
 }
 
-pub fn send(buf: *ei.ei_x_buff, data: anytype) Error!void {
+fn send(buf: *ei.ei_x_buff, data: anytype) Error!void {
     const Data = @TypeOf(data);
 
     return if (Data == *const ei.erlang_pid or
@@ -206,6 +202,16 @@ pub fn send(buf: *ei.ei_x_buff, data: anytype) Error!void {
         .NoReturn => unreachable,
         else => @compileError("unsupported type"),
     };
+}
+
+pub fn with_self(
+    ec: *erl.Node,
+    data: anytype,
+) !std.meta.Tuple(&.{ *ei.erlang_pid, @TypeOf(data) }) {
+    return if (ei.ei_self(&ec.c_node)) |self|
+        .{ self, data }
+    else
+        error.could_not_recover_self_pid;
 }
 
 pub fn run(ec: *erl.Node, data: anytype) !void {
