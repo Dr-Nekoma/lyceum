@@ -4,7 +4,7 @@ pub const ei = @cImport({
 
 pub const std = @import("std");
 pub const process_name = "lyceum_server";
-pub const server_name = process_name ++ "@nixos";
+pub const server_name = process_name ++ "@localhost";
 
 pub const Node = struct {
     c_node: ei.ei_cnode,
