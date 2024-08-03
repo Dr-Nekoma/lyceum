@@ -1,7 +1,6 @@
 const erl = @import("erlang/config.zig");
 const std = @import("std");
 const rl = @import("raylib");
-const sender = @import("erlang/sender.zig");
 const receiver = @import("erlang/receiver.zig");
 
 pub const Erlang_Response = union(enum) {
@@ -61,7 +60,7 @@ pub const Payload = union(enum) {
 };
 
 pub fn send_payload(ec: *erl.Node, message: Payload) !void {
-    try sender.run(ec, try sender.with_self(ec, message));
+    try ec.send(.{ try ec.self(), message });
 }
 
 pub fn receive_login_response(allocator: std.mem.Allocator, ec: *erl.Node) !Login_Response {
