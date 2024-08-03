@@ -29,7 +29,7 @@ start(_, _) ->
 
 handle_message(Connection) ->
     receive
-	{Pid, #{action := registration, username := Username, email := Email, password := Password}} ->
+	{Pid, {register, #{username := Username, email := Email, password := Password}}} ->
 	    io:format("This user now exists: ~p", [Username]),
 	    user:insert_user(#{username => Username, 
 			  password => Password,
@@ -37,18 +37,18 @@ handle_message(Connection) ->
 			Connection),
 	    Response = "I registered " ++ Username,
 	    Pid ! {self(), Response};
-	{Pid, #{action := login, username := Username, password := Password}} ->
+	{Pid, {login, #{username := Username, password := Password}}} ->
 	    io:format("This user logged: ~p", [Username]),
 	    Email = user:check_user(#{username => Username, 
 				      password => Password},
 				    Connection),
 	    io:format("User's email: ~p", [Email]),
 	    Pid ! {self(), {ok, Email}};
-	{Pid, #{action := character_list, username := Username, email := Email}} ->
+	{Pid, {character_list, #{username := Username, email := Email}}} ->
 	    io:format("Querying user's characters..."),
 	    Characters = character:player_characters(Username, Email, Connection),
 	    Pid ! {self(), {ok, Characters}};
-	{Pid, #{action := character_creation} = Character_Map} ->
+	{Pid, {create_character, Character_Map}} ->
 	    io:format("This character logged"),
 	    character:create(Character_Map, Connection),
 	    Pid ! {self(), "I created a character"};
