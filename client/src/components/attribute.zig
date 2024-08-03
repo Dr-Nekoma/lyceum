@@ -1,6 +1,7 @@
 const rl = @import("raylib");
 const config = @import("../config.zig");
-const button = @import("button.zig");
+const Button = @import("button.zig");
+const Clickable = Button.Clickable{};
 const std = @import("std");
 
 // TODO: Move this to another file to have proper generic types for each field
@@ -40,7 +41,7 @@ pub fn at(
     };
 
     var buf: [3:0]u8 = .{ 0, 0, 0 };
-    _ = try std.fmt.bufPrint(&buf, "{}", .{self.current.*});
+    _ = std.fmt.bufPrint(&buf, "{}", .{self.current.*}) catch unreachable;
     const currentMessageSize: f32 = @floatFromInt(rl.measureText(&buf, config.buttonFontSize));
     const currentMessageX = minusPosition.x + padding + attrButtonSize.x;
     rl.drawText(
@@ -56,14 +57,14 @@ pub fn at(
         .y = messageY,
     };
 
-    if (button.at(
+    if (Clickable.at(
         "+",
         plusPosition,
         attrButtonSize,
         config.ColorPalette.primary,
     )) self.current.* +|= 1;
 
-    if (button.at(
+    if (Clickable.at(
         "-",
         minusPosition,
         attrButtonSize,

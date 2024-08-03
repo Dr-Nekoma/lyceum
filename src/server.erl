@@ -9,14 +9,21 @@
 
 -export([start/2, stop/1, main/1, handle_message/1]).
 
+-define(PGHOST, os:getenv("PGHOST", "127.0.0.1")).
+-define(PGPORT, os:getenv("PGPORT", 5432)).
+-define(PGUSER, os:getenv("PGUSER", "admin")).
+-define(PGPASSWORD, os:getenv("PGPASSWORD", "admin")).
+-define(PGDATABASE, os:getenv("PGDATABASE", "mmo")).
+
+
 database_connect() ->
     {ok, Connection} =
-	epgsql:connect(#{host => "localhost",
-			 username => "admin",
-			 password => "admin",
-			 database => "mmo",
-			 timeout => 4000
-			}),
+        epgsql:connect(
+            #{ host => ?PGHOST,
+               username => ?PGUSER,
+               password => ?PGPASSWORD,
+               database => ?PGDATABASE,
+               timeout => 4000 }),
     Connection.
 
     %% ok = epgsql:close(Connection).
