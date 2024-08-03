@@ -22,6 +22,7 @@ rebar3.crashdump
 
 # Zig
 zig-cache/
+.zig-cache/
 zig-out/
 /release/
 /debug/
