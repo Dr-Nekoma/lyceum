@@ -43,7 +43,7 @@ pub const Node = struct {
         return if (ei.ei_self(&ec.c_node)) |pid|
             pid
         else
-            error.could_not_recover_self_pid;
+            error.could_not_find_self;
     }
 };
 
