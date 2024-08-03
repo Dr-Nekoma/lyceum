@@ -61,7 +61,7 @@ pub const Payload = union(enum) {
 };
 
 pub fn send_payload(ec: *erl.Node, message: Payload) !void {
-    try sender.run(ec, message);
+    try sender.run(ec, try sender.with_self(ec, message));
 }
 
 pub fn receive_login_response(allocator: std.mem.Allocator, ec: *erl.Node) !Login_Response {
