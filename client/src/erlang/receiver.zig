@@ -35,10 +35,6 @@ fn receive_atom(self: @This()) ![:0]const u8 {
     return receive_atom_string(self, ei.ei_decode_atom);
 }
 
-pub fn With_Pid(comptime T: type) type {
-    return std.meta.Tuple(&.{ ei.erlang_pid, T });
-}
-
 pub fn run(comptime T: type, allocator: std.mem.Allocator, ec: *erl.Node) !T {
     var msg: ei.erlang_msg = undefined;
     var buf: ei.ei_x_buff = undefined;

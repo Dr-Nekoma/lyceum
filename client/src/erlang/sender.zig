@@ -26,7 +26,7 @@ fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
                 error.could_not_encode_list_head,
                 ei.ei_x_encode_list_header(buf, @bitCast(data.len)),
             );
-            for (data) |item| try send(buf, item);
+            for (data) |item| try send_payload(buf, item);
             try erl.validate(
                 error.could_not_encode_list_tail,
                 ei.ei_x_encode_list_header(buf, 0),
@@ -44,8 +44,8 @@ fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
                 .EnumLiteral,
                 .ComptimeInt,
                 .ComptimeFloat,
-                => try send(buf, data.*),
-                .Array => |array_info| try send(
+                => try send_payload(buf, data.*),
+                .Array => |array_info| try send_payload(
                     buf,
                     @as([]const array_info.child, data),
                 ),
@@ -70,9 +70,9 @@ fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
                                         ei.ei_x_encode_tuple_header(buf, 2),
                                     );
                                 }
-                                try send(buf, tag);
+                                try send_payload(buf, tag);
                                 if (send_tuple) {
-                                    try send(buf, @field(data, @tagName(tag)));
+                                    try send_payload(buf, @field(data, @tagName(tag)));
                                 }
                             }
                         }
@@ -85,7 +85,7 @@ fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
                     );
                     comptime var i = 0;
                     inline while (i < struct_info.fields.len) : (i += 1) {
-                        try send(buf, @field(
+                        try send_payload(buf, @field(
                             data,
                             std.fmt.comptimePrint("{}", .{i}),
                         ));
@@ -126,7 +126,7 @@ fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
                                     @intCast(field.name.len),
                                 ),
                             );
-                            try send(buf, payload);
+                            try send_payload(buf, payload);
                         }
                     }
                 },
@@ -137,7 +137,7 @@ fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
     }
 }
 
-fn send(buf: *ei.ei_x_buff, data: anytype) Error!void {
+pub fn send_payload(buf: *ei.ei_x_buff, data: anytype) Error!void {
     const Data = @TypeOf(data);
 
     return if (Data == *const ei.erlang_pid or
@@ -149,7 +149,7 @@ fn send(buf: *ei.ei_x_buff, data: anytype) Error!void {
             ei.ei_x_encode_pid(buf, data),
         )
     else if (Data == ei.erlang_pid)
-        send(buf, &data)
+        send_payload(buf, &data)
     else if (Data == []const u8 or
         Data == [:0]const u8 or
         Data == []u8 or
@@ -164,12 +164,12 @@ fn send(buf: *ei.ei_x_buff, data: anytype) Error!void {
             error.could_not_encode_bool,
             ei.ei_x_encode_boolean(buf, @intFromBool(data)),
         ),
-        .ComptimeInt => send(
+        .ComptimeInt => send_payload(
             buf,
             // not sure if this conditional actually compiles
             @as(if (0 <= data) u64 else i64, data),
         ),
-        .ComptimeFloat => send(buf, @as(f64, data)),
+        .ComptimeFloat => send_payload(buf, @as(f64, data)),
         .Int => |info| if (65 <= info.bits)
             @compileError("unsupported integer size")
         else if (info.signedness == .signed)
@@ -197,26 +197,9 @@ fn send(buf: *ei.ei_x_buff, data: anytype) Error!void {
                 ei.ei_x_encode_atom_len(buf, name.ptr, @intCast(name.len)),
             );
         },
-        .Array, .Struct, .Union => send(buf, &data),
+        .Array, .Struct, .Union => send_payload(buf, &data),
         .Pointer => send_pointer(buf, data),
         .NoReturn => unreachable,
         else => @compileError("unsupported type"),
     };
-}
-
-pub fn with_self(
-    ec: *erl.Node,
-    data: anytype,
-) !std.meta.Tuple(&.{ *ei.erlang_pid, @TypeOf(data) }) {
-    return if (ei.ei_self(&ec.c_node)) |self|
-        .{ self, data }
-    else
-        error.could_not_recover_self_pid;
-}
-
-pub fn run(ec: *erl.Node, data: anytype) !void {
-    var buf: ei.ei_x_buff = undefined;
-    try erl.validate(error.new_with_version, ei.ei_x_new_with_version(&buf));
-    try send(&buf, data);
-    try erl.validate(error.reg_send_failed, ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(erl.process_name), buf.buff, buf.index));
 }
