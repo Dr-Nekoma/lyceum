@@ -3,8 +3,8 @@ pub const ei = @cImport({
 });
 
 const std = @import("std");
-const receiver = @import("receiver.zig");
-const sender = @import("sender.zig");
+const receiver = @import("erlang/receiver.zig");
+const sender = @import("erlang/sender.zig");
 
 // TODO: move these elsewhere, maybe make them into parameters
 pub const process_name = "lyceum_server";

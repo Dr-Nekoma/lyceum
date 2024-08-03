@@ -1,7 +1,7 @@
 pub const ei = @cImport({
     @cInclude("ei.h");
 });
-const erl = @import("config.zig");
+const erl = @import("../erlang.zig");
 const std = @import("std");
 
 pub const Error = error{

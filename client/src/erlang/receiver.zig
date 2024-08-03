@@ -2,7 +2,7 @@ pub const ei = @cImport({
     @cInclude("ei.h");
 });
 const std = @import("std");
-const erl = @import("config.zig");
+const erl = @import("../erlang.zig");
 
 buf: *ei.ei_x_buff,
 index: *i32,
