@@ -1,5 +1,11 @@
 const rl = @import("raylib");
 
+pub const angleCameraVector: rl.Vector3 = .{
+    .x = 25,
+    .y = 30,
+    .z = 20,
+};
+
 pub const buttonFontSize = 20;
 pub const textFontSize = 20;
 pub const menuButtonsPadding = 6;

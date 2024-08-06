@@ -8,6 +8,14 @@ const text = @import("../components/text.zig");
 const assets = @import("../assets.zig");
 const GameState = @import("../game/state.zig");
 
+pub fn goToSpawn(gameState: *GameState) !void {
+    // Source: https://free3d.com/3d-model/knight-low-poly-542752.html
+    const model = try assets.model("knight.glb");
+    gameState.test_model = model;
+    rl.disableCursor();
+    gameState.scene = .spawn;
+}
+
 // TODO: add limit for total number of points when creating a character
 // TODO: add create button available to click when character is valid
 fn emptyCharacter(gameState: *GameState) !void {
@@ -119,7 +127,7 @@ pub fn selection(gameState: *GameState) !void {
                 joinButtonSize,
                 config.ColorPalette.primary,
             )) {
-                gameState.scene = .nothing;
+                try goToSpawn(gameState);
             }
 
             buttonPosition.x += 5.0 * buttonSize.x / 4.0;
