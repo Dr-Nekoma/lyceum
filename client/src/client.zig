@@ -6,6 +6,7 @@ const state = @import("game/state.zig");
 const user = @import("menu/user.zig");
 const character = @import("menu/character.zig");
 const mainMenu = @import("menu/main.zig");
+const game = @import("game/main.zig");
 
 pub fn print_connect_server_error(message: anytype) !void {
     const stdout = std.io.getStdOut().writer();
@@ -33,6 +34,7 @@ pub fn main() anyerror!void {
     defer rl.closeWindow();
     rl.setTargetFPS(60);
 
+    try character.goToSpawn(&gameState);
     mainMenu.spawn(&gameState);
     while (!rl.windowShouldClose()) {
         rl.beginDrawing();
@@ -50,8 +52,11 @@ pub fn main() anyerror!void {
             .user_login => {
                 try user.login(&gameState);
             },
-            .spawn => {
+            .join => {
                 try character.join(&gameState);
+            },
+            .spawn => {
+                try game.spawn(&gameState);
             },
             .character_selection => {
                 try character.selection(&gameState);
