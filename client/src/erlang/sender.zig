@@ -157,7 +157,8 @@ pub fn send_payload(buf: *ei.ei_x_buff, data: anytype) Error!void {
         erl.validate(
             error.could_not_encode_binary,
             // I think we should lean towards binaries over strings
-            ei.ei_x_encode_binary(buf, data.ptr, @intCast(data.len)),
+            // TODO: make that happen
+            ei.ei_x_encode_string_len(buf, data.ptr, @intCast(data.len)),
         )
     else switch (@typeInfo(Data)) {
         .Bool => erl.validate(
