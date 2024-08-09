@@ -45,7 +45,7 @@ fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
                 .ComptimeInt,
                 .ComptimeFloat,
                 => try send_payload(buf, data.*),
-                .Array => |array_info| try send_payload(
+                .Array => |array_info| try send_pointer(
                     buf,
                     @as([]const array_info.child, data),
                 ),
@@ -53,6 +53,7 @@ fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
                     if (union_info.tag_type) |tag_type|
                         tag_type
                     else
+                        // TODO: consider sending untagged unions
                         @compileError("untagged unions are unsupported"),
                     data.*,
                 )) {
@@ -71,9 +72,7 @@ fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
                                     );
                                 }
                                 try send_payload(buf, tag);
-                                if (send_tuple) {
-                                    try send_payload(buf, @field(data, @tagName(tag)));
-                                }
+                                if (send_tuple) try send_payload(buf, @field(data, @tagName(tag)));
                             }
                         }
                     },
@@ -83,6 +82,7 @@ fn send_pointer(buf: *ei.ei_x_buff, data: anytype) Error!void {
                         error.could_not_encode_tuple,
                         ei.ei_x_encode_tuple_header(buf, struct_info.fields.len),
                     );
+                    // TODO: check if we can use an inline for instead
                     comptime var i = 0;
                     inline while (i < struct_info.fields.len) : (i += 1) {
                         try send_payload(buf, @field(
@@ -165,6 +165,7 @@ pub fn send_payload(buf: *ei.ei_x_buff, data: anytype) Error!void {
             error.could_not_encode_bool,
             ei.ei_x_encode_boolean(buf, @intFromBool(data)),
         ),
+        // TODO: make inline fn to handle this properly
         .ComptimeInt => send_payload(
             buf,
             // not sure if this conditional actually compiles
