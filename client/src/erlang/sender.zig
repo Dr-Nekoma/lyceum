@@ -76,7 +76,11 @@ pub fn run(ec: *erl.Node, data: Erlang_Data) !void {
     var buf: ei.ei_x_buff = undefined;
     try erl.validate(error.new_with_version, ei.ei_x_new_with_version(&buf));
     try send_erlang_data(&buf, data);
-    try erl.validate(error.reg_send_failed, ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(erl.process_name), buf.buff, buf.index));
+    if (ec.handler) |*pid| {
+        try erl.validate(error.send_failed, ei.ei_send(ec.fd, pid, buf.buff, buf.index));
+    } else {
+        try erl.validate(error.reg_send_failed, ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(erl.process_name), buf.buff, buf.index));
+    }
 }
 
 pub fn run_with_self(ec: *erl.Node, data: Erlang_Data) !void {

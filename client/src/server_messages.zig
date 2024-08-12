@@ -3,13 +3,9 @@ const std = @import("std");
 const rl = @import("raylib");
 const sender = @import("erlang/sender.zig");
 const receiver = @import("erlang/receiver.zig");
-
-pub const Action = enum {
-    user_registry,
-    user_login,
-    character_list,
-    debug,
-};
+pub const ei = @cImport({
+    @cInclude("ei.h");
+});
 
 pub const Erlang_Response = union(enum) {
     ok: void,
@@ -20,6 +16,13 @@ pub const Login_Response = union(enum) {
     ok: [:0]const u8,
     @"error": [:0]const u8,
 };
+
+pub fn Tuple_Response(comptime T: type) type {
+    return union(enum) {
+        ok: T,
+        @"error": [:0]const u8,
+    };
+}
 
 pub const Erlang_Character = struct {
     name: [:0]const u8 = "",
@@ -60,10 +63,16 @@ pub const User_Characters_Request = struct {
     email: [:0]const u8,
 };
 
-pub const Payload = union(Action) {
+pub const Character_Update = struct {
+    character_data: Erlang_Character,
+    user_info: User_Characters_Request,
+};
+
+pub const Payload = union(enum) {
     user_registry: User_Registry,
     user_login: User_Login,
     character_list: User_Characters_Request,
+    character_update: Character_Update,
     debug: [:0]const u8,
 };
 
@@ -85,10 +94,22 @@ fn send_user_login(ec: *erl.Node, message: User_Login) !void {
 }
 
 fn send_character_list(ec: *erl.Node, message: User_Characters_Request) !void {
-    return sender.run_with_self(ec, .{ .map = &.{
+    return sender.run(ec, .{ .map = &.{
         .{ .{ .atom = "action" }, .{ .atom = "character_list" } },
         .{ .{ .atom = "username" }, .{ .string = message.username } },
         .{ .{ .atom = "email" }, .{ .string = message.email } },
+    } });
+}
+
+fn send_character_update(ec: *erl.Node, message: Character_Update) !void {
+    return sender.run(ec, .{ .map = &.{
+        .{ .{ .atom = "action" }, .{ .atom = "character_update" } },
+        .{ .{ .atom = "username" }, .{ .string = message.user_info.username } },
+        .{ .{ .atom = "name" }, .{ .string = message.character_data.name } },
+        .{ .{ .atom = "email" }, .{ .string = message.user_info.email } },
+        .{ .{ .atom = "map_name" }, .{ .string = message.character_data.map_name } },
+        .{ .{ .atom = "x_position" }, .{ .number = .{ .eu64 = message.character_data.x_position } } },
+        .{ .{ .atom = "y_position" }, .{ .number = .{ .eu64 = message.character_data.y_position } } },
     } });
 }
 
@@ -102,6 +123,9 @@ pub fn send_payload(ec: *erl.Node, message: Payload) !void {
         },
         .character_list => |item| {
             try send_character_list(ec, item);
+        },
+        .character_update => |item| {
+            try send_character_update(ec, item);
         },
         .debug => |item| {
             try sender.run_with_self(ec, .{
@@ -118,7 +142,18 @@ pub fn receive_login_response(allocator: std.mem.Allocator, ec: *erl.Node) !Logi
 }
 
 pub fn receive_characters_list(allocator: std.mem.Allocator, ec: *erl.Node) !Erlang_Characters {
-    const characters_type = receiver.With_Pid(Erlang_Characters);
-    const response = try receiver.run(characters_type, allocator, ec);
-    return response.@"1";
+    return try receiver.run(Erlang_Characters, allocator, ec);
+}
+
+const handlerWithEmail = std.meta.Tuple(&.{ ei.erlang_pid, [:0]const u8 });
+pub fn receive_handler_and_email(allocator: std.mem.Allocator, ec: *erl.Node) !handlerWithEmail {
+    const handler_email_type = Tuple_Response(handlerWithEmail);
+    const response = try receiver.run(handler_email_type, allocator, ec);
+    switch (response) {
+        .ok => |item| return item,
+        .@"error" => |msg| {
+            std.debug.print("There was an error: {s}", .{msg});
+            return error.did_not_get_handler_pid;
+        },
+    }
 }

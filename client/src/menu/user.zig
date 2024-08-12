@@ -80,6 +80,9 @@ pub fn login(gameState: *GameState) !void {
                 .password = &gameState.menu.login.password,
             },
         });
+        std.debug.print("We are about to receive stuff\n", .{});
+        gameState.node.handler, gameState.menu.email = try messages.receive_handler_and_email(gameState.allocator, gameState.node);
+        std.debug.print("We received stuff: {?} | {s}\n", .{ gameState.node.handler, gameState.menu.email });
         gameState.scene = .join;
     }
 }

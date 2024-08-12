@@ -140,47 +140,36 @@ pub fn selection(gameState: *GameState) !void {
 }
 
 pub fn join(gameState: *GameState) !void {
-    const msg = try messages.receive_login_response(gameState.allocator, gameState.node);
-    switch (msg) {
-        .ok => |email| {
-            gameState.menu.email = email;
-            try messages.send_payload(gameState.node, .{
-                .character_list = .{
-                    .username = &gameState.menu.login.username,
-                    .email = gameState.menu.email,
-                },
-            });
-            std.debug.print("We asked for characters", .{});
-            const maybe_characters = try messages.receive_characters_list(gameState.allocator, gameState.node);
-            switch (maybe_characters) {
-                .ok => |erlang_characters| {
+    try messages.send_payload(gameState.node, .{
+        .character_list = .{
+            .username = &gameState.menu.login.username,
+            .email = gameState.menu.email,
+        },
+    });
+    const maybe_characters = try messages.receive_characters_list(gameState.allocator, gameState.node);
+    switch (maybe_characters) {
+        .ok => |erlang_characters| {
 
-                    // TODO: Discover how to make this work
-                    // const teapotEmbed = @embedFile("../assets/teapot.png");
-                    // const teapotLoaded = rl.loadImageFromMemory(".png", teapotEmbed, teapotEmbed.len);
+            // todo: discover how to make this work
+            // const teapotembed = @embedfile("../assets/teapot.png");
+            // const teapotloaded = rl.loadimagefrommemory(".png", teapotembed, teapotembed.len);
 
-                    const teapotImage = try assets.image("teapot.png");
+            const teapotimage = try assets.image("teapot.png");
 
-                    var characters = std.ArrayList(messages.Character).init(gameState.allocator);
+            var characters = std.ArrayList(messages.Character).init(gameState.allocator);
 
-                    for (erlang_characters) |character| {
-                        try characters.append(.{
-                            .character_data = character,
-                            .equipment_data = rl.loadTextureFromImage(teapotImage),
-                        });
-                    }
-
-                    gameState.character_list = characters.items;
-                    gameState.scene = .character_selection;
-                },
-                .@"error" => |error_msg| {
-                    std.debug.print("ERROR IN SERVER: {s}", .{error_msg});
-                    gameState.scene = .nothing;
-                },
+            for (erlang_characters) |character| {
+                try characters.append(.{
+                    .character_data = character,
+                    .equipment_data = rl.loadTextureFromImage(teapotimage),
+                });
             }
+
+            gameState.character_list = characters.items;
+            gameState.scene = .character_selection;
         },
         .@"error" => |error_msg| {
-            std.debug.print("ERROR IN SERVER: {s}", .{error_msg});
+            std.debug.print("error in server: {s}", .{error_msg});
             gameState.scene = .nothing;
         },
     }

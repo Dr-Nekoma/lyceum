@@ -183,6 +183,10 @@ CREATE TRIGGER trigger_character_insert
 INSTEAD OF INSERT ON lyceum.view_character
 FOR EACH ROW EXECUTE FUNCTION lyceum.view_character_insert();
 
+CREATE TRIGGER trigger_character_update
+INSTEAD OF UPDATE ON lyceum.view_character
+FOR EACH ROW EXECUTE FUNCTION lyceum.view_character_insert();
+
 -- INSERT INTO lyceum.user(username, e_mail, password)
 -- VALUES ('test', 'test@email.com', '123');
 

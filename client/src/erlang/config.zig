@@ -11,6 +11,8 @@ pub const Node = struct {
     fd: i32,
     node_name: [:0]const u8 = "lyceum_client",
     cookie: [:0]const u8 = "lyceum",
+    // TODO: Put this into a separate struct to not mix things
+    handler: ?ei.erlang_pid = null,
 };
 
 pub fn validate(error_tag: anytype, result_value: c_int) !void {

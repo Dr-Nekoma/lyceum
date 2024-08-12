@@ -45,5 +45,15 @@ pub fn spawn(gameState: *GameState) !void {
 
     rl.drawGrid(20, 10.0);
 
+    // Send the modifications back to source of truth
+    try messages.send_payload(gameState.node, .{
+        .character_update = .{
+            .character_data = gameState.current_character,
+            .user_info = .{
+                .username = &gameState.menu.login.username,
+                .email = gameState.menu.email,
+            },
+        },
+    });
     rl.endMode3D();
 }
