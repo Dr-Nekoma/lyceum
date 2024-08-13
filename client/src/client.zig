@@ -1,4 +1,4 @@
-const erl = @import("erlang/config.zig");
+const erl = @import("erlang.zig");
 const std = @import("std");
 const rl = @import("raylib");
 const config = @import("config.zig");
@@ -29,7 +29,7 @@ pub fn main() anyerror!void {
     gameState.menu = .{ .character_name = try gameState.allocator.allocSentinel(u8, config.nameSize, 0) };
     @memset(gameState.menu.character_name, 0);
 
-    rl.setConfigFlags(.flag_window_resizable);
+    rl.setConfigFlags(.{ .window_resizable = true });
     rl.initWindow(@intFromFloat(gameState.width), @intFromFloat(gameState.height), "Lyceum");
     defer rl.closeWindow();
     rl.setTargetFPS(60);

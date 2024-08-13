@@ -1,4 +1,4 @@
-const erl = @import("../erlang/config.zig");
+const erl = @import("../erlang.zig");
 const rl = @import("raylib");
 const messages = @import("../server_messages.zig");
 const std = @import("std");
@@ -19,7 +19,7 @@ height: f32,
 menu: mainMenu.Menu = undefined,
 node: *erl.Node,
 allocator: std.mem.Allocator = std.heap.c_allocator,
-current_character: messages.Erlang_Character = .{},
+current_character: messages.Character_Info = .{},
 character_list: []const messages.Character = &.{},
 camera: rl.Camera,
 test_model: ?rl.Model = null,

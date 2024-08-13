@@ -1,30 +1,77 @@
-const erl = @import("erlang/config.zig");
+const erl = @import("erlang.zig");
 const std = @import("std");
 const rl = @import("raylib");
-const sender = @import("erlang/sender.zig");
-const receiver = @import("erlang/receiver.zig");
-pub const ei = @cImport({
-    @cInclude("ei.h");
-});
 
-pub const Erlang_Response = union(enum) {
-    ok: void,
-    @"error": [:0]const u8,
-};
+fn createAnonymousStruct(comptime T: type, comptime keys: []const [:0]const u8) type {
+    const struct_info = @typeInfo(T).Struct;
+    comptime var structKeys: [keys.len]std.meta.Tuple(&.{[:0]const u8}) = undefined;
+    comptime for (0.., keys) |index, key| {
+        structKeys[index] = .{key};
+    };
+    const mapKeys = std.StaticStringMap(void).initComptime(structKeys);
+    return comptime blk: {
+        var fields: [keys.len]std.builtin.Type.StructField = undefined;
+        var fieldsCounter: usize = 0;
+        for (struct_info.fields) |field| {
+            if (mapKeys.has(field.name)) {
+                fields[fieldsCounter] = field;
+                fieldsCounter += 1;
+            }
+        }
+        break :blk @Type(.{
+            .Struct = .{
+                .layout = .auto,
+                .fields = &fields,
+                .decls = &[_]std.builtin.Type.Declaration{},
+                .is_tuple = false,
+            },
+        });
+    };
+}
 
-pub const Login_Response = union(enum) {
-    ok: [:0]const u8,
-    @"error": [:0]const u8,
-};
+pub fn selectKeysFromStruct(data: anytype, comptime keys: []const [:0]const u8) createAnonymousStruct(@TypeOf(data), keys) {
+    const Temp: type = createAnonymousStruct(@TypeOf(data), keys);
+    var anonymousStruct: Temp = undefined;
+    inline for (@typeInfo(Temp).Struct.fields) |field| {
+        const current_field = &@field(anonymousStruct, field.name);
+        current_field.* = @field(data, field.name);
+    }
+    return anonymousStruct;
+}
 
-pub fn Tuple_Response(comptime T: type) type {
+// Standard Response from Erlang Server
+
+fn Tuple_Response(comptime T: type) type {
     return union(enum) {
         ok: T,
         @"error": [:0]const u8,
     };
 }
 
-pub const Erlang_Character = struct {
+pub const Erlang_Response = Tuple_Response(void);
+
+// User's Login and Registration
+
+pub const Login_Request = struct {
+    username: []const u8,
+    password: []const u8,
+};
+
+pub const Login_Info = std.meta.Tuple(&.{ erl.ei.erlang_pid, [:0]const u8 });
+const Login_Response = Tuple_Response(Login_Info);
+
+pub const Registry_Request = struct {
+    username: [:0]const u8,
+    email: [:0]const u8,
+    password: [:0]const u8,
+};
+
+// TODO: Implement user registration via the client
+pub const Registry_Response = Tuple_Response(void);
+
+// User's Characters
+
+pub const Character_Info = struct {
     name: [:0]const u8 = "",
     constitution: u8 = 0,
     wisdom: u8 = 0,
@@ -38,122 +85,58 @@ pub const Erlang_Character = struct {
 };
 
 pub const Character = struct {
-    character_data: Erlang_Character,
+    character_data: Character_Info,
     equipment_data: rl.Texture2D,
 };
 
-pub const Erlang_Characters = union(enum) {
-    ok: []const Erlang_Character,
-    @"error": [:0]const u8,
+pub const Characters_Request = struct {
+    username: []const u8,
+    email: []const u8,
 };
 
-pub const User_Registry = struct {
-    username: [:0]const u8,
-    email: [:0]const u8,
-    password: [:0]const u8,
-};
-
-pub const User_Login = struct {
-    username: [:0]const u8,
-    password: [:0]const u8,
-};
-
-pub const User_Characters_Request = struct {
-    username: [:0]const u8,
-    email: [:0]const u8,
-};
+pub const Characters_Response = Tuple_Response([]const Character_Info);
 
 pub const Character_Update = struct {
-    character_data: Erlang_Character,
-    user_info: User_Characters_Request,
+    name: [:0]const u8,
+    x_position: u64,
+    y_position: u64,
+    map_name: [:0]const u8,
+    username: []const u8,
+    email: []const u8,
 };
 
+// Central place to send game's data
+
 pub const Payload = union(enum) {
-    user_registry: User_Registry,
-    user_login: User_Login,
-    character_list: User_Characters_Request,
-    character_update: Character_Update,
+    register: Registry_Request,
+    login: Login_Request,
+    list_characters: Characters_Request,
+    // create_character:
+    joining_world: void,
+    update_character: Character_Update,
     debug: [:0]const u8,
 };
 
-fn send_user_registry(ec: *erl.Node, message: User_Registry) !void {
-    return sender.run_with_self(ec, .{ .map = &.{
-        .{ .{ .atom = "action" }, .{ .atom = "registration" } },
-        .{ .{ .atom = "email" }, .{ .string = message.email } },
-        .{ .{ .atom = "username" }, .{ .string = message.username } },
-        .{ .{ .atom = "password" }, .{ .string = message.password } },
-    } });
+pub fn send_with_self(ec: *erl.Node, message: Payload) !void {
+    try ec.send(.{ try ec.self(), message });
 }
 
-fn send_user_login(ec: *erl.Node, message: User_Login) !void {
-    return sender.run_with_self(ec, .{ .map = &.{
-        .{ .{ .atom = "action" }, .{ .atom = "login" } },
-        .{ .{ .atom = "username" }, .{ .string = message.username } },
-        .{ .{ .atom = "password" }, .{ .string = message.password } },
-    } });
-}
+// Central place to receive game's data
 
-fn send_character_list(ec: *erl.Node, message: User_Characters_Request) !void {
-    return sender.run(ec, .{ .map = &.{
-        .{ .{ .atom = "action" }, .{ .atom = "character_list" } },
-        .{ .{ .atom = "username" }, .{ .string = message.username } },
-        .{ .{ .atom = "email" }, .{ .string = message.email } },
-    } });
-}
-
-fn send_character_update(ec: *erl.Node, message: Character_Update) !void {
-    return sender.run(ec, .{ .map = &.{
-        .{ .{ .atom = "action" }, .{ .atom = "character_update" } },
-        .{ .{ .atom = "username" }, .{ .string = message.user_info.username } },
-        .{ .{ .atom = "name" }, .{ .string = message.character_data.name } },
-        .{ .{ .atom = "email" }, .{ .string = message.user_info.email } },
-        .{ .{ .atom = "map_name" }, .{ .string = message.character_data.map_name } },
-        .{ .{ .atom = "x_position" }, .{ .number = .{ .eu64 = message.character_data.x_position } } },
-        .{ .{ .atom = "y_position" }, .{ .number = .{ .eu64 = message.character_data.y_position } } },
-    } });
-}
-
-pub fn send_payload(ec: *erl.Node, message: Payload) !void {
-    switch (message) {
-        .user_registry => |item| {
-            try send_user_registry(ec, item);
-        },
-        .user_login => |item| {
-            try send_user_login(ec, item);
-        },
-        .character_list => |item| {
-            try send_character_list(ec, item);
-        },
-        .character_update => |item| {
-            try send_character_update(ec, item);
-        },
-        .debug => |item| {
-            try sender.run_with_self(ec, .{
-                .atom = item,
-            });
-        },
-    }
-}
-
-pub fn receive_login_response(allocator: std.mem.Allocator, ec: *erl.Node) !Login_Response {
-    const simple_type = receiver.With_Pid(Login_Response);
-    const response = try receiver.run(simple_type, allocator, ec);
-    return response.@"1";
-}
-
-pub fn receive_characters_list(allocator: std.mem.Allocator, ec: *erl.Node) !Erlang_Characters {
-    return try receiver.run(Erlang_Characters, allocator, ec);
-}
-
-const handlerWithEmail = std.meta.Tuple(&.{ ei.erlang_pid, [:0]const u8 });
-pub fn receive_handler_and_email(allocator: std.mem.Allocator, ec: *erl.Node) !handlerWithEmail {
-    const handler_email_type = Tuple_Response(handlerWithEmail);
-    const response = try receiver.run(handler_email_type, allocator, ec);
+pub fn receive_login_response(allocator: std.mem.Allocator, ec: *erl.Node) !Login_Info {
+    const response = try ec.receive(Login_Response, allocator);
     switch (response) {
-        .ok => |item| return item,
+        .ok => |item| {
+            return item;
+        },
         .@"error" => |msg| {
-            std.debug.print("There was an error: {s}", .{msg});
-            return error.did_not_get_handler_pid;
+            defer allocator.free(msg);
+            std.debug.print("[ERROR]: {s}\n", .{msg});
+            return error.unwrapping_tuple_response;
         },
     }
+}
+
+pub fn receive_characters_list(allocator: std.mem.Allocator, ec: *erl.Node) !Characters_Response {
+    return ec.receive(Characters_Response, allocator);
 }

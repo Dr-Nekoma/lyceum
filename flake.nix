@@ -76,7 +76,7 @@
           env = zig2nix.outputs.zig-env.${system} {};
           system-triple = env.lib.zigTripleFromString system;
           raylib = pkgs.raylib;
-          zigLatest = pkgs.zig_0_12;
+          zigLatest = pkgs.zig;
         in {
           packages.default = env.lib.packages.target.${system-triple}.override {
             # Prefer nix friendly settings.
@@ -103,7 +103,7 @@
           env = zig2nix.outputs.zig-env.${system} {};
           system-triple = env.lib.zigTripleFromString system;
           raylib = pkgs.raylib;
-          zigLatest = pkgs.zig_0_12;
+          zigLatest = pkgs.zig;
 
           linuxPkgs = with pkgs; [
             inotify-tools
@@ -138,7 +138,7 @@
                   erlfmt
                   just
                   rebar3
-                  dbeaver
+                  dbeaver-bin
                 ] ++ lib.optionals stdenv.isLinux (linuxPkgs) ++ lib.optionals stdenv.isDarwin darwinPkgs;
 
                 languages.erlang = {

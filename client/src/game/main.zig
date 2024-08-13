@@ -1,6 +1,6 @@
 const messages = @import("../server_messages.zig");
 const rl = @import("raylib");
-const rm = @import("raylib-math");
+const rm = rl.math;
 const config = @import("../config.zig");
 const Button = @import("../components/button.zig");
 const text = @import("../components/text.zig");
@@ -46,13 +46,14 @@ pub fn spawn(gameState: *GameState) !void {
     rl.drawGrid(20, 10.0);
 
     // Send the modifications back to source of truth
-    try messages.send_payload(gameState.node, .{
-        .character_update = .{
-            .character_data = gameState.current_character,
-            .user_info = .{
-                .username = &gameState.menu.login.username,
-                .email = gameState.menu.email,
-            },
+    try gameState.node.send(messages.Payload{
+        .update_character = .{
+            .name = gameState.current_character.name,
+            .x_position = gameState.current_character.x_position,
+            .y_position = gameState.current_character.y_position,
+            .map_name = gameState.current_character.map_name,
+            .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
+            .email = gameState.menu.email,
         },
     });
     rl.endMode3D();

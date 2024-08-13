@@ -28,7 +28,7 @@ fn emptyCharacter(gameState: *GameState) !void {
         .y = 25,
     };
     const fieldPadding = 25;
-    inline for (std.meta.fields(messages.Erlang_Character)) |field| {
+    inline for (std.meta.fields(messages.Character_Info)) |field| {
         if (comptime isDifferent(field.name, &.{ "name", "map_name", "x_position", "y_position" })) {
             const mutable_name: [:0]u8 = try gameState.allocator.allocSentinel(u8, field.name.len, 0);
             std.mem.copyForwards(u8, mutable_name, field.name);
@@ -140,9 +140,9 @@ pub fn selection(gameState: *GameState) !void {
 }
 
 pub fn join(gameState: *GameState) !void {
-    try messages.send_payload(gameState.node, .{
-        .character_list = .{
-            .username = &gameState.menu.login.username,
+    try gameState.node.send(messages.Payload{
+        .list_characters = .{
+            .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
             .email = gameState.menu.email,
         },
     });

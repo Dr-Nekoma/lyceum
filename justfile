@@ -1,5 +1,5 @@
 client:
-    cd client && zig build -fsys=raylib --search-prefix ${ERLANG_INTERFACE_PATH} --search-prefix ${RAYLIB_PATH} run -- \"$@\"
+    cd client && zig build --search-prefix ${ERLANG_INTERFACE_PATH} --search-prefix ${RAYLIB_PATH} run -- \"$@\"
 
 client-build:
     cd client && zig build -fsys=raylib --search-prefix ${ERLANG_INTERFACE_PATH} --search-prefix ${RAYLIB_PATH} -- \"$@\"

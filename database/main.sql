@@ -87,7 +87,7 @@ CREATE TABLE lyceum.character_position(
        map_name VARCHAR(64) NOT NULL,
        FOREIGN KEY (name, username, e_mail) REFERENCES lyceum.character(name, username, e_mail),
        FOREIGN KEY (map_name) REFERENCES lyceum.map(name),
-       PRIMARY KEY(name, username, e_mail, map_name)
+       PRIMARY KEY(name, username, e_mail)
 );
 
 CREATE VIEW lyceum.view_character AS
@@ -95,16 +95,36 @@ SELECT * FROM lyceum.character
 NATURAL JOIN lyceum.character_stats
 NATURAL JOIN lyceum.character_position;
 
-CREATE OR REPLACE FUNCTION lyceum.view_character_insert() RETURNS trigger LANGUAGE plpgsql AS $$
+CREATE OR REPLACE FUNCTION lyceum.view_character_upsert() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
     INSERT INTO lyceum.character(name, e_mail, username)
-    VALUES (NEW.name, NEW.e_mail, NEW.username);
+    VALUES (NEW.name, NEW.e_mail, NEW.username)
+    ON CONFLICT DO NOTHING;
 
     INSERT INTO lyceum.character_stats(name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith)
-    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.constitution, NEW.wisdom, NEW.strength, NEW.endurance, NEW.intelligence, NEW.faith);
+    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.constitution, NEW.wisdom, NEW.strength, NEW.endurance, NEW.intelligence, NEW.faith)
+    ON CONFLICT (name, username, e_mail) DO UPDATE  SET
+       name = NEW.name,
+       e_mail = NEW.e_mail,
+       username = NEW.username,
+       constitution = NEW.constitution,
+       wisdom = NEW.wisdom,
+       strength = NEW.strength,
+       endurance = NEW.endurance,
+       intelligence = NEW.intelligence,
+       faith = NEW.faith
+    WHERE name = NEW.name AND e_mail = NEW.e_mail AND username = NEW.username;
 
     INSERT INTO lyceum.character_position(name, e_mail, username, x_position, y_position, map_name)
-    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.x_position, NEW.y_position, NEW.map_name);
+    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.x_position, NEW.y_position, NEW.map_name)
+    ON CONFLICT (name, username, e_mail) DO UPDATE SET
+           name = NEW.name,
+           e_mail = NEW.e_mail,
+           username = NEW.username,
+           x_position = NEW.x_position,
+           y_position = NEW.y_position,
+           map_name = NEW.map_name
+       WHERE name = NEW.name AND e_mail = NEW.e_mail AND username = NEW.username;
 
     RETURN NEW;
 END
@@ -179,13 +199,9 @@ CREATE TABLE lyceum.character_equipment(
        PRIMARY KEY(name, username, e_mail, equipment_name)
 );
 
-CREATE TRIGGER trigger_character_insert
+CREATE TRIGGER trigger_character_upsert
 INSTEAD OF INSERT ON lyceum.view_character
-FOR EACH ROW EXECUTE FUNCTION lyceum.view_character_insert();
-
-CREATE TRIGGER trigger_character_update
-INSTEAD OF UPDATE ON lyceum.view_character
-FOR EACH ROW EXECUTE FUNCTION lyceum.view_character_insert();
+FOR EACH ROW EXECUTE FUNCTION lyceum.view_character_upsert();
 
 -- INSERT INTO lyceum.user(username, e_mail, password)
 -- VALUES ('test', 'test@email.com', '123');

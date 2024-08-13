@@ -45,15 +45,15 @@ stream_user_data(#{user_pid := UserPid, connection := Connection} = State) ->
 % TODO: We should not just keep passing Connections here, this is dangerous for interactive stuff
 handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
     receive	    
-	#{action := character_list, username := Username, email := Email} ->
+	{list_characters, #{username := Username, email := Email}} ->
 	    io:format("Querying user's characters..."),
 	    Characters = character:player_characters(Username, Email, Connection),
 	    UserPid ! {ok, Characters};
-	#{action := character_creation} = Character_Map ->
+	{create_character, Character_Map} ->
 	    io:format("This character logged"),
 	    character:create(Character_Map, Connection),
 	    UserPid ! ok;
-	#{action := joining_world} -> 
+	joining_world -> 
 	    case maps:is_key(State, stream_pid) of
 		true ->
 		    io:format("We tried to join two worlds at once, bruh. Stopping right now\n"),
@@ -64,11 +64,13 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
 			 %% TimerOutPid = spawn(?MODULE, timeout_user, [NewState]),
 			 handle_user(NewState)
 	    end;
-	#{action := character_update} = Character_Map ->
+	{update_character, Character_Map} ->
 	    io:format("Character will be updated"),
 	    character:update(Character_Map, Connection),
 	    UserPid ! ok;
-	#{action := character_retrieve} = Character_Map ->
+	Something ->
+	    io:format("Catch all case: ~p", [Something]);
+	{retrieve_character, Character_Map} ->
 	    io:format("Character will be retrieved"),
 	    Data = character:retrieve(Character_Map, Connection),
 	    UserPid ! Data
@@ -77,7 +79,7 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
 
 handle_master(Connection) ->
     receive
-	{Pid, #{action := registration, username := Username, email := Email, password := Password}} ->
+	{Pid, {register, #{username := Username, email := Email, password := Password}}} ->
 	    io:format("This user now exists: ~p", [Username]),
 	    user:insert_user(#{username => Username, 
 			  password => Password,
@@ -85,7 +87,7 @@ handle_master(Connection) ->
 			Connection),
 	    Response = "I registered " ++ Username,
 	    Pid ! {self(), Response};
-	{Pid, #{action := login, username := Username, password := Password}} ->
+	{Pid, {login, #{username := Username, password := Password}}} ->
 	    io:format("This user logged: ~p", [Username]),
 	    Email = user:check_user(#{username => Username, 
 				      password => Password},

@@ -74,14 +74,14 @@ pub fn login(gameState: *GameState) !void {
     )) {
         // TODO: Add loading animation to wait for response
         // TODO: Add a timeout for login
-        try messages.send_payload(gameState.node, .{
-            .user_login = .{
-                .username = &gameState.menu.login.username,
-                .password = &gameState.menu.login.password,
+        try messages.send_with_self(gameState.node, .{
+            .login = .{
+                .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
+                .password = gameState.menu.login.password[0..gameState.menu.login.passwordPosition],
             },
         });
         std.debug.print("We are about to receive stuff\n", .{});
-        gameState.node.handler, gameState.menu.email = try messages.receive_handler_and_email(gameState.allocator, gameState.node);
+        gameState.node.handler, gameState.menu.email = try messages.receive_login_response(gameState.allocator, gameState.node);
         std.debug.print("We received stuff: {?} | {s}\n", .{ gameState.node.handler, gameState.menu.email });
         gameState.scene = .join;
     }
