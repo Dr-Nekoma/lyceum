@@ -90,7 +90,7 @@ CREATE TABLE lyceum.character_position(
        PRIMARY KEY(name, username, e_mail)
 );
 
-CREATE VIEW lyceum.view_character AS
+CREATE OR REPLACE VIEW lyceum.view_character AS
 SELECT * FROM lyceum.character
 NATURAL JOIN lyceum.character_stats
 NATURAL JOIN lyceum.character_position;
@@ -103,7 +103,7 @@ BEGIN
 
     INSERT INTO lyceum.character_stats(name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith)
     VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.constitution, NEW.wisdom, NEW.strength, NEW.endurance, NEW.intelligence, NEW.faith)
-    ON CONFLICT (name, username, e_mail) DO UPDATE  SET
+    ON CONFLICT (name, username, e_mail) DO UPDATE SET
        name = NEW.name,
        e_mail = NEW.e_mail,
        username = NEW.username,
@@ -199,7 +199,7 @@ CREATE TABLE lyceum.character_equipment(
        PRIMARY KEY(name, username, e_mail, equipment_name)
 );
 
-CREATE TRIGGER trigger_character_upsert
+CREATE OR REPLACE TRIGGER trigger_character_upsert
 INSTEAD OF INSERT ON lyceum.view_character
 FOR EACH ROW EXECUTE FUNCTION lyceum.view_character_upsert();
 
