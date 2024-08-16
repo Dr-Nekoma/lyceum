@@ -213,4 +213,4 @@ FOR EACH ROW EXECUTE FUNCTION lyceum.view_character_upsert();
 
 -- With map stuff
 -- INSERT INTO lyceum.view_character(name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith, x_position, y_position, map_name)
--- VALUES ('knight', 'test@email.com', 'test', 10, 12, 13, 14, 15, 16, 0, 0, 'arda');
+-- VALUES ('knight', 'test@email.com', 'test', 10, 12, 13, 14, 15, 16, 0, 0, 'CASTLE_HALL');
