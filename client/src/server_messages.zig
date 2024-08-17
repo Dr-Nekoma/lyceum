@@ -84,11 +84,6 @@ pub const Character_Info = struct {
     map_name: [:0]const u8 = "",
 };
 
-pub const Character = struct {
-    character_data: Character_Info,
-    equipment_data: rl.Texture2D,
-};
-
 pub const Characters_Request = struct {
     username: []const u8,
     email: []const u8,

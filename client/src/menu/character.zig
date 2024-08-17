@@ -11,7 +11,7 @@ const GameState = @import("../game/state.zig");
 pub fn goToSpawn(gameState: *GameState) !void {
     // Source: https://free3d.com/3d-model/knight-low-poly-542752.html
     const model = try assets.model("knight.glb");
-    gameState.test_model = model;
+    gameState.character.model = model;
     rl.disableCursor();
     gameState.scene = .spawn;
 }
@@ -34,7 +34,7 @@ fn emptyCharacter(gameState: *GameState) !void {
             std.mem.copyForwards(u8, mutable_name, field.name);
             mutable_name[0] = std.ascii.toUpper(mutable_name[0]);
             const attributeComp = attribute{
-                .current = &@field(gameState.current_character, field.name),
+                .current = &@field(gameState.character.stats, field.name),
                 .text = mutable_name,
                 .textPosition = .{
                     .x = currentTextPosition.x,
@@ -65,7 +65,7 @@ fn emptyCharacter(gameState: *GameState) !void {
                 .position = &gameState.test_value,
             };
             nameText.at(nameBoxPosition);
-            gameState.current_character.name = gameState.menu.character_name;
+            gameState.character.stats.name = gameState.menu.character_name;
         } else {
             std.debug.print("Not editable: .{s}\n", .{field.name});
         }
@@ -109,17 +109,19 @@ pub fn selection(gameState: *GameState) !void {
             currentButton.index = index;
             if (Button.Selectable.at(
                 &currentButton,
-                character.character_data.name,
+                character.stats.name,
                 buttonPosition,
                 buttonSize,
                 config.ColorPalette.primary,
                 currentSelected.*,
             )) {
                 currentSelected.* = index;
-                gameState.current_character = character.character_data;
+                gameState.character.stats = character.stats;
             }
 
-            rl.drawTextureEx(character.equipment_data, texturePosition, 0.0, 1, rl.Color.white);
+            if (character.preview) |preview| {
+                rl.drawTextureEx(preview, texturePosition, 0.0, 1, rl.Color.white);
+            }
             joinButton.disabled = currentSelected.* == null;
             if (joinButton.at(
                 "Join Map",
@@ -156,12 +158,12 @@ pub fn join(gameState: *GameState) !void {
 
             const teapotimage = try assets.image("teapot.png");
 
-            var characters = std.ArrayList(messages.Character).init(gameState.allocator);
+            var characters = std.ArrayList(GameState.Character).init(gameState.allocator);
 
-            for (erlang_characters) |character| {
+            for (erlang_characters) |stats| {
                 try characters.append(.{
-                    .character_data = character,
-                    .equipment_data = rl.loadTextureFromImage(teapotimage),
+                    .stats = stats,
+                    .preview = rl.loadTextureFromImage(teapotimage),
                 });
             }
 
