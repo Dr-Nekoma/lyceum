@@ -23,7 +23,7 @@ pub const Character = struct {
     // TODO: Remove this position and use spatial info from stats
     position: rl.Vector3 = .{
         .x = 0.0,
-        .y = physics.Character.floorLevel,
+        .y = physics.character.floorLevel,
         .z = 0.0,
     },
     preview: ?rl.Texture2D = null,

@@ -8,7 +8,7 @@ pub fn spawn(gameState: *GameState) !void {
     rl.beginMode3D(gameState.camera);
     defer rl.endMode3D();
 
-    physics.Character.move(gameState);
+    physics.character.move(gameState);
     camera.update(gameState);
     rl.drawGrid(20, 10.0);
     try protocol.pingUpdateCharacter(gameState);
