@@ -15,6 +15,7 @@ pub const Scene = enum {
     join,
     spawn,
     character_selection,
+    connect,
 };
 
 pub const Character = struct {
@@ -39,17 +40,18 @@ scene: Scene = .nothing,
 width: f32,
 height: f32,
 menu: mainMenu.Menu = undefined,
-node: *erl.Node,
+node: ?*erl.Node = null,
 allocator: std.mem.Allocator = std.heap.c_allocator,
 character: Character = .{},
 character_list: []const Character = &.{},
+other_players: []const messages.Character_Info = &.{},
 camera: rl.Camera,
 
 // TODO: Change the name and maybe even the location of this
 test_value: usize = 0,
 cameraDistance: f32 = 60,
 
-pub fn init(width: f32, height: f32, node: *erl.Node) !@This() {
+pub fn init(width: f32, height: f32) !@This() {
     const camera: rl.Camera = .{
         .position = .{ .x = 50.0, .y = 50.0, .z = 50.0 },
         .target = .{ .x = 0.0, .y = 10.0, .z = 0.0 },
@@ -62,7 +64,6 @@ pub fn init(width: f32, height: f32, node: *erl.Node) !@This() {
     return .{
         .width = width,
         .height = height,
-        .node = node,
         .camera = camera,
     };
 }

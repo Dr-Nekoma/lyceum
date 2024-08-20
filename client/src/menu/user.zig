@@ -74,15 +74,19 @@ pub fn login(gameState: *GameState) !void {
     )) {
         // TODO: Add loading animation to wait for response
         // TODO: Add a timeout for login
-        try messages.send_with_self(gameState.node, .{
-            .login = .{
-                .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
-                .password = gameState.menu.login.password[0..gameState.menu.login.passwordPosition],
-            },
-        });
+        if (gameState.node) |nod| {
+            try messages.send_with_self(nod, .{
+                .login = .{
+                    .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
+                    .password = gameState.menu.login.password[0..gameState.menu.login.passwordPosition],
+                },
+            });
+        }
         std.debug.print("We are about to receive stuff\n", .{});
-        gameState.node.handler, gameState.menu.email = try messages.receive_login_response(gameState.allocator, gameState.node);
-        std.debug.print("We received stuff: {?} | {s}\n", .{ gameState.node.handler, gameState.menu.email });
+        if (gameState.node) |nod| {
+            nod.handler, gameState.menu.email = try messages.receive_login_response(gameState.allocator, nod);
+        }
+        // std.debug.print("We received stuff: {?} | {s}\n", .{ gameState.node.handler, gameState.menu.email });
         gameState.scene = .join;
     }
 }

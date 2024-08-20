@@ -3,13 +3,29 @@ const GameState = @import("../game/state.zig");
 const physics = @import("../game/physics.zig");
 const protocol = @import("../game/protocol.zig");
 const camera = @import("../game/camera.zig");
+const messages = @import("../server_messages.zig");
+
+fn drawPlayers(gameState: *GameState) void {
+    for (gameState.other_players) |player| {
+        const maybeModel = gameState.character.model;
+        if (maybeModel) |model| {
+            const position: rl.Vector3 = .{
+                .x = @floatFromInt(player.x_position),
+                .y = physics.character.floorLevel,
+                .z = @floatFromInt(player.y_position),
+            };
+            rl.drawModelEx(model, position, physics.heightAxis, @floatFromInt(player.face_direction), physics.character.modelScale, rl.Color.white);
+        }
+    }
+}
 
 pub fn spawn(gameState: *GameState) !void {
     rl.beginMode3D(gameState.camera);
     defer rl.endMode3D();
 
-    physics.character.move(gameState);
+    physics.character.draw(gameState);
     camera.update(gameState);
     rl.drawGrid(20, 10.0);
     try protocol.pingUpdateCharacter(gameState);
+    drawPlayers(gameState);
 }

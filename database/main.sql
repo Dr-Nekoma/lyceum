@@ -84,6 +84,7 @@ CREATE TABLE lyceum.character_position(
        username VARCHAR(32) NOT NULL,
        x_position SMALLINT NOT NULL,
        y_position SMALLINT NOT NULL,
+       face_direction SMALLINT NOT NULL CHECK (face_direction >= 0 AND face_direction < 360),	
        map_name VARCHAR(64) NOT NULL,
        FOREIGN KEY (name, username, e_mail) REFERENCES lyceum.character(name, username, e_mail),
        FOREIGN KEY (map_name) REFERENCES lyceum.map(name),

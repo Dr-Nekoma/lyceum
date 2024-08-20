@@ -8,7 +8,15 @@ const sender = @import("erlang/sender.zig");
 
 // TODO: move these elsewhere, maybe make them into parameters
 pub const process_name = "lyceum_server";
-pub const server_name = process_name ++ "@localhost";
+pub const server_name = process_name ++ "@179.237.195.222";
+
+pub fn print_connect_server_error(message: anytype) !void {
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print(
+        "Could not connect to Lyceum Server!\n\u{1b}[31mError: \u{1b}[37m{}\n",
+        .{message},
+    );
+}
 
 pub const Send_Error = sender.Error || error{
     // TODO: rid the world of these terrible names
@@ -62,8 +70,14 @@ pub fn validate(error_tag: anytype, result_value: c_int) !void {
     }
 }
 
-pub fn establish_connection(ec: *Node) !void {
-    const sockfd = ei.ei_connect(&ec.c_node, @constCast(server_name));
+const max_size = 50;
+
+pub fn establish_connection(ec: *Node, ip: []const u8) !void {
+    var buffer: [max_size:0]u8 = .{0} ** max_size;
+    std.mem.copyForwards(u8, &buffer, process_name);
+    buffer[process_name.len] = '@';
+    std.mem.copyForwards(u8, buffer[process_name.len + 1 ..], ip);
+    const sockfd = ei.ei_connect(&ec.c_node, &buffer);
     try validate(error.ei_connect_failed, sockfd);
     ec.fd = sockfd;
 }

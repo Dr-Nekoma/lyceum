@@ -29,12 +29,29 @@ updateTemp(#{name := Name,
 	     username := Username, 
 	     email := Email,
 	     map_name := MapName,
+	     face_direction := FaceDirection,
 	     x_position := XPosition,
 	     y_position := YPosition}, Connection) ->
     io:format("x: ~p, y: ~p", [XPosition, YPosition]),
-    Query = "UPDATE lyceum.character_position SET x_position = $1::SMALLINT, y_position = $2::SMALLINT \ 
+    Query = "UPDATE lyceum.character_position SET x_position = $1::SMALLINT, y_position = $2::SMALLINT, face_direction = $7::SMALLINT \ 
              WHERE name = $3::VARCHAR(18) AND e_mail = $4::TEXT AND username = $5::VARCHAR(32) AND map_name = $6::VARCHAR(64)",
-    {ok, _} = epgsql:equery(Connection, Query, [XPosition, YPosition, Name, Email, Username, MapName]).
+    {ok, _} = epgsql:equery(Connection, Query, [XPosition, YPosition, Name, Email, Username, MapName, FaceDirection]).
+
+retrieve_near_players(#{map_name := MapName}, Connection) ->
+    Query = "SELECT lyceum.view_character.name, \
+                    lyceum.view_character.constitution, \
+                    lyceum.view_character.wisdom, \
+                    lyceum.view_character.strength, \
+                    lyceum.view_character.endurance, \
+                    lyceum.view_character.intelligence, \
+                    lyceum.view_character.faith, \
+                    lyceum.view_character.x_position, \
+                    lyceum.view_character.y_position, \
+                    lyceum.view_character.map_name \
+                    lyceum.view_character.face_direction \
+             FROM lyceum.view_character WHERE map_name = $1::VARCHAR(64)",
+    {ok, FullColumns, Values} = epgsql:equery(Connection, Query, [MapName]),
+    util:columns_and_rows(FullColumns, Values).
 
 retrieve(#{name := Name, 
 	   username := Username, 
