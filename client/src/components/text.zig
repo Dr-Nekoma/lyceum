@@ -43,7 +43,7 @@ fn at_impl(
     if (rl.checkCollisionPointRec(rl.getMousePosition(), textBox)) {
         mouseOnText = true;
 
-        rl.setMouseCursor(@intFromEnum(rl.MouseCursor.mouse_cursor_ibeam));
+        rl.setMouseCursor(.mouse_cursor_ibeam);
 
         var key = rl.getCharPressed();
 
@@ -65,7 +65,7 @@ fn at_impl(
         }
     } else {
         mouseOnText = false;
-        rl.setMouseCursor(@intFromEnum(rl.MouseCursor.mouse_cursor_default));
+        rl.setMouseCursor(.mouse_cursor_default);
     }
 
     rl.drawRectangleV(textBoxPosition, textBoxSize, config.ColorPalette.primary);

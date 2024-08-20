@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) void {
         .name = "lyceum-client",
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
-        .root_source_file = .{ .path = "src/client.zig" },
+        .root_source_file = b.path("src/client.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -27,8 +27,6 @@ pub fn build(b: *std.Build) void {
     if (b.systemIntegrationOption("raylib-zig", .{})) {
         // TODO: double-check this
         exe.linkSystemLibrary("raylib");
-        exe.linkSystemLibrary("raylib-math");
-        exe.linkSystemLibrary("rlgl");
     } else {
         const raylib_dep = b.dependency("raylib-zig", .{
             .target = target,
@@ -36,8 +34,6 @@ pub fn build(b: *std.Build) void {
         });
 
         const raylib = raylib_dep.module("raylib"); // main raylib module
-        const raylib_math = raylib_dep.module("raylib-math"); // raymath module
-        const rlgl = raylib_dep.module("rlgl"); // rlgl module
 
         if (b.systemIntegrationOption("raylib", .{}))
             exe.linkLibrary(raylib_dep.artifact("raylib")) // raylib C library
@@ -45,8 +41,6 @@ pub fn build(b: *std.Build) void {
             exe.linkSystemLibrary("raylib");
 
         exe.root_module.addImport("raylib", raylib);
-        exe.root_module.addImport("raylib-math", raylib_math);
-        exe.root_module.addImport("rlgl", rlgl);
     }
 
     exe.linkLibC();
@@ -90,17 +84,17 @@ pub fn build(b: *std.Build) void {
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
-    // const unit_tests = b.addTest(.{
-    //     .root_source_file = .{ .path = "src/main.zig" },
-    //     .target = target,
-    //     .optimize = optimize,
-    // });
+    const unit_tests = b.addTest(.{
+        .root_source_file = b.path("src/client.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
 
-    // const run_unit_tests = b.addRunArtifact(unit_tests);
+    const run_unit_tests = b.addRunArtifact(unit_tests);
 
-    // // Similar to creating the run step earlier, this exposes a `test` step to
-    // // the `zig build --help` menu, providing a way for the user to request
-    // // running the unit tests.
-    // const test_step = b.step("test", "Run unit tests");
-    // test_step.dependOn(&run_unit_tests.step);
+    // Similar to creating the run step earlier, this exposes a `test` step to
+    // the `zig build --help` menu, providing a way for the user to request
+    // running the unit tests.
+    const test_step = b.step("test", "Run unit tests");
+    test_step.dependOn(&run_unit_tests.step);
 }
