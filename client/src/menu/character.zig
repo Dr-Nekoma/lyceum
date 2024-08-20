@@ -156,14 +156,14 @@ pub fn join(gameState: *GameState) !void {
             // const teapotembed = @embedfile("../assets/teapot.png");
             // const teapotloaded = rl.loadimagefrommemory(".png", teapotembed, teapotembed.len);
 
-            const teapotimage = try assets.image("teapot.png");
+            const teapotImage = try assets.image("teapot.png");
 
             var characters = std.ArrayList(GameState.Character).init(gameState.allocator);
 
             for (erlang_characters) |stats| {
                 try characters.append(.{
                     .stats = stats,
-                    .preview = rl.loadTextureFromImage(teapotimage),
+                    .preview = rl.loadTextureFromImage(teapotImage),
                 });
             }
 

@@ -68,12 +68,12 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
 	    io:format("Character will be updated"),
 	    character:updateTemp(Character_Map, Connection),
 	    UserPid ! ok;
-	Something ->
-	    io:format("Catch all case: ~p", [Something]);
 	{retrieve_character, Character_Map} ->
 	    io:format("Character will be retrieved"),
 	    Data = character:retrieve(Character_Map, Connection),
-	    UserPid ! Data
+	    UserPid ! Data;
+	Something ->
+	    io:format("Catch all case: ~p", [Something])
     end,
     handle_user(State).
 

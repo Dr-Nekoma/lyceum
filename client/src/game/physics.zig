@@ -9,7 +9,7 @@ const heightAxis: rl.Vector3 = .{
     .z = 0,
 };
 
-pub const Character = struct {
+pub const character = struct {
     const modelScale: rl.Vector3 = .{
         .x = 1.75,
         .y = 1.75,
