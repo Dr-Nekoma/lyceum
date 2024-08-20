@@ -7,10 +7,10 @@ fn load(
     comptime T: type,
     comptime err: anyerror,
     comptime whitelist: anytype,
-    comptime loader: fn ([:0]const u8) T,
+    comptime loader: fn ([*:0]const u8) T,
     file_path: [:0]const u8,
 ) !T {
-    const valid_extensions = comptime std.ComptimeStringMap(void, whitelist);
+    const valid_extensions = comptime std.StaticStringMap(void).initComptime(whitelist);
     const extension = std.fs.path.extension(file_path);
     if (!valid_extensions.has(extension)) return err;
 
