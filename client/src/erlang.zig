@@ -13,7 +13,8 @@ pub const server_name = process_name ++ "@localhost";
 pub const Send_Error = sender.Error || error{
     // TODO: rid the world of these terrible names
     new_with_version,
-    reg_send_failed,
+    reg_send_failed_to_subprocess,
+    reg_send_failed_to_master,
 };
 
 pub const Node = struct {
@@ -21,6 +22,7 @@ pub const Node = struct {
     fd: i32,
     node_name: [:0]const u8 = "lyceum_client",
     cookie: [:0]const u8 = "lyceum",
+    handler: ?ei.erlang_pid = null,
 
     pub fn receive(ec: *Node, comptime T: type, allocator: std.mem.Allocator) !T {
         return receiver.run(T, allocator, ec);
@@ -33,10 +35,17 @@ pub const Node = struct {
         defer _ = ei.ei_x_free(&buf);
 
         try sender.send_payload(&buf, data);
-        try validate(
-            error.reg_send_failed,
-            ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(process_name), buf.buff, buf.index),
-        );
+        if (ec.handler) |*pid| {
+            try validate(
+                error.reg_send_failed_to_subprocess,
+                ei.ei_send(ec.fd, pid, buf.buff, buf.index),
+            );
+        } else {
+            try validate(
+                error.reg_send_failed_to_master,
+                ei.ei_reg_send(&ec.c_node, ec.fd, @constCast(process_name), buf.buff, buf.index),
+            );
+        }
     }
 
     pub fn self(ec: *Node) !*ei.erlang_pid {

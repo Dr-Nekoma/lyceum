@@ -29,12 +29,12 @@ pub fn main() anyerror!void {
     gameState.menu = .{ .character_name = try gameState.allocator.allocSentinel(u8, config.nameSize, 0) };
     @memset(gameState.menu.character_name, 0);
 
-    rl.setConfigFlags(.flag_window_resizable);
+    rl.setConfigFlags(.{ .window_resizable = true });
     rl.initWindow(@intFromFloat(gameState.width), @intFromFloat(gameState.height), "Lyceum");
     defer rl.closeWindow();
     rl.setTargetFPS(60);
 
-    try character.goToSpawn(&gameState);
+    // try character.goToSpawn(&gameState);
     mainMenu.spawn(&gameState);
     while (!rl.windowShouldClose()) {
         rl.beginDrawing();

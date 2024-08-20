@@ -3,7 +3,11 @@ const rl = @import("raylib");
 const messages = @import("../server_messages.zig");
 const std = @import("std");
 const mainMenu = @import("../menu/main.zig");
+const physics = @import("physics.zig");
 
+// TODO: Make this a tagged union in which we have different data available
+// per scene, so we can have more guarantees of what is happening with the data
+// This should allow us to not have nullables everywhere.
 pub const Scene = enum {
     user_registry,
     user_login,
@@ -13,21 +17,34 @@ pub const Scene = enum {
     character_selection,
 };
 
+pub const Character = struct {
+    stats: messages.Character_Info = .{},
+    model: ?rl.Model = null,
+    // TODO: Remove this position and use spatial info from stats
+    position: rl.Vector3 = .{
+        .x = 0.0,
+        .y = physics.character.floorLevel,
+        .z = 0.0,
+    },
+    preview: ?rl.Texture2D = null,
+    faceDirection: f32 = 270,
+    velocity: rl.Vector3 = .{
+        .x = 0,
+        .y = 0,
+        .z = 0,
+    },
+};
+
 scene: Scene = .nothing,
 width: f32,
 height: f32,
 menu: mainMenu.Menu = undefined,
 node: *erl.Node,
 allocator: std.mem.Allocator = std.heap.c_allocator,
-current_character: messages.Erlang_Character = .{},
-character_list: []const messages.Character = &.{},
+character: Character = .{},
+character_list: []const Character = &.{},
 camera: rl.Camera,
-test_model: ?rl.Model = null,
-model_position: rl.Vector3 = .{
-    .x = 0.0,
-    .y = 16.0,
-    .z = 0.0,
-},
+
 // TODO: Change the name and maybe even the location of this
 test_value: usize = 0,
 cameraDistance: f32 = 60,

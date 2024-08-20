@@ -90,7 +90,7 @@ CREATE TABLE lyceum.character_position(
        PRIMARY KEY(name, username, e_mail)
 );
 
-CREATE VIEW lyceum.view_character AS
+CREATE OR REPLACE VIEW lyceum.view_character AS
 SELECT * FROM lyceum.character
 NATURAL JOIN lyceum.character_stats
 NATURAL JOIN lyceum.character_position;
@@ -103,7 +103,7 @@ BEGIN
 
     INSERT INTO lyceum.character_stats(name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith)
     VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.constitution, NEW.wisdom, NEW.strength, NEW.endurance, NEW.intelligence, NEW.faith)
-    ON CONFLICT DO UPDATE lyceum.character_stats SET
+    ON CONFLICT (name, e_mail, username) DO UPDATE SET
        name = NEW.name,
        e_mail = NEW.e_mail,
        username = NEW.username,
@@ -112,20 +112,21 @@ BEGIN
        strength = NEW.strength,
        endurance = NEW.endurance,
        intelligence = NEW.intelligence,
-       faith = NEW.faith
-    WHERE name = NEW.name AND e_mail = NEW.e_mail AND username = NEW.username;
+       faith = NEW.faith;
+    -- Is this really necessary? The on conflict already catches this!
+    -- WHERE name = NEW.name AND e_mail = NEW.e_mail AND username = NEW.username;
 
     INSERT INTO lyceum.character_position(name, e_mail, username, x_position, y_position, map_name)
     VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.x_position, NEW.y_position, NEW.map_name)
-    ON CONFLICT DO
-       UPDATE lyceum.character_position SET
+    ON CONFLICT (name, username, e_mail) DO UPDATE SET
            name = NEW.name,
            e_mail = NEW.e_mail,
            username = NEW.username,
            x_position = NEW.x_position,
            y_position = NEW.y_position,
-           map_name = NEW.map_name
-       WHERE name = NEW.name AND e_mail = NEW.e_mail AND username = NEW.username;
+           map_name = NEW.map_name;
+    -- Same issue here.
+    -- WHERE name = NEW.name AND e_mail = NEW.e_mail AND username = NEW.username;
 
     RETURN NEW;
 END
@@ -200,12 +201,16 @@ CREATE TABLE lyceum.character_equipment(
        PRIMARY KEY(name, username, e_mail, equipment_name)
 );
 
-CREATE TRIGGER trigger_character_upsert
+CREATE OR REPLACE TRIGGER trigger_character_upsert
 INSTEAD OF INSERT ON lyceum.view_character
 FOR EACH ROW EXECUTE FUNCTION lyceum.view_character_upsert();
 
 -- INSERT INTO lyceum.user(username, e_mail, password)
 -- VALUES ('test', 'test@email.com', '123');
 
--- INSERT INTO lyceum.view_character(name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith)
--- VALUES ('knight', 'test@email.com', 'test', 10, 12, 13, 14, 15, 16);
+-- INSERT INTO lyceum.view_character(name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith, x_position, y_position, map_name)
+-- VALUES ('knight', 'test@email.com', 'test', 10, 12, 13, 14, 15, 16, 0, 0, 'arda');
+
+-- With map stuff
+-- INSERT INTO lyceum.view_character(name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith, x_position, y_position, map_name)
+-- VALUES ('knight', 'test@email.com', 'test', 10, 12, 13, 14, 15, 16, 0, 0, 'CASTLE_HALL');
