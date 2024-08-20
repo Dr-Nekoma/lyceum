@@ -3,6 +3,7 @@ const rl = @import("raylib");
 const messages = @import("../server_messages.zig");
 const std = @import("std");
 const mainMenu = @import("../menu/main.zig");
+const physics = @import("physics.zig");
 
 // TODO: Make this a tagged union in which we have different data available
 // per scene, so we can have more guarantees of what is happening with the data
@@ -19,9 +20,10 @@ pub const Scene = enum {
 pub const Character = struct {
     stats: messages.Character_Info = .{},
     model: ?rl.Model = null,
+    // TODO: Remove this position and use spatial info from stats
     position: rl.Vector3 = .{
         .x = 0.0,
-        .y = 16.0,
+        .y = physics.Character.floorLevel,
         .z = 0.0,
     },
     preview: ?rl.Texture2D = null,

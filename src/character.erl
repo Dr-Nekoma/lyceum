@@ -1,6 +1,6 @@
 -module(character).
 
--export([create/2, player_characters/3, update/2, retrieve/2]).
+-export([create/2, player_characters/3, update/2, updateTemp/2, retrieve/2]).
 
 create(#{name := Name, 
 	 username := Username, 
@@ -23,7 +23,18 @@ update(#{name := Name,
 	 y_position := YPosition}, Connection) ->
     Query = "UPDATE lyceum.view_character SET x_position = $1::SMALLINT, y_position = $2::SMALLINT \ 
              WHERE name = $3::VARCHAR(18) AND e_mail = $4::TEXT AND username = $5::VARCHAR(32) AND map_name = $6::VARCHAR(64)",
-    {ok, _, _} = epgsql:equery(Connection, Query, [XPosition, YPosition, Name, Email, Username, MapName]).
+    {ok, _} = epgsql:equery(Connection, Query, [XPosition, YPosition, Name, Email, Username, MapName]).
+
+updateTemp(#{name := Name, 
+	     username := Username, 
+	     email := Email,
+	     map_name := MapName,
+	     x_position := XPosition,
+	     y_position := YPosition}, Connection) ->
+    io:format("x: ~p, y: ~p", [XPosition, YPosition]),
+    Query = "UPDATE lyceum.character_position SET x_position = $1::SMALLINT, y_position = $2::SMALLINT \ 
+             WHERE name = $3::VARCHAR(18) AND e_mail = $4::TEXT AND username = $5::VARCHAR(32) AND map_name = $6::VARCHAR(64)",
+    {ok, _} = epgsql:equery(Connection, Query, [XPosition, YPosition, Name, Email, Username, MapName]).
 
 retrieve(#{name := Name, 
 	   username := Username, 

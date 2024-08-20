@@ -79,8 +79,8 @@ pub const Character_Info = struct {
     strength: u8 = 0,
     intelligence: u8 = 0,
     faith: u8 = 0,
-    x_position: u64 = 0,
-    y_position: u64 = 0,
+    x_position: i16 = 0,
+    y_position: i16 = 0,
     map_name: [:0]const u8 = "",
 };
 
@@ -93,8 +93,8 @@ pub const Characters_Response = Tuple_Response([]const Character_Info);
 
 pub const Character_Update = struct {
     name: [:0]const u8,
-    x_position: u64,
-    y_position: u64,
+    x_position: i16,
+    y_position: i16,
     map_name: [:0]const u8,
     username: []const u8,
     email: []const u8,
@@ -117,6 +117,10 @@ pub fn send_with_self(ec: *erl.Node, message: Payload) !void {
 }
 
 // Central place to receive game's data
+
+pub fn receive_standard_response(allocator: std.mem.Allocator, ec: *erl.Node) !Erlang_Response {
+    return ec.receive(Erlang_Response, allocator);
+}
 
 pub fn receive_login_response(allocator: std.mem.Allocator, ec: *erl.Node) !Login_Info {
     const response = try ec.receive(Login_Response, allocator);

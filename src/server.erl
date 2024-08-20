@@ -66,7 +66,7 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
 	    end;
 	{update_character, Character_Map} ->
 	    io:format("Character will be updated"),
-	    character:update(Character_Map, Connection),
+	    character:updateTemp(Character_Map, Connection),
 	    UserPid ! ok;
 	Something ->
 	    io:format("Catch all case: ~p", [Something]);

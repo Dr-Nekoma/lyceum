@@ -34,7 +34,7 @@ pub fn main() anyerror!void {
     defer rl.closeWindow();
     rl.setTargetFPS(60);
 
-    try character.goToSpawn(&gameState);
+    // try character.goToSpawn(&gameState);
     mainMenu.spawn(&gameState);
     while (!rl.windowShouldClose()) {
         rl.beginDrawing();
