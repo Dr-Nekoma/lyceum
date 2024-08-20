@@ -1,6 +1,4 @@
 const rl = @import("raylib");
-const rm = rl.math;
-const config = @import("../config.zig");
 const GameState = @import("../game/state.zig");
 const physics = @import("../game/physics.zig");
 const protocol = @import("../game/protocol.zig");
