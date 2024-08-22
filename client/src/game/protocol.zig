@@ -5,7 +5,7 @@ const std = @import("std");
 pub fn pingUpdateCharacter(gameState: *GameState) !void {
     // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
     // if we are not overwhelming the database
-    if (gameState.node) |nod| {
+    if (gameState.node) |*nod| {
         try nod.send(messages.Payload{
             .update_character = .{
                 .name = gameState.character.stats.name,

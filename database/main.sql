@@ -113,7 +113,8 @@ BEGIN
        strength = NEW.strength,
        endurance = NEW.endurance,
        intelligence = NEW.intelligence,
-       faith = NEW.faith;
+       faith = NEW.faith,
+       face_direction = new.face_direction;
     -- Is this really necessary? The on conflict already catches this!
     -- WHERE name = NEW.name AND e_mail = NEW.e_mail AND username = NEW.username;
 

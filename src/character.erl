@@ -1,6 +1,6 @@
 -module(character).
 
--export([create/2, player_characters/3, update/2, updateTemp/2, retrieve/2]).
+-export([create/2, player_characters/3, update/2, updateTemp/2, retrieve_near_players/2, retrieve/2]).
 
 create(#{name := Name, 
 	 username := Username, 
@@ -32,12 +32,14 @@ updateTemp(#{name := Name,
 	     face_direction := FaceDirection,
 	     x_position := XPosition,
 	     y_position := YPosition}, Connection) ->
-    io:format("x: ~p, y: ~p", [XPosition, YPosition]),
+    %% io:format("x: ~p, y: ~p\n", [XPosition, YPosition]),
     Query = "UPDATE lyceum.character_position SET x_position = $1::SMALLINT, y_position = $2::SMALLINT, face_direction = $7::SMALLINT \ 
              WHERE name = $3::VARCHAR(18) AND e_mail = $4::TEXT AND username = $5::VARCHAR(32) AND map_name = $6::VARCHAR(64)",
     {ok, _} = epgsql:equery(Connection, Query, [XPosition, YPosition, Name, Email, Username, MapName, FaceDirection]).
 
-retrieve_near_players(#{map_name := MapName}, Connection) ->
+retrieve_near_players(#{name := Name, 
+			map_name := MapName} = Something, Connection) ->
+    %% io:format("Map: ~p\n", [Something]),    
     Query = "SELECT lyceum.view_character.name, \
                     lyceum.view_character.constitution, \
                     lyceum.view_character.wisdom, \
@@ -47,10 +49,11 @@ retrieve_near_players(#{map_name := MapName}, Connection) ->
                     lyceum.view_character.faith, \
                     lyceum.view_character.x_position, \
                     lyceum.view_character.y_position, \
-                    lyceum.view_character.map_name \
+                    lyceum.view_character.map_name, \
                     lyceum.view_character.face_direction \
-             FROM lyceum.view_character WHERE map_name = $1::VARCHAR(64)",
-    {ok, FullColumns, Values} = epgsql:equery(Connection, Query, [MapName]),
+             FROM lyceum.view_character \
+             WHERE name <> $1::VARCHAR(18) AND map_name = $2::VARCHAR(64)",
+    {ok, FullColumns, Values} = epgsql:equery(Connection, Query, [Name, MapName]),
     util:columns_and_rows(FullColumns, Values).
 
 retrieve(#{name := Name, 
@@ -73,11 +76,12 @@ player_characters(Username, Email, Connection) ->
                     lyceum.view_character.faith, \
                     lyceum.view_character.x_position, \
                     lyceum.view_character.y_position, \
-                    lyceum.view_character.map_name \
+                    lyceum.view_character.map_name, \
+                    lyceum.view_character.face_direction \
              FROM lyceum.view_character WHERE username = $1::VARCHAR(32) AND e_mail = $2::TEXT",
     {ok, FullColumns, Values} = epgsql:equery(Connection, Query, [Username, Email]),
     util:columns_and_rows(FullColumns, Values).
-
+    %% io:format("Username: ~p, Email: ~p, Data: ~p\n", [Username, Email, Something]),    
 
 %% INSERT INTO lyceum."view_character"("name", "e-mail", "username", "constitution", "wisdom", "strength", "endurance", "intelligence", "faith")
 %% VALUES ('knight', 'test@email.com', 'test', 10, 12, 13, 14, 15, 16);

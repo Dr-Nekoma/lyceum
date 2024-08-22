@@ -45,8 +45,9 @@ stream_user_data(#{user_pid := UserPid, connection := Connection} = State) ->
 % TODO: We should not just keep passing Connections here, this is dangerous for interactive stuff
 handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
     receive	    
-	{list_characters, #{username := Username, email := Email}} ->
+	{list_characters, #{username := Username, email := Email} = Something} ->
 	    io:format("Querying user's characters..."),
+	    io:format("Map: ~p\n", [Something]),    
 	    Characters = character:player_characters(Username, Email, Connection),
 	    UserPid ! {ok, Characters};
 	{create_character, Character_Map} ->
@@ -65,7 +66,7 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
 			 handle_user(NewState)
 	    end;
 	{update_character, Character_Map} ->
-	    io:format("Character will be updated"),
+	    io:format("Character will be updated\n"),
 	    character:updateTemp(Character_Map, Connection),
 	    Players = character:retrieve_near_players(Character_Map, Connection),
 	    UserPid ! {ok, Players};

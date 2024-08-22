@@ -47,7 +47,7 @@ fn emptyCharacter(gameState: *GameState) !void {
             currentTextPosition.y += textSize.y + fieldPadding;
         } else if (std.mem.eql(u8, field.name, "name")) {
             const nameBoxPosition: rl.Vector2 = .{
-                .x = 50,
+                .x = 150,
                 .y = 50,
             };
             const nameLabelPositionY =
@@ -55,7 +55,7 @@ fn emptyCharacter(gameState: *GameState) !void {
 
             rl.drawText(
                 "Name:",
-                @intFromFloat(nameBoxPosition.x),
+                50,
                 @intFromFloat(nameLabelPositionY),
                 config.buttonFontSize,
                 rl.Color.white,
@@ -67,7 +67,7 @@ fn emptyCharacter(gameState: *GameState) !void {
             nameText.at(nameBoxPosition);
             gameState.character.stats.name = gameState.menu.character_name;
         } else {
-            std.debug.print("Not editable: .{s}\n", .{field.name});
+            // std.debug.print("Not editable: .{s}\n", .{field.name});
         }
     }
 }
@@ -142,7 +142,7 @@ pub fn selection(gameState: *GameState) !void {
 }
 
 pub fn join(gameState: *GameState) !void {
-    if (gameState.node) |nod| {
+    if (gameState.node) |*nod| {
         try nod.send(messages.Payload{
             .list_characters = .{
                 .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
@@ -150,23 +150,22 @@ pub fn join(gameState: *GameState) !void {
             },
         });
     }
-    if (gameState.node) |nod| {
+    if (gameState.node) |*nod| {
         const maybe_characters = try messages.receive_characters_list(gameState.allocator, nod);
         switch (maybe_characters) {
             .ok => |erlang_characters| {
-
                 // todo: discover how to make this work
                 // const teapotembed = @embedfile("../assets/teapot.png");
                 // const teapotloaded = rl.loadimagefrommemory(".png", teapotembed, teapotembed.len);
 
-                const teapotImage = try assets.image("teapot.png");
+                const teapot = try assets.texture("teapot.png");
 
                 var characters = std.ArrayList(GameState.Character).init(gameState.allocator);
 
                 for (erlang_characters) |stats| {
                     try characters.append(.{
                         .stats = stats,
-                        .preview = rl.loadTextureFromImage(teapotImage),
+                        .preview = teapot,
                     });
                 }
 
