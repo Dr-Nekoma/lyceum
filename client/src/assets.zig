@@ -46,7 +46,7 @@ pub fn texture(textureFilePath: [:0]const u8) !rl.Texture2D {
         rl.Texture2D,
         error.could_not_load_texture,
         .{ .{".png"}, .{".jpg"} },
-        rl.loadTexture2D,
+        rl.loadTexture,
         textureFilePath,
     );
 }
