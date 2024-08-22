@@ -7,7 +7,6 @@ fn load(
     comptime T: type,
     comptime err: anyerror,
     comptime whitelist: anytype,
-    comptime loader: fn ([*:0]const u8) T,
     file_path: [:0]const u8,
 ) !T {
     const valid_extensions = comptime std.StaticStringMap(void).initComptime(whitelist);
@@ -18,7 +17,7 @@ fn load(
     const full_path = try std.fs.path.joinZ(allocator, &.{ base_filepath, file_path });
     defer allocator.free(full_path);
 
-    return loader(full_path);
+    return T.init(full_path);
 }
 
 pub fn image(imageFilePath: [:0]const u8) !rl.Image {
@@ -26,7 +25,6 @@ pub fn image(imageFilePath: [:0]const u8) !rl.Image {
         rl.Image,
         error.could_not_load_image,
         .{ .{".png"}, .{".jpg"} },
-        rl.loadImage,
         imageFilePath,
     );
 }
@@ -36,7 +34,6 @@ pub fn model(modelFilePath: [:0]const u8) !rl.Model {
         rl.Model,
         error.could_not_load_model,
         .{ .{".glb"}, .{".obj"} },
-        rl.loadModel,
         modelFilePath,
     );
 }
@@ -46,7 +43,6 @@ pub fn texture(textureFilePath: [:0]const u8) !rl.Texture2D {
         rl.Texture2D,
         error.could_not_load_texture,
         .{ .{".png"}, .{".jpg"} },
-        rl.loadTexture,
         textureFilePath,
     );
 }
