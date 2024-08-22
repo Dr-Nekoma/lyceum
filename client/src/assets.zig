@@ -38,9 +38,9 @@ pub fn model(modelFilePath: [:0]const u8) !rl.Model {
     );
 }
 
-pub fn texture(textureFilePath: [:0]const u8) !rl.Texture2D {
+pub fn texture(textureFilePath: [:0]const u8) !rl.Texture {
     return load(
-        rl.Texture2D,
+        rl.Texture,
         error.could_not_load_texture,
         .{ .{".png"}, .{".jpg"} },
         textureFilePath,
