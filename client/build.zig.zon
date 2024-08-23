@@ -7,6 +7,11 @@
             .url = "https://github.com/Not-Nik/raylib-zig/archive/devel.tar.gz",
             .hash = "1220ff1a9e774784fe3f11ffe71bc0186f9e62eb0fe1727f676d038b62665a5c74c5", // put the actual hash here
         },
+
+        .zerl = .{
+            .url = "https://github.com/dont-rely-on-nulls/zerl/archive/c791c08723da0e13d1ffe2e81464ae3e4853f6de.tar.gz",
+            .hash = "1220673f8da42b67fe1606b04e743349261b03aad113d0ca401db27c431f5841c6ff",
+        },
     },
     .paths = .{
         "build.zig",

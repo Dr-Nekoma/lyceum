@@ -1,4 +1,4 @@
-const erl = @import("erlang.zig");
+const erl = @import("zerl");
 const std = @import("std");
 const rl = @import("raylib");
 
