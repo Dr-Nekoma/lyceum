@@ -4,8 +4,8 @@
     .version = "0.0.1",
     .dependencies = .{
         .@"raylib-zig" = .{
-            .url = "https://github.com/Not-Nik/raylib-zig/archive/devel.tar.gz",
-            .hash = "1220ff1a9e774784fe3f11ffe71bc0186f9e62eb0fe1727f676d038b62665a5c74c5", // put the actual hash here
+            .url = "https://github.com/Not-Nik/raylib-zig/archive/58df62807f62bef1db79538d04b37b9f79909d0a.tar.gz",
+            .hash = "1220df9aa89d657f5dca24ab0ac3d187f7a992a4d27461fd9e76e934bf0670ca9a90",
         },
 
         .zerl = .{
