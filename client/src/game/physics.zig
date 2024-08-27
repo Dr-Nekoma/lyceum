@@ -23,7 +23,7 @@ pub const character = struct {
     };
 
     const acceleration = 120;
-    pub const floorLevel = 16;
+    pub const floorLevel = 12;
     const ceilingLevel = 48;
 
     pub fn draw(gameState: *GameState) void {
