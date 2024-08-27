@@ -30,3 +30,47 @@ pub fn pingUpdateCharacter(gameState: *GameState) !void {
         }
     }
 }
+
+pub fn pingJoinMap(gameState: *GameState) !void {
+    // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
+    // if we are not overwhelming the database
+    if (gameState.node) |*nod| {
+        try nod.send(messages.Payload{
+            .joining_map = .{
+                .name = gameState.character.stats.name,
+                .x_position = gameState.character.stats.x_position,
+                .y_position = gameState.character.stats.y_position,
+                .map_name = gameState.character.stats.map_name,
+                .face_direction = gameState.character.stats.face_direction,
+                .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
+                .email = gameState.menu.email,
+            },
+        });
+        const server_response = try messages.receive_standard_response(gameState.allocator, nod);
+        switch (server_response) {
+            .ok => {},
+            .@"error" => |msg| {
+                defer gameState.allocator.free(msg);
+                std.debug.print("[ERROR]: {s}\n", .{msg});
+                gameState.scene = .nothing;
+            },
+        }
+    }
+}
+
+pub fn pingExitMap(gameState: *GameState) !void {
+    // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
+    // if we are not overwhelming the database
+    if (gameState.node) |*nod| {
+        try nod.send(messages.Payload.exit_map);
+        const server_response = try messages.receive_standard_response(gameState.allocator, nod);
+        switch (server_response) {
+            .ok => {},
+            .@"error" => |msg| {
+                defer gameState.allocator.free(msg);
+                std.debug.print("[ERROR]: {s}\n", .{msg});
+                gameState.scene = .nothing;
+            },
+        }
+    }
+}

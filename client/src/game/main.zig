@@ -28,4 +28,8 @@ pub fn spawn(gameState: *GameState) !void {
     rl.drawGrid(20, 10.0);
     try protocol.pingUpdateCharacter(gameState);
     drawPlayers(gameState);
+    if (rl.isKeyDown(.key_q)) {
+        try protocol.pingExitMap(gameState);
+        gameState.scene = .nothing;
+    }
 }

@@ -13,6 +13,7 @@ pub fn goToSpawn(gameState: *GameState) !void {
     const model = try assets.model("knight.glb");
     gameState.character.model = model;
     rl.disableCursor();
+    try protocol.pingJoinMap(gameState);
     gameState.scene = .spawn;
 }
 
