@@ -51,7 +51,7 @@ pub fn connect(gameState: *GameState) !void {
     )) {
         const connection_status = erl.ei.ei_init();
         if (connection_status != 0) return error.ei_init_failed;
-        var node: erl.Node = try erl.prepare_connection();
+        var node: erl.Node = try erl.Node.init();
         erl.establish_connection(&node, gameState.menu.server.ip[0..gameState.menu.server.ipPosition]) catch |error_value| {
             try erl.print_connect_server_error(error_value);
             std.process.exit(2);

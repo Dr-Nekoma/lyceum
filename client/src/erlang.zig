@@ -26,11 +26,38 @@ pub const Send_Error = sender.Error || error{
 };
 
 pub const Node = struct {
+    const nodeLength = 10;
+    pub const bufferMaxSize = 50;
     c_node: ei.ei_cnode,
     fd: i32,
-    node_name: [:0]const u8 = "lyceum_client",
+    node_name: [nodeLength:0]u8,
     cookie: [:0]const u8 = "lyceum",
     handler: ?ei.erlang_pid = null,
+
+    pub fn init() !@This() {
+        var tempNode: Node = .{
+            .c_node = undefined,
+            .fd = undefined,
+            .node_name = .{0} ** nodeLength,
+        };
+
+        var src_node_name: [nodeLength / 2]u8 = undefined;
+        std.crypto.random.bytes(&src_node_name);
+        const encoder = std.base64.Base64Encoder.init(std.base64.standard_alphabet_chars, null);
+        _ = encoder.encode(&tempNode.node_name, &src_node_name);
+
+        const creation = std.time.timestamp() + 1;
+        const creation_u: u64 = @bitCast(creation);
+        const check = ei.ei_connect_init(
+            &tempNode.c_node,
+            &tempNode.node_name,
+            tempNode.cookie.ptr,
+            @truncate(creation_u),
+        );
+        try validate(error.ei_connect_init_failed, check);
+
+        return tempNode;
+    }
 
     pub fn receive(ec: *Node, comptime T: type, allocator: std.mem.Allocator) !T {
         return receiver.run(T, allocator, ec);
@@ -70,35 +97,14 @@ pub fn validate(error_tag: anytype, result_value: c_int) !void {
     }
 }
 
-const max_size = 50;
-
 pub fn establish_connection(ec: *Node, ip: []const u8) !void {
-    var buffer: [max_size:0]u8 = .{0} ** max_size;
+    var buffer: [Node.bufferMaxSize:0]u8 = .{0} ** Node.bufferMaxSize;
     std.mem.copyForwards(u8, &buffer, process_name);
     buffer[process_name.len] = '@';
     std.mem.copyForwards(u8, buffer[process_name.len + 1 ..], ip);
     const sockfd = ei.ei_connect(&ec.c_node, &buffer);
     try validate(error.ei_connect_failed, sockfd);
     ec.fd = sockfd;
-}
-
-pub fn prepare_connection() !Node {
-    var l_node: Node = .{
-        .c_node = undefined,
-        .fd = undefined,
-    };
-    const creation = std.time.timestamp() + 1;
-    const creation_u: u64 = @bitCast(creation);
-    const result = ei.ei_connect_init(
-        &l_node.c_node,
-        l_node.node_name.ptr,
-        l_node.cookie.ptr,
-        @truncate(creation_u),
-    );
-    return if (result < 0)
-        error.ei_connect_init_failed
-    else
-        l_node;
 }
 
 pub fn With_Pid(comptime T: type) type {

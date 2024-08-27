@@ -109,8 +109,9 @@ pub const Payload = union(enum) {
     login: Login_Request,
     list_characters: Characters_Request,
     // create_character:
-    joining_world: void,
+    joining_map: Character_Update,
     update_character: Character_Update,
+    exit_map: void,
     debug: [:0]const u8,
 };
 
