@@ -91,6 +91,15 @@ CREATE TABLE lyceum.character_position(
        PRIMARY KEY(name, username, e_mail)
 );
 
+CREATE TABLE lyceum.active_characters(
+       name VARCHAR(18) NOT NULL,
+       e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
+       username VARCHAR(32) NOT NULL,
+       user_pid VARCHAR(50) NOT NULL UNIQUE,       
+       FOREIGN KEY (name, username, e_mail) REFERENCES lyceum.character(name, username, e_mail),
+       PRIMARY KEY(name, username, e_mail)      
+);
+
 CREATE OR REPLACE VIEW lyceum.view_character AS
 SELECT * FROM lyceum.character
 NATURAL JOIN lyceum.character_stats
@@ -127,6 +136,7 @@ BEGIN
            x_position = NEW.x_position,
            y_position = NEW.y_position,
            map_name = NEW.map_name;
+
     -- Same issue here.
     -- WHERE name = NEW.name AND e_mail = NEW.e_mail AND username = NEW.username;
 
