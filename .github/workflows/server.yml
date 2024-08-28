@@ -12,8 +12,8 @@ permissions:
 env:
   PGHOST: localhost
   PGPORT: 5432
-  PGPASSWORD: sekryt
-  PGUSER: lyceum_ci
+  PGPASSWORD: admin
+  PGUSER: admin
   PGDATABASE: mmo
 
 jobs:
@@ -50,6 +50,11 @@ jobs:
 
       - name: Install Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: "[Erlang] Postgres migrations"
+        run: |
+          #nix develop .#ci --impure -c just build
+          echo "todo"
 
       - name: "[Erlang] build"
         run: |

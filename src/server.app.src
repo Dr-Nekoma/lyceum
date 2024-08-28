@@ -4,10 +4,9 @@
   {registered, []},
   {mod, {server, []}},
   {applications,
-   [epgsql, kernel, stdlib, sasl]},
-  {env,[]},
+   [kernel,stdlib,pure_migrations,epgsql,sasl]},
+  {env,[ {migrations_path, "./database/migrations/"} ]},
   {modules, []},
-
   {licenses, ["Apache-2.0"]},
   {links, []}
  ]}.
