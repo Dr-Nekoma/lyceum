@@ -13,6 +13,7 @@ pub fn goToSpawn(gameState: *GameState) !void {
     const model = try assets.model("knight.glb");
     gameState.character.model = model;
     rl.disableCursor();
+    try protocol.pingJoinMap(gameState);
     gameState.scene = .spawn;
 }
 
@@ -29,7 +30,7 @@ fn emptyCharacter(gameState: *GameState) !void {
     };
     const fieldPadding = 25;
     inline for (std.meta.fields(messages.Character_Info)) |field| {
-        if (comptime isDifferent(field.name, &.{ "name", "map_name", "x_position", "y_position" })) {
+        if (comptime isDifferent(field.name, &.{ "name", "map_name", "x_position", "y_position", "face_direction" })) {
             const mutable_name: [:0]u8 = try gameState.allocator.allocSentinel(u8, field.name.len, 0);
             std.mem.copyForwards(u8, mutable_name, field.name);
             mutable_name[0] = std.ascii.toUpper(mutable_name[0]);
@@ -47,7 +48,7 @@ fn emptyCharacter(gameState: *GameState) !void {
             currentTextPosition.y += textSize.y + fieldPadding;
         } else if (std.mem.eql(u8, field.name, "name")) {
             const nameBoxPosition: rl.Vector2 = .{
-                .x = 50,
+                .x = 150,
                 .y = 50,
             };
             const nameLabelPositionY =
@@ -55,7 +56,7 @@ fn emptyCharacter(gameState: *GameState) !void {
 
             rl.drawText(
                 "Name:",
-                @intFromFloat(nameBoxPosition.x),
+                50,
                 @intFromFloat(nameLabelPositionY),
                 config.buttonFontSize,
                 rl.Color.white,
@@ -67,7 +68,7 @@ fn emptyCharacter(gameState: *GameState) !void {
             nameText.at(nameBoxPosition);
             gameState.character.stats.name = gameState.menu.character_name;
         } else {
-            std.debug.print("Not editable: .{s}\n", .{field.name});
+            // std.debug.print("Not editable: .{s}\n", .{field.name});
         }
     }
 }
@@ -142,37 +143,40 @@ pub fn selection(gameState: *GameState) !void {
 }
 
 pub fn join(gameState: *GameState) !void {
-    try gameState.node.send(messages.Payload{
-        .list_characters = .{
-            .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
-            .email = gameState.menu.email,
-        },
-    });
-    const maybe_characters = try messages.receive_characters_list(gameState.allocator, gameState.node);
-    switch (maybe_characters) {
-        .ok => |erlang_characters| {
+    if (gameState.node) |*nod| {
+        try nod.send(messages.Payload{
+            .list_characters = .{
+                .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
+                .email = gameState.menu.email,
+            },
+        });
+    }
+    if (gameState.node) |*nod| {
+        const maybe_characters = try messages.receive_characters_list(gameState.allocator, nod);
+        switch (maybe_characters) {
+            .ok => |erlang_characters| {
+                // todo: discover how to make this work
+                // const teapotembed = @embedfile("../assets/teapot.png");
+                // const teapotloaded = rl.loadimagefrommemory(".png", teapotembed, teapotembed.len);
 
-            // todo: discover how to make this work
-            // const teapotembed = @embedfile("../assets/teapot.png");
-            // const teapotloaded = rl.loadimagefrommemory(".png", teapotembed, teapotembed.len);
+                const teapot = try assets.texture("teapot.png");
 
-            const teapotImage = try assets.image("teapot.png");
+                var characters = std.ArrayList(GameState.Character).init(gameState.allocator);
 
-            var characters = std.ArrayList(GameState.Character).init(gameState.allocator);
+                for (erlang_characters) |stats| {
+                    try characters.append(.{
+                        .stats = stats,
+                        .preview = teapot,
+                    });
+                }
 
-            for (erlang_characters) |stats| {
-                try characters.append(.{
-                    .stats = stats,
-                    .preview = rl.loadTextureFromImage(teapotImage),
-                });
-            }
-
-            gameState.character_list = characters.items;
-            gameState.scene = .character_selection;
-        },
-        .@"error" => |error_msg| {
-            std.debug.print("error in server: {s}", .{error_msg});
-            gameState.scene = .nothing;
-        },
+                gameState.character_list = characters.items;
+                gameState.scene = .character_selection;
+            },
+            .@"error" => |error_msg| {
+                std.debug.print("error in server: {s}", .{error_msg});
+                gameState.scene = .nothing;
+            },
+        }
     }
 }

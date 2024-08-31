@@ -1,6 +1,7 @@
 -- Insert into lyceum.user
 INSERT INTO lyceum.user (username, password, e_mail)
-VALUES ('mmagueta', 'password123', 'mmagueta@example.com');
+VALUES ('mmagueta', 'password123', 'mmagueta@example.com'),
+       ('lambdu', 'pass123', 'lambdu@example.com');
 
 -- Insert into lyceum.map
 INSERT INTO lyceum.map (name)
@@ -9,15 +10,18 @@ VALUES ('CASTLE_HALL'), ('CASTLE_YARD');
 -- Insert into lyceum.character and related tables
 INSERT INTO lyceum.character (name, e_mail, username)
 VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta'),
-       ('Gaiseric', 'mmagueta@example.com', 'mmagueta');
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta'),
+       ('Legion', 'lambdu@example.com', 'lambdu');
 
 INSERT INTO lyceum.character_stats (name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith)
 VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 100, 110, 95, 120, 105, 100),
-       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 60, 110, 55, 150, 150, 50);
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 60, 110, 55, 150, 150, 50),
+       ('Legion', 'lambdu@example.com', 'lambdu', 60, 110, 55, 150, 150, 50);
 
-INSERT INTO lyceum.character_position (name, e_mail, username, x_position, y_position, map_name)
-VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 10, 20, 'CASTLE_HALL'),
-       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 15, 15, 'CASTLE_HALL');
+INSERT INTO lyceum.character_position (name, e_mail, username, x_position, y_position, map_name, face_direction)
+VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 10, 20, 'CASTLE_HALL', 270),
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 15, 15, 'CASTLE_HALL', 270),
+       ('Legion', 'lambdu@example.com', 'lambdu', 15, 15, 'CASTLE_HALL', 270);
 
 -- Insert into lyceum.equipment
 INSERT INTO lyceum.equipment (name, description, kind)
@@ -29,4 +33,5 @@ VALUES
 INSERT INTO lyceum.character_equipment (name, e_mail, username, is_equiped, equipment_name, use, kind)
 VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::lyceum.equipment_kind),
        ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Blood-Reaver''s Gauntlet', 'ARMS'::lyceum.equipment_use, 'ARMS'::lyceum.equipment_kind),
-       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::lyceum.equipment_kind);
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::lyceum.equipment_kind),
+       ('Legion', 'lambdu@example.com', 'lambdu', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::lyceum.equipment_kind);

@@ -3,14 +3,14 @@ const rm = rl.math;
 const GameState = @import("../game/state.zig");
 const std = @import("std");
 
-const heightAxis: rl.Vector3 = .{
+pub const heightAxis: rl.Vector3 = .{
     .x = 0,
     .y = 1,
     .z = 0,
 };
 
 pub const character = struct {
-    const modelScale: rl.Vector3 = .{
+    pub const modelScale: rl.Vector3 = .{
         .x = 1.75,
         .y = 1.75,
         .z = 1.75,
@@ -23,11 +23,11 @@ pub const character = struct {
     };
 
     const acceleration = 120;
-    pub const floorLevel = 16;
+    pub const floorLevel = 12;
     const ceilingLevel = 48;
 
-    pub fn move(gameState: *GameState) void {
-        var tempAngle = gameState.character.faceDirection;
+    pub fn draw(gameState: *GameState) void {
+        var tempAngle = gameState.character.stats.face_direction;
         const velocity = &gameState.character.velocity;
         const deltaTime = rl.getFrameTime();
         const deltaVelocity = deltaTime * acceleration;
@@ -74,15 +74,15 @@ pub const character = struct {
         var tempPosition: rl.Vector3 = rm.vector3Add(gameState.character.position, rm.vector3Scale(velocity.*, deltaTime));
         tempPosition.y = rm.clamp(tempPosition.y, floorLevel, ceilingLevel);
 
-        const previous = &gameState.character.faceDirection;
+        const previous = &gameState.character.stats.face_direction;
         if (previous.* != tempAngle) {
             if (gameState.character.model) |model| {
-                rl.drawModelEx(model, gameState.character.position, heightAxis, previous.*, modelScale, rl.Color.white);
+                rl.drawModelEx(model, gameState.character.position, heightAxis, @floatFromInt(previous.*), modelScale, rl.Color.white);
             }
             previous.* = tempAngle;
         } else {
             if (gameState.character.model) |model| {
-                rl.drawModelEx(model, tempPosition, heightAxis, tempAngle, modelScale, rl.Color.white);
+                rl.drawModelEx(model, tempPosition, heightAxis, @floatFromInt(tempAngle), modelScale, rl.Color.white);
             }
             gameState.character.position = tempPosition;
             gameState.character.stats.x_position = @intFromFloat(tempPosition.x);
