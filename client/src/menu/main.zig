@@ -8,24 +8,25 @@ const std = @import("std");
 
 pub const Menu = struct {
     pub const Server = struct {
+        pub const bufferSize = 50;
         ip: [bufferSize:0]u8 = .{0} ** bufferSize,
         ipPosition: usize = 0,
         connectionStatus: bool = false,
-        pub const bufferSize = 50;
     };
-    pub const Login = struct {
+    pub const Credentials = struct {
+        pub const bufferSize = 50;
         username: [bufferSize:0]u8 = .{0} ** bufferSize,
         usernamePosition: usize = 0,
         password: [bufferSize:0]u8 = .{0} ** bufferSize,
         passwordPosition: usize = 0,
-        pub const bufferSize = 50;
+        email: [:0]const u8 = "",
+        login_button: Button.Clickable = Button.Clickable{ .disabled = true },
     };
     pub const Configuration = struct {
-        pub const ScreenMode = enum {
+        currentScreenMode: enum {
             windowed,
             fullscreen,
-        };
-        currentScreenMode: ScreenMode = .windowed,
+        } = .windowed,
     };
     pub const Assets = struct {
         connection: struct {
@@ -33,14 +34,24 @@ pub const Menu = struct {
             not_connected_icon: rl.Texture2D,
         },
     };
-    character_name: [:0]u8,
-    character_buttons: Button.SelectableGroup = .{},
-    join_world_button: Button.Clickable = Button.Clickable{ .disabled = true },
-    login_button: Button.Clickable = Button.Clickable{ .disabled = true },
-    login: Login = .{},
+    pub const Character = struct {
+        pub const Creation = struct {
+            name_position: usize = 0,
+            name: [:0]u8,
+        };
+        pub const Selection = struct {
+            list: []const GameState.World.Character = &.{},
+            buttons: Button.SelectableGroup = .{},
+            join_world_button: Button.Clickable = Button.Clickable{ .disabled = true },
+        };
+        create: Creation,
+        select: Selection = .{},
+    };
+
+    credentials: Credentials = .{},
     server: Server = .{},
-    email: [:0]const u8 = "",
     config: Configuration = .{},
+    character: Character,
     assets: Assets,
 };
 
@@ -66,8 +77,8 @@ fn userLoginButton(gameState: *GameState) void {
         .x = createUserButtonX,
         .y = createUserButtonY + buttonSize.y + config.menuButtonsPadding,
     };
-    const loginButton = &gameState.menu.login_button;
-    loginButton.disabled = gameState.node == null;
+    const loginButton = &gameState.menu.credentials.login_button;
+    loginButton.disabled = !gameState.connection.is_connected;
     if (loginButton.at(
         "Login",
         buttonPosition,

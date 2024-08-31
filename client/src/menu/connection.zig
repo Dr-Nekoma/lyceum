@@ -50,14 +50,13 @@ pub fn connect(gameState: *GameState) !void {
         config.ColorPalette.primary,
     )) {
         const connection_status = erl.ei.ei_init();
+        const node = gameState.connection.node;
         if (connection_status != 0) return error.ei_init_failed;
-        var node: erl.Node = try erl.Node.init();
-        erl.establish_connection(&node, gameState.menu.server.ip[0..gameState.menu.server.ipPosition]) catch |error_value| {
+        erl.establish_connection(node, gameState.menu.server.ip[0..gameState.menu.server.ipPosition]) catch |error_value| {
             try erl.print_connect_server_error(error_value);
             std.process.exit(2);
         };
-
-        gameState.node = node;
+        gameState.connection.is_connected = true;
         // // TODO: Remove this from here and go to the login screen
         // // For now, everyone will be Magueta
         // if (gameState.node) |nod| {
@@ -87,5 +86,5 @@ pub fn status(gameState: *GameState) void {
             .not_connected = &gameState.menu.assets.connection.not_connected_icon,
         },
     };
-    statusWidget.at(gameState.node != null, gameState.height);
+    statusWidget.at(gameState.connection.is_connected, gameState.height);
 }

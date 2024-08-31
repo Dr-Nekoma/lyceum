@@ -115,8 +115,8 @@ pub const Payload = union(enum) {
     debug: [:0]const u8,
 };
 
-pub fn send_with_self(ec: *erl.Node, message: Payload) !void {
-    try ec.send(.{ try ec.self(), message });
+pub fn send_with_self(ec: *erl.Node, message: Payload, handler: ?erl.ei.erlang_pid) !void {
+    try ec.send(.{ try ec.self(), message }, handler);
 }
 
 // Central place to receive game's data
