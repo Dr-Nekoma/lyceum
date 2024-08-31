@@ -1,8 +1,8 @@
 const rl = @import("raylib");
 const config = @import("../config.zig");
+const std = @import("std");
 const Button = @import("button.zig");
 const Clickable = Button.Clickable{};
-const std = @import("std");
 
 // TODO: Move this to another file to have proper generic types for each field
 ceiling: u16 = 999,

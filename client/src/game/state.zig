@@ -1,9 +1,9 @@
-const erl = @import("../erlang.zig");
-const rl = @import("raylib");
-const messages = @import("../server_messages.zig");
-const std = @import("std");
 const mainMenu = @import("../menu/main.zig");
+const messages = @import("../server_messages.zig");
 const physics = @import("physics.zig");
+const rl = @import("raylib");
+const std = @import("std");
+const zerl = @import("zerl");
 
 // TODO: Make this a tagged union in which we have different data available
 // per scene, so we can have more guarantees of what is happening with the data
@@ -41,12 +41,14 @@ pub const World = struct {
     camera: rl.Camera = undefined,
     cameraDistance: f32 = 60,
 };
+
 pub const Connection = struct {
-    handler: ?erl.ei.erlang_pid = null,
-    node: *erl.Node,
+    pub const process_name = "lyceum_server";
+    handler: ?zerl.ei.erlang_pid = null,
+    node: *zerl.Node,
     is_connected: bool = false,
 };
-// Common
+
 width: f32,
 height: f32,
 menu: mainMenu.Menu = undefined,
@@ -55,7 +57,18 @@ scene: Scene = .nothing,
 connection: Connection,
 world: World = undefined,
 
-pub fn init(width: f32, height: f32, node: *erl.Node) !@This() {
+pub fn send(state: *@This(), data: anytype) !void {
+    try if (state.connection.handler) |*pid|
+        state.connection.node.send(pid, data)
+    else
+        state.connection.node.send(Connection.process_name, data);
+}
+
+pub fn send_with_self(state: *@This(), message: messages.Payload) !void {
+    try state.send(.{ try state.connection.node.self(), message });
+}
+
+pub fn init(width: f32, height: f32, node: *zerl.Node) !@This() {
     const camera: rl.Camera = .{
         .position = .{ .x = 50.0, .y = 50.0, .z = 50.0 },
         .target = .{ .x = 0.0, .y = 10.0, .z = 0.0 },
@@ -65,9 +78,10 @@ pub fn init(width: f32, height: f32, node: *erl.Node) !@This() {
     };
     if (width < 0) return error.negative_width;
     if (height < 0) return error.negative_height;
-    return .{ .width = width, .height = height, .connection = .{
-        .node = node,
-    }, .world = .{
-        .camera = camera,
-    } };
+    return .{
+        .width = width,
+        .height = height,
+        .connection = .{ .node = node },
+        .world = .{ .camera = camera },
+    };
 }

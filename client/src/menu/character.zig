@@ -144,14 +144,14 @@ pub fn selection(gameState: *GameState) !void {
 }
 
 pub fn join(gameState: *GameState) !void {
-    const node = gameState.connection.node;
-    try node.send(messages.Payload{
+    try gameState.send(messages.Payload{
         .list_characters = .{
             .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
             .email = gameState.menu.credentials.email,
         },
-    }, gameState.connection.handler);
+    });
 
+    const node = gameState.connection.node;
     const maybe_characters = try messages.receive_characters_list(gameState.allocator, node);
     switch (maybe_characters) {
         .ok => |erlang_characters| {

@@ -1,7 +1,7 @@
 const rl = @import("raylib");
 const rm = rl.math;
-const GameState = @import("../game/state.zig");
 const std = @import("std");
+const GameState = @import("../game/state.zig");
 
 pub const heightAxis: rl.Vector3 = .{
     .x = 0,

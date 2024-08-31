@@ -1,5 +1,5 @@
-const rl = @import("raylib");
 const config = @import("../config.zig");
+const rl = @import("raylib");
 
 position: rl.Vector2,
 size: rl.Vector2,

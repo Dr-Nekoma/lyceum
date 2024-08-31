@@ -1,10 +1,10 @@
 const assets = @import("../assets.zig");
-const rl = @import("raylib");
 const config = @import("../config.zig");
+const rl = @import("raylib");
+const std = @import("std");
 const Button = @import("../components/button.zig");
 const Clickable = Button.Clickable{};
 const GameState = @import("../game/state.zig");
-const std = @import("std");
 
 pub const Menu = struct {
     pub const Server = struct {

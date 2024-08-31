@@ -1,12 +1,11 @@
 const messages = @import("../server_messages.zig");
-const GameState = @import("../game/state.zig");
 const std = @import("std");
+const GameState = @import("../game/state.zig");
 
 pub fn pingUpdateCharacter(gameState: *GameState) !void {
     // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
     // if we are not overwhelming the database
-    const node = gameState.connection.node;
-    try node.send(messages.Payload{
+    try gameState.send(messages.Payload{
         .update_character = .{
             .name = gameState.world.character.stats.name,
             .x_position = gameState.world.character.stats.x_position,
@@ -16,7 +15,8 @@ pub fn pingUpdateCharacter(gameState: *GameState) !void {
             .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
             .email = gameState.menu.credentials.email,
         },
-    }, gameState.connection.handler);
+    });
+    const node = gameState.connection.node;
     const server_response = try messages.receive_characters_list(gameState.allocator, node);
     switch (server_response) {
         .ok => |players| {
@@ -33,8 +33,7 @@ pub fn pingUpdateCharacter(gameState: *GameState) !void {
 pub fn pingJoinMap(gameState: *GameState) !void {
     // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
     // if we are not overwhelming the database
-    const node = gameState.connection.node;
-    try node.send(messages.Payload{
+    try gameState.send(messages.Payload{
         .joining_map = .{
             .name = gameState.world.character.stats.name,
             .x_position = gameState.world.character.stats.x_position,
@@ -44,7 +43,8 @@ pub fn pingJoinMap(gameState: *GameState) !void {
             .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
             .email = gameState.menu.credentials.email,
         },
-    }, gameState.connection.handler);
+    });
+    const node = gameState.connection.node;
     const server_response = try messages.receive_standard_response(gameState.allocator, node);
     switch (server_response) {
         .ok => {},
@@ -59,8 +59,8 @@ pub fn pingJoinMap(gameState: *GameState) !void {
 pub fn pingExitMap(gameState: *GameState) !void {
     // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
     // if we are not overwhelming the database
+    try gameState.send(messages.Payload.exit_map);
     const node = gameState.connection.node;
-    try node.send(messages.Payload.exit_map, gameState.connection.handler);
     const server_response = try messages.receive_standard_response(gameState.allocator, node);
     switch (server_response) {
         .ok => {},

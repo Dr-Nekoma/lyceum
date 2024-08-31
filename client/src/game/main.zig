@@ -1,9 +1,9 @@
-const rl = @import("raylib");
-const GameState = @import("../game/state.zig");
-const physics = @import("../game/physics.zig");
-const protocol = @import("../game/protocol.zig");
 const camera = @import("../game/camera.zig");
 const messages = @import("../server_messages.zig");
+const physics = @import("../game/physics.zig");
+const protocol = @import("../game/protocol.zig");
+const rl = @import("raylib");
+const GameState = @import("../game/state.zig");
 
 fn drawPlayers(gameState: *GameState) void {
     for (gameState.world.other_players) |player| {

@@ -1,11 +1,11 @@
+const config = @import("../config.zig");
+const menu = @import("main.zig");
 const messages = @import("../server_messages.zig");
 const rl = @import("raylib");
-const config = @import("../config.zig");
-const Button = @import("../components/button.zig");
-const text = @import("../components/text.zig");
-const GameState = @import("../game/state.zig");
-const menu = @import("main.zig");
 const std = @import("std");
+const text = @import("../components/text.zig");
+const Button = @import("../components/button.zig");
+const GameState = @import("../game/state.zig");
 
 pub fn login(gameState: *GameState) !void {
     const buttonSize = Button.Sizes.medium(gameState);
@@ -74,16 +74,15 @@ pub fn login(gameState: *GameState) !void {
     )) {
         // TODO: Add loading animation to wait for response
         // TODO: Add a timeout for login
-        const node = gameState.connection.node;
-        try messages.send_with_self(@constCast(node), .{
+        try gameState.send_with_self(.{
             .login = .{
                 .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
                 .password = gameState.menu.credentials.password[0..gameState.menu.credentials.passwordPosition],
             },
-        }, gameState.connection.handler);
-        std.debug.print("We are about to receive stuff\n", .{});
-        gameState.connection.handler, gameState.menu.credentials.email = try messages.receive_login_response(gameState.allocator, @constCast(node));
-        // std.debug.print("We received stuff: {?} | {s}\n", .{ gameState.node.handler, gameState.menu.email });
+        });
+        const node = gameState.connection.node;
+        gameState.connection.handler, gameState.menu.credentials.email =
+            try messages.receive_login_response(gameState.allocator, node);
         gameState.scene = .join;
     }
 }

@@ -1,13 +1,21 @@
-const erl = @import("../erlang.zig");
+const config = @import("../config.zig");
+const connection = @import("../components/connection_status.zig");
+const menu = @import("main.zig");
 const messages = @import("../server_messages.zig");
 const rl = @import("raylib");
-const config = @import("../config.zig");
-const Button = @import("../components/button.zig");
-const text = @import("../components/text.zig");
-const connection = @import("../components/connection_status.zig");
-const GameState = @import("../game/state.zig");
-const menu = @import("main.zig");
 const std = @import("std");
+const text = @import("../components/text.zig");
+const zerl = @import("zerl");
+const Button = @import("../components/button.zig");
+const GameState = @import("../game/state.zig");
+
+fn print_connect_server_error(message: anytype) !void {
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print(
+        "Could not connect to Lyceum Server!\n\u{1b}[31mError: \u{1b}[37m{}\n",
+        .{message},
+    );
+}
 
 pub fn connect(gameState: *GameState) !void {
     const buttonSize = Button.Sizes.medium(gameState);
@@ -49,33 +57,15 @@ pub fn connect(gameState: *GameState) !void {
         buttonSize,
         config.ColorPalette.primary,
     )) {
-        const connection_status = erl.ei.ei_init();
-        const node = gameState.connection.node;
+        const connection_status = zerl.ei.ei_init();
         if (connection_status != 0) return error.ei_init_failed;
-        erl.establish_connection(node, gameState.menu.server.ip[0..gameState.menu.server.ipPosition]) catch |error_value| {
-            try erl.print_connect_server_error(error_value);
+        const node = gameState.connection.node;
+        zerl.establish_connection(node, GameState.Connection.process_name, gameState.menu.server.ip[0..gameState.menu.server.ipPosition]) catch |error_value| {
+            try print_connect_server_error(error_value);
             std.process.exit(2);
         };
         gameState.connection.is_connected = true;
-        // // TODO: Remove this from here and go to the login screen
-        // // For now, everyone will be Magueta
-        // if (gameState.node) |nod| {
-        //     try messages.send_with_self(nod, .{
-        //         .login = .{
-        //             .username = "mmagueta",
-        //             .password = "password123",
-        //         },
-        //     });
-        //     std.mem.copyForwards(u8, gameState.menu.login.username[0..8], "mmagueta");
-        //     gameState.menu.login.usernamePosition = 8;
-        // }
-        // if (gameState.node) |nod| {
-        //     nod.handler, gameState.menu.email = try messages.receive_login_response(gameState.allocator, nod);
-        // }
-        // // std.debug.print("We received stuff when connection: {?} | {s}\n", .{ gameState.node.handler, gameState.menu.email });
-        // gameState.scene = .join;
         gameState.scene = .nothing;
-        // gameState.scene = .join;
     }
 }
 

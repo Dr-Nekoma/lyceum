@@ -1,5 +1,5 @@
-const rl = @import("raylib");
 const config = @import("../config.zig");
+const rl = @import("raylib");
 
 const standardSize: rl.Vector2 = .{
     .x = 200,
