@@ -39,7 +39,7 @@ pub fn selectKeysFromStruct(data: anytype, comptime keys: []const [:0]const u8) 
     return anonymousStruct;
 }
 
-// Standard Response from Zerlang Server
+// Standard Response from Erlang Server
 
 fn Tuple_Response(comptime T: type) type {
     return union(enum) {
@@ -48,7 +48,7 @@ fn Tuple_Response(comptime T: type) type {
     };
 }
 
-pub const Zerlang_Response = Tuple_Response(void);
+pub const Erlang_Response = Tuple_Response(void);
 
 // User's Login and Registration
 
@@ -117,8 +117,8 @@ pub const Payload = union(enum) {
 
 // Central place to receive game's data
 
-pub fn receive_standard_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Zerlang_Response {
-    return ec.receive(Zerlang_Response, allocator);
+pub fn receive_standard_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Erlang_Response {
+    return ec.receive(Erlang_Response, allocator);
 }
 
 pub fn receive_login_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Login_Info {
