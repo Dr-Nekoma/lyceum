@@ -67,7 +67,7 @@ fn userLoginButton(gameState: *GameState) void {
         .y = createUserButtonY + buttonSize.y + config.menuButtonsPadding,
     };
     const loginButton = &gameState.menu.login_button;
-    loginButton.disabled = gameState.node == null;
+    loginButton.disabled = false;
     if (loginButton.at(
         "Login",
         buttonPosition,

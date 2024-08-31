@@ -74,19 +74,16 @@ pub fn login(gameState: *GameState) !void {
     )) {
         // TODO: Add loading animation to wait for response
         // TODO: Add a timeout for login
-        if (gameState.node) |*nod| {
-            std.debug.print("Handler: {?}\n", .{nod.handler});
-            try messages.send_with_self(@constCast(nod), .{
-                .login = .{
-                    .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
-                    .password = gameState.menu.login.password[0..gameState.menu.login.passwordPosition],
-                },
-            });
-        }
+        std.debug.print("Handler: {?}\n", .{gameState.connection.handler});
+        try gameState.send_with_self(.{
+            .login = .{
+                .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
+                .password = gameState.menu.login.password[0..gameState.menu.login.passwordPosition],
+            },
+        });
         std.debug.print("We are about to receive stuff\n", .{});
-        if (gameState.node) |*nod| {
-            nod.handler, gameState.menu.email = try messages.receive_login_response(gameState.allocator, @constCast(nod));
-        }
+        gameState.connection.handler, gameState.menu.email =
+            try messages.receive_login_response(gameState.allocator, gameState.connection.node);
         // std.debug.print("We received stuff: {?} | {s}\n", .{ gameState.node.handler, gameState.menu.email });
         gameState.scene = .join;
     }

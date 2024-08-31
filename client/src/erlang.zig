@@ -6,18 +6,6 @@ const std = @import("std");
 const receiver = @import("erlang/receiver.zig");
 const sender = @import("erlang/sender.zig");
 
-// TODO: move these elsewhere, maybe make them into parameters
-pub const process_name = "lyceum_server";
-pub const server_name = process_name ++ "@179.237.195.222";
-
-pub fn print_connect_server_error(message: anytype) !void {
-    const stdout = std.io.getStdOut().writer();
-    try stdout.print(
-        "Could not connect to Lyceum Server!\n\u{1b}[31mError: \u{1b}[37m{}\n",
-        .{message},
-    );
-}
-
 pub const Send_Error = sender.Error || error{
     // TODO: rid the world of these terrible names
     new_with_version,

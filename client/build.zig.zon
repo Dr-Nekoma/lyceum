@@ -9,8 +9,8 @@
         },
 
         .zerl = .{
-            .url = "https://github.com/dont-rely-on-nulls/zerl/archive/c791c08723da0e13d1ffe2e81464ae3e4853f6de.tar.gz",
-            .hash = "1220673f8da42b67fe1606b04e743349261b03aad113d0ca401db27c431f5841c6ff",
+            .url = "https://github.com/dont-rely-on-nulls/zerl/archive/fd97f0fa25de3cdae39644827babdd39290c7cfc.tar.gz",
+            .hash = "122026f7013ef3f4faabbd70632eef2c552afcda98c19b3f1ce927eb973b371b3a7b",
         },
     },
     .paths = .{

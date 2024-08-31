@@ -1,3 +1,4 @@
+const erl = @import("zerl");
 const std = @import("std");
 const rl = @import("raylib");
 const config = @import("config.zig");
@@ -14,8 +15,9 @@ pub fn main() anyerror!void {
     rl.initWindow(@intFromFloat(config.Screen.initialWidth), @intFromFloat(config.Screen.initialHeight), "Lyceum");
     defer rl.closeWindow();
     rl.setTargetFPS(60);
+    var node = try erl.Node.init();
 
-    var gameState = try state.init(config.Screen.initialWidth, config.Screen.initialHeight);
+    var gameState = try state.init(config.Screen.initialWidth, config.Screen.initialHeight, &node);
     gameState.menu = .{
         .character_name = try gameState.allocator.allocSentinel(u8, config.nameSize, 0),
         .assets = try mainMenu.loadAssets(),

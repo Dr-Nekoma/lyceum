@@ -36,11 +36,18 @@ pub const Character = struct {
     },
 };
 
+pub const Connection = struct {
+    pub const process_name = "lyceum_server";
+    pub const server_name = process_name ++ "@179.237.195.222";
+    handler: ?erl.ei.erlang_pid = null,
+    node: *erl.Node,
+};
+
 scene: Scene = .nothing,
 width: f32,
 height: f32,
+connection: Connection,
 menu: mainMenu.Menu = undefined,
-node: ?erl.Node = null,
 allocator: std.mem.Allocator = std.heap.c_allocator,
 character: Character = .{},
 character_list: []const Character = &.{},
@@ -51,7 +58,18 @@ camera: rl.Camera,
 test_value: usize = 0,
 cameraDistance: f32 = 60,
 
-pub fn init(width: f32, height: f32) !@This() {
+pub fn send(state: *@This(), data: anytype) !void {
+    try if (state.connection.handler) |*pid|
+        state.connection.node.send(pid, data)
+    else
+        state.connection.node.send(Connection.process_name, data);
+}
+
+pub fn send_with_self(state: *@This(), message: messages.Payload) !void {
+    try state.send(.{ try state.connection.node.self(), message });
+}
+
+pub fn init(width: f32, height: f32, node: *erl.Node) !@This() {
     const camera: rl.Camera = .{
         .position = .{ .x = 50.0, .y = 50.0, .z = 50.0 },
         .target = .{ .x = 0.0, .y = 10.0, .z = 0.0 },
@@ -64,6 +82,7 @@ pub fn init(width: f32, height: f32) !@This() {
     return .{
         .width = width,
         .height = height,
+        .connection = .{ .node = node },
         .camera = camera,
     };
 }

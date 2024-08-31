@@ -1,4 +1,4 @@
-const erl = @import("../erlang.zig");
+const erl = @import("zerl");
 const messages = @import("../server_messages.zig");
 const rl = @import("raylib");
 const config = @import("../config.zig");
@@ -8,6 +8,14 @@ const connection = @import("../components/connection_status.zig");
 const GameState = @import("../game/state.zig");
 const menu = @import("main.zig");
 const std = @import("std");
+
+fn print_connect_server_error(message: anytype) !void {
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print(
+        "Could not connect to Lyceum Server!\n\u{1b}[31mError: \u{1b}[37m{}\n",
+        .{message},
+    );
+}
 
 pub fn connect(gameState: *GameState) !void {
     const buttonSize = Button.Sizes.medium(gameState);
@@ -53,11 +61,11 @@ pub fn connect(gameState: *GameState) !void {
         if (connection_status != 0) return error.ei_init_failed;
         var node: erl.Node = try erl.Node.init();
         erl.establish_connection(&node, gameState.menu.server.ip[0..gameState.menu.server.ipPosition]) catch |error_value| {
-            try erl.print_connect_server_error(error_value);
+            try print_connect_server_error(error_value);
             std.process.exit(2);
         };
 
-        gameState.node = node;
+        gameState.connection.node = &node;
         // // TODO: Remove this from here and go to the login screen
         // // For now, everyone will be Magueta
         // if (gameState.node) |nod| {
@@ -87,5 +95,5 @@ pub fn status(gameState: *GameState) void {
             .not_connected = &gameState.menu.assets.connection.not_connected_icon,
         },
     };
-    statusWidget.at(gameState.node != null, gameState.height);
+    statusWidget.at(true, gameState.height);
 }
