@@ -1,9 +1,9 @@
-const erl = @import("zerl");
-const rl = @import("raylib");
-const messages = @import("../server_messages.zig");
-const std = @import("std");
 const mainMenu = @import("../menu/main.zig");
+const messages = @import("../server_messages.zig");
 const physics = @import("physics.zig");
+const rl = @import("raylib");
+const std = @import("std");
+const zerl = @import("zerl");
 
 // TODO: Make this a tagged union in which we have different data available
 // per scene, so we can have more guarantees of what is happening with the data
@@ -44,9 +44,8 @@ pub const World = struct {
 
 pub const Connection = struct {
     pub const process_name = "lyceum_server";
-    pub const server_name = process_name ++ "@179.237.195.222";
-    handler: ?erl.ei.erlang_pid = null,
-    node: *erl.Node,
+    handler: ?zerl.ei.erlang_pid = null,
+    node: *zerl.Node,
     is_connected: bool = false,
 };
 
@@ -69,7 +68,7 @@ pub fn send_with_self(state: *@This(), message: messages.Payload) !void {
     try state.send(.{ try state.connection.node.self(), message });
 }
 
-pub fn init(width: f32, height: f32, node: *erl.Node) !@This() {
+pub fn init(width: f32, height: f32, node: *zerl.Node) !@This() {
     const camera: rl.Camera = .{
         .position = .{ .x = 50.0, .y = 50.0, .z = 50.0 },
         .target = .{ .x = 0.0, .y = 10.0, .z = 0.0 },

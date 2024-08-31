@@ -1,13 +1,13 @@
 const assets = @import("../assets.zig");
 const attribute = @import("../components/attribute.zig");
-const Button = @import("../components/button.zig");
 const config = @import("../config.zig");
-const GameState = @import("../game/state.zig");
 const messages = @import("../server_messages.zig");
 const protocol = @import("../game/protocol.zig");
 const rl = @import("raylib");
 const std = @import("std");
 const text = @import("../components/text.zig");
+const Button = @import("../components/button.zig");
+const GameState = @import("../game/state.zig");
 
 pub fn goToSpawn(gameState: *GameState) !void {
     // Source: https://free3d.com/3d-model/knight-low-poly-542752.html

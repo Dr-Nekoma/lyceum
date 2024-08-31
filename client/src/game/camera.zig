@@ -1,6 +1,6 @@
+const config = @import("../config.zig");
 const rl = @import("raylib");
 const rm = rl.math;
-const config = @import("../config.zig");
 const GameState = @import("../game/state.zig");
 
 pub fn update(gameState: *GameState) void {

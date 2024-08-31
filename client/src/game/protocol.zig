@@ -1,6 +1,6 @@
 const messages = @import("../server_messages.zig");
-const GameState = @import("../game/state.zig");
 const std = @import("std");
+const GameState = @import("../game/state.zig");
 
 pub fn pingUpdateCharacter(gameState: *GameState) !void {
     // TODO: We should a time out functionality (Zerl should provide one) to correctly assess

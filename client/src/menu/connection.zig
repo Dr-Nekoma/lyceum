@@ -1,13 +1,13 @@
-const erl = @import("zerl");
+const config = @import("../config.zig");
+const connection = @import("../components/connection_status.zig");
+const menu = @import("main.zig");
 const messages = @import("../server_messages.zig");
 const rl = @import("raylib");
-const config = @import("../config.zig");
-const Button = @import("../components/button.zig");
-const text = @import("../components/text.zig");
-const connection = @import("../components/connection_status.zig");
-const GameState = @import("../game/state.zig");
-const menu = @import("main.zig");
 const std = @import("std");
+const text = @import("../components/text.zig");
+const zerl = @import("zerl");
+const Button = @import("../components/button.zig");
+const GameState = @import("../game/state.zig");
 
 fn print_connect_server_error(message: anytype) !void {
     const stdout = std.io.getStdOut().writer();
@@ -57,10 +57,10 @@ pub fn connect(gameState: *GameState) !void {
         buttonSize,
         config.ColorPalette.primary,
     )) {
-        const connection_status = erl.ei.ei_init();
-        const node = gameState.connection.node;
+        const connection_status = zerl.ei.ei_init();
         if (connection_status != 0) return error.ei_init_failed;
-        erl.establish_connection(node, gameState.menu.server.ip[0..gameState.menu.server.ipPosition]) catch |error_value| {
+        const node = gameState.connection.node;
+        zerl.establish_connection(node, GameState.Connection.process_name, gameState.menu.server.ip[0..gameState.menu.server.ipPosition]) catch |error_value| {
             try print_connect_server_error(error_value);
             std.process.exit(2);
         };

@@ -1,11 +1,11 @@
+const config = @import("../config.zig");
+const menu = @import("main.zig");
 const messages = @import("../server_messages.zig");
 const rl = @import("raylib");
-const config = @import("../config.zig");
-const Button = @import("../components/button.zig");
-const text = @import("../components/text.zig");
-const GameState = @import("../game/state.zig");
-const menu = @import("main.zig");
 const std = @import("std");
+const text = @import("../components/text.zig");
+const Button = @import("../components/button.zig");
+const GameState = @import("../game/state.zig");
 
 pub fn login(gameState: *GameState) !void {
     const buttonSize = Button.Sizes.medium(gameState);
