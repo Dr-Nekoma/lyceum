@@ -2,20 +2,20 @@ const assets = @import("assets.zig");
 const character = @import("menu/character.zig");
 const config = @import("config.zig");
 const connection = @import("menu/connection.zig");
-const erl = @import("zerl");
 const game = @import("game/main.zig");
 const mainMenu = @import("menu/main.zig");
 const rl = @import("raylib");
 const state = @import("game/state.zig");
 const std = @import("std");
 const user = @import("menu/user.zig");
+const zerl = @import("zerl");
 
 pub fn main() anyerror!void {
     rl.setConfigFlags(.{ .window_resizable = true });
     rl.initWindow(@intFromFloat(config.Screen.initialWidth), @intFromFloat(config.Screen.initialHeight), "Lyceum");
     defer rl.closeWindow();
     rl.setTargetFPS(60);
-    var node = try erl.Node.init();
+    var node = try zerl.Node.init("lyceum");
 
     var gameState = try state.init(config.Screen.initialWidth, config.Screen.initialHeight, &node);
     gameState.menu = .{
