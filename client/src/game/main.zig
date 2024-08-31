@@ -6,8 +6,8 @@ const camera = @import("../game/camera.zig");
 const messages = @import("../server_messages.zig");
 
 fn drawPlayers(gameState: *GameState) void {
-    for (gameState.other_players) |player| {
-        const maybeModel = gameState.character.model;
+    for (gameState.world.other_players) |player| {
+        const maybeModel = gameState.world.character.model;
         if (maybeModel) |model| {
             const position: rl.Vector3 = .{
                 .x = @floatFromInt(player.x_position),
@@ -20,7 +20,7 @@ fn drawPlayers(gameState: *GameState) void {
 }
 
 pub fn spawn(gameState: *GameState) !void {
-    rl.beginMode3D(gameState.camera);
+    rl.beginMode3D(gameState.world.camera);
     defer rl.endMode3D();
 
     physics.character.draw(gameState);

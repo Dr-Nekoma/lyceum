@@ -1,18 +1,18 @@
-const messages = @import("../server_messages.zig");
-const std = @import("std");
-const rl = @import("raylib");
-const config = @import("../config.zig");
+const assets = @import("../assets.zig");
 const attribute = @import("../components/attribute.zig");
 const Button = @import("../components/button.zig");
-const text = @import("../components/text.zig");
-const assets = @import("../assets.zig");
+const config = @import("../config.zig");
 const GameState = @import("../game/state.zig");
+const messages = @import("../server_messages.zig");
 const protocol = @import("../game/protocol.zig");
+const rl = @import("raylib");
+const std = @import("std");
+const text = @import("../components/text.zig");
 
 pub fn goToSpawn(gameState: *GameState) !void {
     // Source: https://free3d.com/3d-model/knight-low-poly-542752.html
     const model = try assets.model("knight.glb");
-    gameState.character.model = model;
+    gameState.world.character.model = model;
     rl.disableCursor();
     try protocol.pingJoinMap(gameState);
     gameState.scene = .spawn;
@@ -36,7 +36,7 @@ fn emptyCharacter(gameState: *GameState) !void {
             std.mem.copyForwards(u8, mutable_name, field.name);
             mutable_name[0] = std.ascii.toUpper(mutable_name[0]);
             const attributeComp = attribute{
-                .current = &@field(gameState.character.stats, field.name),
+                .current = &@field(gameState.world.character.stats, field.name),
                 .text = mutable_name,
                 .textPosition = .{
                     .x = currentTextPosition.x,
@@ -63,11 +63,11 @@ fn emptyCharacter(gameState: *GameState) !void {
                 rl.Color.white,
             );
             const nameText = text{
-                .content = gameState.menu.character_name,
-                .position = &gameState.test_value,
+                .content = gameState.menu.character.create.name,
+                .position = &gameState.menu.character.create.name_position,
             };
             nameText.at(nameBoxPosition);
-            gameState.character.stats.name = gameState.menu.character_name;
+            gameState.world.character.stats.name = gameState.menu.character.create.name;
         } else {
             // std.debug.print("Not editable: .{s}\n", .{field.name});
         }
@@ -102,12 +102,12 @@ pub fn selection(gameState: *GameState) !void {
         .y = buttonPosition.y + buttonSize.y * 1.5,
     };
 
-    if (gameState.character_list.len != 0) {
+    if (gameState.menu.character.select.list.len != 0) {
         // TODO: Make pagination for 3 characters at a time
-        const currentSelected = &gameState.menu.character_buttons.selected;
-        const joinButton = &gameState.menu.join_world_button;
-        for (0.., gameState.character_list) |index, character| {
-            var currentButton = gameState.menu.character_buttons.buttons[index];
+        const currentSelected = &gameState.menu.character.select.buttons.selected;
+        const joinButton = &gameState.menu.character.select.join_world_button;
+        for (0.., gameState.menu.character.select.list) |index, character| {
+            var currentButton = gameState.menu.character.select.buttons.instances[index];
             currentButton.index = index;
             if (Button.Selectable.at(
                 &currentButton,
@@ -118,7 +118,7 @@ pub fn selection(gameState: *GameState) !void {
                 currentSelected.*,
             )) {
                 currentSelected.* = index;
-                gameState.character.stats = character.stats;
+                gameState.world.character.stats = character.stats;
             }
 
             if (character.preview) |preview| {
@@ -146,12 +146,13 @@ pub fn selection(gameState: *GameState) !void {
 pub fn join(gameState: *GameState) !void {
     try gameState.send(messages.Payload{
         .list_characters = .{
-            .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
-            .email = gameState.menu.email,
+            .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
+            .email = gameState.menu.credentials.email,
         },
     });
 
-    const maybe_characters = try messages.receive_characters_list(gameState.allocator, gameState.connection.node);
+    const node = gameState.connection.node;
+    const maybe_characters = try messages.receive_characters_list(gameState.allocator, node);
     switch (maybe_characters) {
         .ok => |erlang_characters| {
             // todo: discover how to make this work
@@ -160,7 +161,7 @@ pub fn join(gameState: *GameState) !void {
 
             const teapot = try assets.texture("teapot.png");
 
-            var characters = std.ArrayList(GameState.Character).init(gameState.allocator);
+            var characters = std.ArrayList(GameState.World.Character).init(gameState.allocator);
 
             for (erlang_characters) |stats| {
                 try characters.append(.{
@@ -169,7 +170,7 @@ pub fn join(gameState: *GameState) !void {
                 });
             }
 
-            gameState.character_list = characters.items;
+            gameState.menu.character.select.list = characters.items;
             gameState.scene = .character_selection;
         },
         .@"error" => |error_msg| {

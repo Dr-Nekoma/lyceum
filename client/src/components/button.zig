@@ -140,5 +140,5 @@ pub const Selectable = struct {
 
 pub const SelectableGroup = struct {
     selected: ?usize = null,
-    buttons: [config.maximumCharacters]Selectable = .{Selectable{}} ** config.maximumCharacters,
+    instances: [config.maximumCharacters]Selectable = .{Selectable{}} ** config.maximumCharacters,
 };

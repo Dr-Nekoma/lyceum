@@ -29,8 +29,8 @@ pub fn login(gameState: *GameState) !void {
         rl.Color.white,
     );
     const usernameText = text{
-        .content = &gameState.menu.login.username,
-        .position = &gameState.menu.login.usernamePosition,
+        .content = &gameState.menu.credentials.username,
+        .position = &gameState.menu.credentials.usernamePosition,
     };
     usernameText.at(usernameBoxPosition);
 
@@ -54,8 +54,8 @@ pub fn login(gameState: *GameState) !void {
         rl.Color.white,
     );
     const passwordText = text{
-        .content = &gameState.menu.login.password,
-        .position = &gameState.menu.login.passwordPosition,
+        .content = &gameState.menu.credentials.password,
+        .position = &gameState.menu.credentials.passwordPosition,
     };
     passwordText.at(passwordBoxPosition);
 
@@ -74,17 +74,15 @@ pub fn login(gameState: *GameState) !void {
     )) {
         // TODO: Add loading animation to wait for response
         // TODO: Add a timeout for login
-        std.debug.print("Handler: {?}\n", .{gameState.connection.handler});
         try gameState.send_with_self(.{
             .login = .{
-                .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
-                .password = gameState.menu.login.password[0..gameState.menu.login.passwordPosition],
+                .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
+                .password = gameState.menu.credentials.password[0..gameState.menu.credentials.passwordPosition],
             },
         });
-        std.debug.print("We are about to receive stuff\n", .{});
-        gameState.connection.handler, gameState.menu.email =
-            try messages.receive_login_response(gameState.allocator, gameState.connection.node);
-        // std.debug.print("We received stuff: {?} | {s}\n", .{ gameState.node.handler, gameState.menu.email });
+        const node = gameState.connection.node;
+        gameState.connection.handler, gameState.menu.credentials.email =
+            try messages.receive_login_response(gameState.allocator, node);
         gameState.scene = .join;
     }
 }

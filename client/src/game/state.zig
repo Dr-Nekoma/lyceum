@@ -18,22 +18,28 @@ pub const Scene = enum {
     connect,
 };
 
-pub const Character = struct {
-    stats: messages.Character_Info = .{},
-    model: ?rl.Model = null,
-    // TODO: Remove this position and use spatial info from stats
-    position: rl.Vector3 = .{
-        .x = 0.0,
-        .y = physics.character.floorLevel,
-        .z = 0.0,
-    },
-    preview: ?rl.Texture2D = null,
-    faceDirection: f32 = 270,
-    velocity: rl.Vector3 = .{
-        .x = 0,
-        .y = 0,
-        .z = 0,
-    },
+pub const World = struct {
+    pub const Character = struct {
+        stats: messages.Character_Info = .{},
+        model: ?rl.Model = null,
+        // TODO: Remove this position and use spatial info from stats
+        position: rl.Vector3 = .{
+            .x = 0.0,
+            .y = physics.character.floorLevel,
+            .z = 0.0,
+        },
+        preview: ?rl.Texture2D = null,
+        faceDirection: f32 = 270,
+        velocity: rl.Vector3 = .{
+            .x = 0,
+            .y = 0,
+            .z = 0,
+        },
+    };
+    character: Character = .{},
+    other_players: []const messages.Character_Info = &.{},
+    camera: rl.Camera = undefined,
+    cameraDistance: f32 = 60,
 };
 
 pub const Connection = struct {
@@ -41,22 +47,16 @@ pub const Connection = struct {
     pub const server_name = process_name ++ "@179.237.195.222";
     handler: ?erl.ei.erlang_pid = null,
     node: *erl.Node,
+    is_connected: bool = false,
 };
 
-scene: Scene = .nothing,
 width: f32,
 height: f32,
-connection: Connection,
 menu: mainMenu.Menu = undefined,
 allocator: std.mem.Allocator = std.heap.c_allocator,
-character: Character = .{},
-character_list: []const Character = &.{},
-other_players: []const messages.Character_Info = &.{},
-camera: rl.Camera,
-
-// TODO: Change the name and maybe even the location of this
-test_value: usize = 0,
-cameraDistance: f32 = 60,
+scene: Scene = .nothing,
+connection: Connection,
+world: World = undefined,
 
 pub fn send(state: *@This(), data: anytype) !void {
     try if (state.connection.handler) |*pid|
@@ -83,6 +83,6 @@ pub fn init(width: f32, height: f32, node: *erl.Node) !@This() {
         .width = width,
         .height = height,
         .connection = .{ .node = node },
-        .camera = camera,
+        .world = .{ .camera = camera },
     };
 }

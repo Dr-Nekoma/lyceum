@@ -20,7 +20,6 @@ pub const Node = struct {
     fd: i32,
     node_name: [nodeLength:0]u8,
     cookie: [:0]const u8 = "lyceum",
-    handler: ?ei.erlang_pid = null,
 
     pub fn init() !@This() {
         var tempNode: Node = .{
@@ -51,14 +50,14 @@ pub const Node = struct {
         return receiver.run(T, allocator, ec);
     }
 
-    pub fn send(ec: *Node, data: anytype) Send_Error!void {
+    pub fn send(ec: *Node, data: anytype, handler: ?ei.erlang_pid) Send_Error!void {
         var buf: ei.ei_x_buff = undefined;
         // TODO: get rid of hidden allocation
         try validate(error.new_with_version, ei.ei_x_new_with_version(&buf));
         defer _ = ei.ei_x_free(&buf);
 
         try sender.send_payload(&buf, data);
-        if (ec.handler) |*pid| {
+        if (handler) |pid| {
             try validate(
                 error.reg_send_failed_to_subprocess,
                 ei.ei_send(ec.fd, pid, buf.buff, buf.index),
