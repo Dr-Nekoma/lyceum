@@ -23,7 +23,7 @@ pub fn spawn(gameState: *GameState) !void {
     rl.beginMode3D(gameState.world.camera);
     defer rl.endMode3D();
 
-    physics.character.draw(gameState);
+    physics.character.draw(&gameState.world.character);
     camera.update(gameState);
     rl.drawGrid(20, 10.0);
     try protocol.pingUpdateCharacter(gameState);

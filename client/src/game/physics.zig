@@ -1,3 +1,4 @@
+const animate = @import("animation.zig");
 const rl = @import("raylib");
 const rm = rl.math;
 const std = @import("std");
@@ -10,10 +11,16 @@ pub const heightAxis: rl.Vector3 = .{
 };
 
 pub const character = struct {
+    // pub const modelScale: rl.Vector3 = .{
+    //     .x = 1.75,
+    //     .y = 1.75,
+    //     .z = 1.75,
+    // };
+
     pub const modelScale: rl.Vector3 = .{
-        .x = 1.75,
-        .y = 1.75,
-        .z = 1.75,
+        .x = 18,
+        .y = 18,
+        .z = 18,
     };
 
     const velocityCeiling: rl.Vector3 = .{
@@ -26,27 +33,30 @@ pub const character = struct {
     pub const floorLevel = 12;
     const ceilingLevel = 48;
 
-    pub fn draw(gameState: *GameState) void {
-        var tempAngle = gameState.world.character.stats.face_direction;
-        const velocity = &gameState.world.character.velocity;
+    pub fn draw(entity: *GameState.World.Character) void {
+        var tempAngle = entity.stats.face_direction;
+        const velocity = &entity.velocity;
         const deltaTime = rl.getFrameTime();
         const deltaVelocity = deltaTime * acceleration;
 
         if (rl.isKeyDown(.key_d)) {
+            entity.animation.state = .walking;
             velocity.z -= deltaVelocity;
             tempAngle = 180;
-        }
-        if (rl.isKeyDown(.key_a)) {
+        } else if (rl.isKeyDown(.key_a)) {
+            entity.animation.state = .walking;
             velocity.z += deltaVelocity;
             tempAngle = 0;
-        }
-        if (rl.isKeyDown(.key_w)) {
+        } else if (rl.isKeyDown(.key_w)) {
+            entity.animation.state = .walking;
             velocity.x -= deltaVelocity;
             tempAngle = 270;
-        }
-        if (rl.isKeyDown(.key_s)) {
+        } else if (rl.isKeyDown(.key_s)) {
+            entity.animation.state = .walking;
             velocity.x += deltaVelocity;
             tempAngle = 90;
+        } else {
+            entity.animation.state = .idle;
         }
         if (rl.isKeyDown(.key_space)) {
             velocity.y += deltaVelocity;
@@ -54,6 +64,8 @@ pub const character = struct {
         if (rl.isKeyDown(.key_left_control)) {
             velocity.y -= deltaVelocity;
         }
+
+        animate.character.update(entity);
 
         const frictionFactor = deltaVelocity * 0.65;
 
@@ -71,22 +83,23 @@ pub const character = struct {
 
         velocity.* = rm.vector3Clamp(velocity.*, rm.vector3Scale(velocityCeiling, -1), velocityCeiling);
 
-        var tempPosition: rl.Vector3 = rm.vector3Add(gameState.world.character.position, rm.vector3Scale(velocity.*, deltaTime));
+        var tempPosition: rl.Vector3 = rm.vector3Add(entity.position, rm.vector3Scale(velocity.*, deltaTime));
         tempPosition.y = rm.clamp(tempPosition.y, floorLevel, ceilingLevel);
 
-        const previous = &gameState.world.character.stats.face_direction;
+        const previous = &entity.stats.face_direction;
         if (previous.* != tempAngle) {
-            if (gameState.world.character.model) |model| {
-                rl.drawModelEx(model, gameState.world.character.position, heightAxis, @floatFromInt(previous.*), modelScale, rl.Color.white);
+            if (entity.model) |model| {
+                rl.drawModelEx(model, entity.position, heightAxis, @floatFromInt(previous.*), modelScale, rl.Color.blue);
             }
             previous.* = tempAngle;
+            entity.animation.state = .idle;
         } else {
-            if (gameState.world.character.model) |model| {
-                rl.drawModelEx(model, tempPosition, heightAxis, @floatFromInt(tempAngle), modelScale, rl.Color.white);
+            if (entity.model) |model| {
+                rl.drawModelEx(model, tempPosition, heightAxis, @floatFromInt(tempAngle), modelScale, rl.Color.blue);
             }
-            gameState.world.character.position = tempPosition;
-            gameState.world.character.stats.x_position = @intFromFloat(tempPosition.x);
-            gameState.world.character.stats.y_position = @intFromFloat(tempPosition.z);
+            entity.position = tempPosition;
+            entity.stats.x_position = @intFromFloat(tempPosition.x);
+            entity.stats.y_position = @intFromFloat(tempPosition.z);
         }
     }
 };
