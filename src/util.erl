@@ -12,7 +12,7 @@ columns_and_rows(FullColumns, Rows) ->
 				       Value = case Type of
 						   varchar -> erlang:binary_to_list(RowValue);
 						   text -> erlang:binary_to_list(RowValue);
-						   Unknown -> RowValue
+						   _ -> RowValue
 					       end,
 				       {ColumnName, Value}
 			       end, Columns, erlang:tuple_to_list(Row))
