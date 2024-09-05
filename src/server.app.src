@@ -1,10 +1,10 @@
 {application, server,
- [{description, "An OTP application"},
+ [{description, "An OTP Lyceum Server"},
   {vsn, "0.1.0"},
   {registered, []},
   {mod, {server, []}},
   {applications,
-   [epgsql]},
+   [epgsql, kernel, stdlib, sasl]},
   {env,[]},
   {modules, []},
 

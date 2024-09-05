@@ -43,6 +43,13 @@ pub fn build(b: *std.Build) void {
         exe.root_module.addImport("raylib", raylib);
     }
 
+    const zerl_dep = b.dependency("zerl", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const zerl = zerl_dep.module("zerl");
+    exe.root_module.addImport("zerl", zerl);
+
     exe.linkLibC();
     exe.linkSystemLibrary("pthread");
     exe.linkSystemLibrary("ei");

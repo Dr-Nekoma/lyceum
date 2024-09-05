@@ -1,6 +1,6 @@
-const erl = @import("erlang.zig");
-const std = @import("std");
 const rl = @import("raylib");
+const std = @import("std");
+const zerl = @import("zerl");
 
 fn createAnonymousStruct(comptime T: type, comptime keys: []const [:0]const u8) type {
     const struct_info = @typeInfo(T).Struct;
@@ -57,7 +57,7 @@ pub const Login_Request = struct {
     password: []const u8,
 };
 
-pub const Login_Info = std.meta.Tuple(&.{ erl.ei.erlang_pid, [:0]const u8 });
+pub const Login_Info = std.meta.Tuple(&.{ zerl.ei.erlang_pid, [:0]const u8 });
 const Login_Response = Tuple_Response(Login_Info);
 
 pub const Registry_Request = struct {
@@ -81,6 +81,7 @@ pub const Character_Info = struct {
     faith: u8 = 0,
     x_position: i16 = 0,
     y_position: i16 = 0,
+    face_direction: u16 = 270,
     map_name: [:0]const u8 = "",
 };
 
@@ -97,6 +98,7 @@ pub const Character_Update = struct {
     y_position: i16,
     map_name: [:0]const u8,
     username: []const u8,
+    face_direction: u16 = 270,
     email: []const u8,
 };
 
@@ -107,22 +109,19 @@ pub const Payload = union(enum) {
     login: Login_Request,
     list_characters: Characters_Request,
     // create_character:
-    joining_world: void,
+    joining_map: Character_Update,
     update_character: Character_Update,
+    exit_map: void,
     debug: [:0]const u8,
 };
 
-pub fn send_with_self(ec: *erl.Node, message: Payload) !void {
-    try ec.send(.{ try ec.self(), message });
-}
-
 // Central place to receive game's data
 
-pub fn receive_standard_response(allocator: std.mem.Allocator, ec: *erl.Node) !Erlang_Response {
+pub fn receive_standard_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Erlang_Response {
     return ec.receive(Erlang_Response, allocator);
 }
 
-pub fn receive_login_response(allocator: std.mem.Allocator, ec: *erl.Node) !Login_Info {
+pub fn receive_login_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Login_Info {
     const response = try ec.receive(Login_Response, allocator);
     switch (response) {
         .ok => |item| {
@@ -136,6 +135,6 @@ pub fn receive_login_response(allocator: std.mem.Allocator, ec: *erl.Node) !Logi
     }
 }
 
-pub fn receive_characters_list(allocator: std.mem.Allocator, ec: *erl.Node) !Characters_Response {
+pub fn receive_characters_list(allocator: std.mem.Allocator, ec: *zerl.Node) !Characters_Response {
     return ec.receive(Characters_Response, allocator);
 }
