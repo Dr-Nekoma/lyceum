@@ -1,3 +1,9 @@
+default:
+    just --list
+
+db:
+    psql -U admin mmo
+
 client:
     cd client && zig build --search-prefix ${ERLANG_INTERFACE_PATH} --search-prefix ${RAYLIB_PATH} run -- \"$@\"
 
@@ -15,7 +21,7 @@ deps:
 	rebar3 get-deps
 	rebar3 nix lock
 
-server:
+server: build
 	rebar3 shell
 
 test:

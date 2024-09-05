@@ -1,4 +1,4 @@
-CREATE SCHEMA lyceum;
+CREATE SCHEMA IF NOT EXISTS lyceum;
 
 CREATE TABLE lyceum.user(
        username VARCHAR(32) NOT NULL,

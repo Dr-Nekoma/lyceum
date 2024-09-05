@@ -35,6 +35,9 @@
         ERLANG_INTERFACE_PATH = "${erlangLibs.interface.path}";
         ERLANG_PATH = "${erlangLatest}";
         RAYLIB_PATH = "${raylib}";
+        # Devenv sets this to something else
+        # https://www.postgresql.org/docs/7.0/libpq-envars.htm
+        PGHOST = "127.0.0.1";
       };
     in
       {
@@ -60,11 +63,10 @@
                 pkgs.stdenv.cc.cc.lib
                 rebar3
                 just
-                openssl
                 gnutar
               ];
               nativeBuildInputs = with pkgs; [
-                autoPatchelfHook libz ncurses systemdLibs
+                autoPatchelfHook coreutils gawk gnugrep libz ncurses openssl systemdLibs
               ];
               buildPhase = ''
                 mkdir -p _checkouts
@@ -77,18 +79,21 @@
               '';        
               installPhase = ''
                 mkdir -p $out
+                mkdir -p $out/database
+                # Add migrations to the output as well, otherwise the server
+                # breaks at runtime.
+                cp -r database/migrations $out/database
                 tar -xzf _build/prod/rel/*/*.tar.gz -C $out/
               '';
             };
 
-            # TODO: Move the container build to nix, instead of docker
             # nix build .#dockerImage
             dockerImage = pkgs.dockerTools.buildLayeredImage {
               name = "lyceum";
               tag = "latest";
               created = "now";
               # This will copy the compiled erlang release to the image
-              contents = [ server pkgs.coreutils pkgs.gawk pkgs.gnugrep ];
+              contents = [ server ];
               config = {
                 Cmd = [ "${server}/bin/server" "foreground" ];
                 ExposedPorts = {"8080/tcp" = {};};
@@ -218,7 +223,7 @@
                 '';
 
                 services.postgres = {
-                  package = pkgs.postgresql_15.withPackages (p: with p; [p.periods]);
+                  package = pkgs.postgresql_16.withPackages (p: with p; [p.periods]);
                   enable = true;
                   initialDatabases = [ { name = "mmo"; } ];
                   port = 5432;
@@ -226,6 +231,7 @@
                   initialScript = ''
                   CREATE USER admin SUPERUSER;
                   ALTER USER admin PASSWORD 'admin';
+                  GRANT ALL PRIVILEGES ON DATABASE mmo to admin;
                   '';
                 };
               })
