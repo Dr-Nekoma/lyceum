@@ -41,10 +41,60 @@
         packages = forAllSystems (system:
           let
             pkgs = nixpkgs.legacyPackages."${system}";
-            env = zig2nix.outputs.zig-env.${system} {};
-            system-triple = env.lib.zigTripleFromString system;
-          in {
+            erlangLatest = pkgs.erlang_27;
+          in rec {
             devenv-up = self.devShells.${system}.default.config.procfileScript;
+
+          # Leverages nix to build the erlang backend release
+          # nix build .#server
+          server = 
+            let
+              deps = import ./rebar-deps.nix { inherit (pkgs) fetchHex fetchFromGitHub fetchgit; };
+            in
+            pkgs.stdenv.mkDerivation {
+              name = "server";
+              version = "0.0.1";
+              src = pkgs.lib.cleanSource ./.;
+              buildInputs = with pkgs; [ 
+                erlangLatest
+                pkgs.stdenv.cc.cc.lib
+                rebar3
+                just
+                openssl
+                gnutar
+              ];
+              nativeBuildInputs = with pkgs; [
+                autoPatchelfHook libz ncurses systemdLibs
+              ];
+              buildPhase = ''
+                mkdir -p _checkouts
+                # https://github.com/NixOS/nix/issues/670#issuecomment-1211700127
+                export HOME=$(pwd)
+                ${toString (pkgs.lib.mapAttrsToList (k: v: ''
+                    cp -R --no-preserve=mode ${v} _checkouts/${k}
+                '') deps)}
+                just release-nix
+              '';        
+              installPhase = ''
+                mkdir -p $out
+                tar -xzf _build/prod/rel/*/*.tar.gz -C $out/
+              '';
+            };
+
+            # TODO: Move the container build to nix, instead of docker
+            # nix build .#dockerImage
+            dockerImage = pkgs.dockerTools.buildLayeredImage {
+              name = "lyceum";
+              tag = "latest";
+              created = "now";
+              # This will copy the compiled erlang release to the image
+              contents = [ server pkgs.coreutils pkgs.gawk pkgs.gnugrep ];
+              config = {
+                Cmd = [ "${server}/bin/server" "foreground" ];
+                ExposedPorts = {"8080/tcp" = {};};
+              };
+            };
+
             # docs = pkgs.stdenv.mkDerivation {
             #   name = "docs";
             #   src = ./.;
@@ -69,7 +119,7 @@
           pkgs = nixpkgs.legacyPackages.${system};
 
           # Erlang shit
-          erlangLatest = pkgs.erlang_26;
+          erlangLatest = pkgs.erlang_27;
           erlangLibs = getErlangLibs erlangLatest;
 
           # Zig shit
@@ -89,19 +139,17 @@
           
           # nix run .#test
           apps.test = env.app [] "zig build --search-prefix ${erlangLatest} --search-prefix ${raylib} test -- \"$@\"";
-        });
+        });    
 
       devShells = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
 
           # Erlang shit
-          erlangLatest = pkgs.erlang_26;
+          erlangLatest = pkgs.erlang_27;
           erlangLibs = getErlangLibs erlangLatest;
 
           # Zig shit
-          env = zig2nix.outputs.zig-env.${system} {};
-          system-triple = env.lib.zigTripleFromString system;
           raylib = pkgs.raylib;
           zigLatest = pkgs.zig;
 
@@ -126,6 +174,12 @@
           ci = pkgs.mkShell {
             env = mkEnvVars pkgs erlangLatest erlangLibs raylib;
             buildInputs = with pkgs; [ erlangLatest just rebar3 zigLatest ];
+          };
+
+          # Deploy the erlang server
+          # `nix develop .#deploy`
+          deploy = pkgs.mkShell {
+            buildInputs = with pkgs; [ erlangLatest just rebar3 ];
           };
 
           # `nix develop`

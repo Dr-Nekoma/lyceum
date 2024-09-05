@@ -92,7 +92,7 @@ handle_master(Connection) ->
     receive
 	{Pid, {register, #{username := Username, email := Email, password := Password}}} ->
 	    io:format("This user now exists: ~p", [Username]),
-	    user:insert_user(#{username => Username, 
+	    registry:insert_user(#{username => Username, 
 			  password => Password,
 			  email => Email},
 			Connection),
@@ -100,7 +100,7 @@ handle_master(Connection) ->
 	    Pid ! {self(), Response};
 	{Pid, {login, #{username := Username, password := Password}}} ->
 	    io:format("This user logged: ~p\n", [Username]),
-	    Email = user:check_user(#{username => Username, 
+	    Email = registry:check_user(#{username => Username, 
 				      password => Password},
 				    Connection),
 	    NewPid = spawn(?MODULE, handle_user, [#{ user_pid => Pid, connection => database_connect()}]),
