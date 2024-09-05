@@ -69,7 +69,7 @@ fn emptyCharacter(gameState: *GameState) !void {
             nameText.at(nameBoxPosition);
             gameState.world.character.stats.name = gameState.menu.character.create.name;
         } else {
-            // std.debug.print("Not editable: .{s}\n", .{field.name});
+            std.debug.print("Not editable: .{s}\n", .{field.name});
         }
     }
 }
@@ -159,14 +159,14 @@ pub fn join(gameState: *GameState) !void {
             // const teapotembed = @embedfile("../assets/teapot.png");
             // const teapotloaded = rl.loadimagefrommemory(".png", teapotembed, teapotembed.len);
 
-            const teapot = try assets.texture("teapot.png");
+            const teapotTexture = try assets.texture("teapot.png");
 
             var characters = std.ArrayList(GameState.World.Character).init(gameState.allocator);
 
             for (erlang_characters) |stats| {
                 try characters.append(.{
                     .stats = stats,
-                    .preview = teapot,
+                    .preview = teapotTexture,
                 });
             }
 

@@ -9,8 +9,8 @@ const GameState = @import("../game/state.zig");
 pub const Menu = struct {
     pub const Server = struct {
         pub const bufferSize = 50;
-        ip: [bufferSize:0]u8 = .{0} ** bufferSize,
-        ipPosition: usize = 0,
+        address: [bufferSize:0]u8 = .{0} ** bufferSize,
+        addressPosition: usize = 0,
         connectionStatus: bool = false,
     };
     pub const Credentials = struct {
