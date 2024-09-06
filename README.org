@@ -1,20 +1,49 @@
 #+TITLE: Lyceum Server 🏛️
 
+#+html: <a href="https://builtwithnix.org"><img alt="built with nix" src="https://builtwithnix.org/badge.svg" /></a><br>
+#+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/build_client.yml"> <img alt="[Build] Client" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/build_client.yml/badge.svg" /></a>
+#+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/build_server.yml"> <img alt="[Build] Server Client" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/build_server.yml/badge.svg" /></a>
+#+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/deploy_server.yml"> <img alt="[Deploy] Server Status" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/deploy_server.yml/badge.svg" /></a>
+
 * About
 
 This is an MMO Server written in Erlang, for a game called Lyceum.
 
 * How to run
 
-Currently it is very simple:
+There are several ways to run this project, but they all leverage [[https://nixos.org/][Nix]].
+
+** Development Shell
+
+We have a single [[https://devenv.sh/][devenv]] configured, that has all the tooling required to run this project, it also includes postgres:
 
 #+BEGIN_SRC shell
+  # To enter the developmet shell
   nix develop --impure
-  rebar3 get-deps
-  rebar3 shell
+  # To spawn postgres
+  devenv up -d
 #+END_SRC
 
-Then simply interact with /localhost:8080/.
+Then simply interact with ~/localhost:8080/~. For more commands, make sure to check ~just~.
+
+#+BEGIN_SRC shell
+    # Will list all commands we have right now
+    just
+#+END_SRC
+
+*** Nix Builds
+
+You can also build the server and related OCI images with Nix.
+
+#+BEGIN_SRC shell
+    nix build .#server
+#+END_SRC
+if you prefer running a container for the server:
+#+BEGIN_SRC shell
+    nix build .#buildImage
+    docker load < ./result
+    docker container run --network=host lyceum:latest
+#+END_SRC
 
 * Lore
 

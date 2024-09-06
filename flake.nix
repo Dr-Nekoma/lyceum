@@ -9,21 +9,46 @@
     zig2nix.url = "github:Cloudef/zig2nix";
   };
 
-  outputs = { self, nixpkgs, devenv, zig2nix, ... } @ inputs:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      devenv,
+      zig2nix,
+      ...
+    }@inputs:
     let
-      systems = [ "x86_64-linux" "x86_64-darwin" "aarch64-linux" "aarch64-darwin" ];
-      forAllSystems = f: builtins.listToAttrs (map (name: { inherit name; value = f name; }) systems);
-      getErlangLibs = erlangPkg: 
+      systems = [
+        "x86_64-linux"
+        "x86_64-darwin"
+        "aarch64-linux"
+        "aarch64-darwin"
+      ];
+      forAllSystems =
+        f:
+        builtins.listToAttrs (
+          map (name: {
+            inherit name;
+            value = f name;
+          }) systems
+        );
+      getErlangLibs =
+        erlangPkg:
         let
-            erlangPath = "${erlangPkg}/lib/erlang/lib/";
-            dirs = builtins.attrNames (builtins.readDir erlangPath);
-            interfaceVersion = builtins.head (builtins.filter (s: builtins.substring 0 13 s == "erl_interface") dirs);
-            interfacePath = erlangPath + interfaceVersion;
+          erlangPath = "${erlangPkg}/lib/erlang/lib/";
+          dirs = builtins.attrNames (builtins.readDir erlangPath);
+          interfaceVersion = builtins.head (
+            builtins.filter (s: builtins.substring 0 13 s == "erl_interface") dirs
+          );
+          interfacePath = erlangPath + interfaceVersion;
         in
         {
-            path = erlangPath;
-            dirs = dirs;
-            interface = { version = interfaceVersion; path = interfacePath; };
+          path = erlangPath;
+          dirs = dirs;
+          interface = {
+            version = interfaceVersion;
+            path = interfacePath;
+          };
         };
 
       mkEnvVars = pkgs: erlangLatest: erlangLibs: raylib: {
@@ -40,17 +65,32 @@
         PGHOST = "127.0.0.1";
       };
     in
-      {
-        packages = forAllSystems (system:
-          let
-            pkgs = nixpkgs.legacyPackages."${system}";
-            erlangLatest = pkgs.erlang_27;
-          in rec {
-            devenv-up = self.devShells.${system}.default.config.procfileScript;
+    {
+      packages = forAllSystems (
+        system:
+        let
+          pkgs = nixpkgs.legacyPackages."${system}";
+
+          # Erlang
+          erlangLatest = pkgs.erlang_27;
+          erlangLibs = getErlangLibs erlangLatest;
+
+          # Zig shit (Incomplete)
+          zigLatest = pkgs.zig;
+          raylib = pkgs.raylib;
+          env = zig2nix.outputs.zig-env.${system} {
+            #zig = zig2nix.outputs.packages.${system}.zig.master.bin;
+            customRuntimeLibs = [ pkgs.pkg-config erlangLibs raylib ];
+            customRuntimeDeps = [ erlangLibs raylib ];
+          };
+          system-triple = env.lib.zigTripleFromString system;
+        in
+        rec {
+          devenv-up = self.devShells.${system}.default.config.procfileScript;
 
           # Leverages nix to build the erlang backend release
           # nix build .#server
-          server = 
+          server =
             let
               deps = import ./rebar-deps.nix { inherit (pkgs) fetchHex fetchFromGitHub fetchgit; };
             in
@@ -58,7 +98,7 @@
               name = "server";
               version = "0.0.1";
               src = pkgs.lib.cleanSource ./.;
-              buildInputs = with pkgs; [ 
+              buildInputs = with pkgs; [
                 erlangLatest
                 pkgs.stdenv.cc.cc.lib
                 rebar3
@@ -66,17 +106,26 @@
                 gnutar
               ];
               nativeBuildInputs = with pkgs; [
-                autoPatchelfHook coreutils gawk gnugrep libz ncurses openssl systemdLibs
+                autoPatchelfHook
+                coreutils
+                gawk
+                gnugrep
+                libz
+                ncurses
+                openssl
+                systemdLibs
               ];
               buildPhase = ''
                 mkdir -p _checkouts
                 # https://github.com/NixOS/nix/issues/670#issuecomment-1211700127
                 export HOME=$(pwd)
-                ${toString (pkgs.lib.mapAttrsToList (k: v: ''
+                ${toString (
+                  pkgs.lib.mapAttrsToList (k: v: ''
                     cp -R --no-preserve=mode ${v} _checkouts/${k}
-                '') deps)}
+                  '') deps
+                )}
                 just release-nix
-              '';        
+              '';
               installPhase = ''
                 mkdir -p $out
                 mkdir -p $out/database
@@ -87,39 +136,56 @@
               '';
             };
 
-            # nix build .#dockerImage
-            dockerImage = pkgs.dockerTools.buildLayeredImage {
-              name = "lyceum";
-              tag = "latest";
-              created = "now";
-              # This will copy the compiled erlang release to the image
-              contents = [ server ];
-              config = {
-                Cmd = [ "${server}/bin/server" "foreground" ];
-                ExposedPorts = {"8080/tcp" = {};};
+          # nix build .#dockerImage
+          dockerImage = pkgs.dockerTools.buildLayeredImage {
+            name = "lyceum";
+            tag = "latest";
+            created = "now";
+            # This will copy the compiled erlang release to the image
+            contents = [ server ];
+            config = {
+              Cmd = [
+                "${server}/bin/server"
+                "foreground"
+              ];
+              ExposedPorts = {
+                "8080/tcp" = { };
               };
             };
+          };
 
-            # docs = pkgs.stdenv.mkDerivation {
-            #   name = "docs";
-            #   src = ./.;
+          # TODO: Finish this, it's incomplete
+          # Leverages nix to build the zig-based client
+          # nix build .#client
+          client = env.package {
+            src = env.pkgs.lib.cleanSource ./client;
+            # Prefer nix friendly settings.
+            zigPreferMusl = false;
+            zigDisableWrap = false;
+          };
 
-            #   installPhase = ''
-            #     mkdir -p $out
+          # docs = pkgs.stdenv.mkDerivation {
+          #   name = "docs";
+          #   src = ./.;
 
-            #     # remove first heading
-            #     # sed -i '1d' README.md
+          #   installPhase = ''
+          #     mkdir -p $out
 
-            #     # add frontmatter to markdown file, required by hugo
-            #     # sed -i '1s/^/---\ntitle: Railroad\n---\n\n/' README.md
+          #     # remove first heading
+          #     # sed -i '1d' README.md
 
-            #     # cp README.md $out/Railroad.md
-            #     # cp -r docs $out/
-            #   '';
-            # };
-          });
+          #     # add frontmatter to markdown file, required by hugo
+          #     # sed -i '1s/^/---\ntitle: Railroad\n---\n\n/' README.md
 
-      apps = forAllSystems (system:
+          #     # cp README.md $out/Railroad.md
+          #     # cp -r docs $out/
+          #   '';
+          # };
+        }
+      );
+
+      apps = forAllSystems (
+        system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
 
@@ -128,11 +194,12 @@
           erlangLibs = getErlangLibs erlangLatest;
 
           # Zig shit
-          env = zig2nix.outputs.zig-env.${system} {};
+          env = zig2nix.outputs.zig-env.${system} { };
           system-triple = env.lib.zigTripleFromString system;
           raylib = pkgs.raylib;
           zigLatest = pkgs.zig;
-        in {
+        in
+        {
           packages.default = env.lib.packages.target.${system-triple}.override {
             # Prefer nix friendly settings.
             zigPreferMusl = false;
@@ -140,13 +207,19 @@
           };
 
           # nix run .#build
-          apps.build = env.app [] "zig build --search-prefix ${erlangLatest} --search-prefix ${raylib} \"$@\"";
-          
-          # nix run .#test
-          apps.test = env.app [] "zig build --search-prefix ${erlangLatest} --search-prefix ${raylib} test -- \"$@\"";
-        });    
+          apps.build =
+            env.app [ ]
+              "zig build --search-prefix ${erlangLatest} --search-prefix ${raylib} \"$@\"";
 
-      devShells = forAllSystems (system:
+          # nix run .#test
+          apps.test =
+            env.app [ ]
+              "zig build --search-prefix ${erlangLatest} --search-prefix ${raylib} test -- \"$@\"";
+        }
+      );
+
+      devShells = forAllSystems (
+        system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
 
@@ -178,65 +251,73 @@
           # reduce the number of packages to the bare minimum needed for CI
           ci = pkgs.mkShell {
             env = mkEnvVars pkgs erlangLatest erlangLibs raylib;
-            buildInputs = with pkgs; [ erlangLatest just rebar3 zigLatest ];
-          };
-
-          # Deploy the erlang server
-          # `nix develop .#deploy`
-          deploy = pkgs.mkShell {
-            buildInputs = with pkgs; [ erlangLatest just rebar3 ];
+            buildInputs = with pkgs; [
+              erlangLatest
+              heroku
+              just
+              rebar3
+              zigLatest
+            ];
           };
 
           # `nix develop`
           default = devenv.lib.mkShell {
             inherit inputs pkgs;
             modules = [
-              ({ pkgs, lib, ... }: {
-                packages = with pkgs; [
-                  erlang-ls
-                  erlfmt
-                  just
-                  rebar3
-                  dbeaver-bin
-                ] ++ lib.optionals stdenv.isLinux (linuxPkgs) ++ lib.optionals stdenv.isDarwin darwinPkgs;
+              (
+                { pkgs, lib, ... }:
+                {
+                  packages =
+                    with pkgs;
+                    [
+                      erlang-ls
+                      erlfmt
+                      just
+                      rebar3
+                      dbeaver-bin
+                    ]
+                    ++ lib.optionals stdenv.isLinux (linuxPkgs)
+                    ++ lib.optionals stdenv.isDarwin darwinPkgs;
 
-                languages.erlang = {
-                  enable = true;
-                  package = erlangLatest;
-                };
+                  languages.erlang = {
+                    enable = true;
+                    package = erlangLatest;
+                  };
 
-                languages.zig = {
-                  enable = true;
-                  package = zigLatest;
-                };
+                  languages.zig = {
+                    enable = true;
+                    package = zigLatest;
+                  };
 
-                env = mkEnvVars pkgs erlangLatest erlangLibs raylib;
+                  env = mkEnvVars pkgs erlangLatest erlangLibs raylib;
 
-                scripts = {
-                  build.exec = "just build";
-                  server.exec = "just server";
-                };
+                  scripts = {
+                    build.exec = "just build";
+                    server.exec = "just server";
+                  };
 
-                enterShell = ''
-                  echo "Starting Erlang environment..."
-                  rebar3 get-deps
-                '';
-
-                services.postgres = {
-                  package = pkgs.postgresql_16.withPackages (p: with p; [p.periods]);
-                  enable = true;
-                  initialDatabases = [ { name = "mmo"; } ];
-                  port = 5432;
-                  listen_addresses = "127.0.0.1";
-                  initialScript = ''
-                  CREATE USER admin SUPERUSER;
-                  ALTER USER admin PASSWORD 'admin';
-                  GRANT ALL PRIVILEGES ON DATABASE mmo to admin;
+                  enterShell = ''
+                    echo "Starting Erlang environment..."
+                    rebar3 get-deps
                   '';
-                };
-              })
+
+                  services.postgres = {
+                    package = pkgs.postgresql_16.withPackages (p: with p; [ p.periods ]);
+                    enable = true;
+                    initialDatabases = [ { name = "mmo"; } ];
+                    port = 5432;
+                    listen_addresses = "127.0.0.1";
+                    initialScript = ''
+                      CREATE USER admin SUPERUSER;
+                      ALTER USER admin PASSWORD 'admin';
+                      GRANT ALL PRIVILEGES ON DATABASE mmo to admin;
+                    '';
+                  };
+                }
+              )
             ];
           };
-        });
+        }
+      );
     };
 }
