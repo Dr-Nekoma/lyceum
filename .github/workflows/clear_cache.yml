@@ -1,9 +1,9 @@
-name: Clear cache
+name: "[Cron] Clear cache"
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/15 2-3 * * *"
+    - cron: "*/15 2-4 * * *"
   pull_request:
     types:
       - closed
