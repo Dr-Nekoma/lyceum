@@ -107,9 +107,6 @@
               ];
               nativeBuildInputs = with pkgs; [
                 autoPatchelfHook
-                coreutils
-                gawk
-                gnugrep
                 libz
                 ncurses
                 openssl
@@ -142,7 +139,7 @@
             tag = "latest";
             created = "now";
             # This will copy the compiled erlang release to the image
-            contents = [ server ];
+            contents = [ server pkgs.coreutils pkgs.gawk pkgs.gnugrep pkgs.openssl ];
             config = {
               Cmd = [
                 "${server}/bin/server"
