@@ -297,8 +297,8 @@
                   };
 
                   enterShell = ''
-                    echo "Starting Erlang environment..."
-                    rebar3 get-deps
+                    echo "Starting Development Environment..."
+                    just deps
                   '';
 
                   services.postgres = {
