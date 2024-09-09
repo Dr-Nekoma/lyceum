@@ -139,16 +139,20 @@
             tag = "latest";
             created = "now";
             # This will copy the compiled erlang release to the image
-            contents = [ server pkgs.coreutils pkgs.gawk pkgs.gnugrep pkgs.openssl ];
+            contents = [ server pkgs.coreutils pkgs.gawk pkgs.gnugrep ];
             config = {
               Cmd = [
                 "${server}/bin/server"
                 "foreground"
               ];
+              Env = [
+                "ERL_DIST_PORT=8001"
+              ];
               ExposedPorts = {
                 "8080/tcp" = { };
               };
             };
+            maxLayers = 30;
           };
 
           # TODO: Finish this, it's incomplete
