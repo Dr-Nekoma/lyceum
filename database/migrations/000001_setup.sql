@@ -19,6 +19,68 @@ CREATE TYPE lyceum.TILE_TYPE AS ENUM(
        'ROCK'
 );
 
+CREATE TYPE lyceum.SPELL_TYPE AS ENUM(
+       'PROJECTILE',
+       'AREA',
+       'BUFF'
+);
+
+CREATE TYPE lyceum.SPELL_TARGET AS ENUM(
+       'SINGULAR',
+       'VICINITY',
+       'SELF'
+);
+
+CREATE TABLE lyceum.spell(
+       name VARCHAR(16) NOT NULL,
+       description VARCHAR(32) NOT NULL,
+       cost SMALLINT NOT NULL CHECK (cost > 0),
+       duration SMALLINT NOT NULL CHECK (duration >= 0),
+       cast_time SMALLINT NOT NULL CHECK (cast_time >= 0),              
+       kind lyceum.SPELL_TYPE NOT NULL,
+       target lyceum.SPELL_TARGET NOT NULL,
+       PRIMARY KEY (name)
+);
+
+CREATE TYPE lyceum.SPELL_DESTRUCTION_TYPE AS ENUM(
+       'MAGIC'
+);
+
+CREATE TYPE lyceum.SPELL_DAMAGE_TYPE AS ENUM(
+       'FIRE',
+       'PHYSICAL'
+);
+
+CREATE TABLE lyceum.spell_destruction(
+       name VARCHAR(16) NOT NULL,
+       base_damage SMALLINT NOT NULL CHECK (base_damage > 0),
+       damage_kind lyceum.SPELL_DAMAGE_TYPE NOT NULL,
+       destruction_kind lyceum.SPELL_DESTRUCTION_TYPE NOT NULL,
+       FOREIGN KEY (name) REFERENCES lyceum.spell(name)
+);
+
+CREATE TYPE lyceum.SPELL_CONJURATION_TYPE AS ENUM(
+       'FAKE WEAPONS',
+       'INVOCATION'
+);
+
+CREATE TABLE lyceum.spell_conjuration(
+       name VARCHAR(16) NOT NULL,
+       conjuration_kind lyceum.SPELL_CONJURATION_TYPE NOT NULL,
+       FOREIGN KEY (name) REFERENCES lyceum.spell(name)
+);
+
+CREATE TYPE lyceum.SPELL_HEAL_TYPE AS ENUM(
+       'BLESSING'
+);
+
+CREATE TABLE lyceum.spell_restoration(
+       name VARCHAR(16) NOT NULL,
+       base_heal SMALLINT NOT NULL CHECK (base_heal > 0),
+       restoration_kind lyceum.SPELL_HEAL_TYPE NOT NULL,
+       FOREIGN KEY (name) REFERENCES lyceum.spell(name)
+);
+
 CREATE TABLE lyceum.tile(
        map_name VARCHAR(16) NOT NULL, 
        kind lyceum.TILE_TYPE NOT NULL,
@@ -35,6 +97,21 @@ CREATE TABLE lyceum.object(
        y_position SMALLINT NOT NULL,
        PRIMARY KEY(map_name, x_position, y_position),
        FOREIGN KEY (map_name) REFERENCES lyceum.map(name)
+);
+
+CREATE TABLE lyceum.projectile(
+       map_name VARCHAR(16) NOT NULL,
+       velocity FLOAT(4) NOT NULL,
+       angle FLOAT(4) NOT NULL,
+       duration SMALLINT NOT NULL CHECK (duration > 0),
+       x_position SMALLINT NOT NULL,
+       y_position SMALLINT NOT NULL,
+       -- ownership information goes here
+       action_name VARCHAR(16) NOT NULL,
+       -- path function should go here
+       PRIMARY KEY (map_name, x_position, y_position),
+       FOREIGN KEY (map_name) REFERENCES lyceum.map(name),
+       FOREIGN KEY (spell_name) REFERENCES lyceum.spell(name)       
 );
 
 CREATE OR REPLACE FUNCTION map_object_overlap() RETURNS trigger AS $map_object_overlap$
@@ -60,9 +137,15 @@ CREATE TABLE lyceum.character(
        name VARCHAR(18) NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
        username VARCHAR(32) NOT NULL,
+       level SMALLINT NOT NULL DEFAULT 1 CHECK (level >= 1),
+       mana SMALLINT NOT NULL DEFAULT 100,
+       health SMALLINT NOT NULL DEFAULT 100,
        FOREIGN KEY (e_mail, username) REFERENCES lyceum.user(e_mail, username),
        PRIMARY KEY(name, username, e_mail)
 );
+
+-- HEALTH = CONSTITUTION + (99 - CONSTITUTION) / (1 + e^(50 - ENDURANCE) * 0.1) + (99 - CONSTITUTION) / (1 + e^(50 - STRENGTH) * 0.1)
+-- MANA = SOMETHING SIMILAR HERE
 
 CREATE TABLE lyceum.character_stats(
        name VARCHAR(18) NOT NULL,
@@ -74,6 +157,8 @@ CREATE TABLE lyceum.character_stats(
        endurance SMALLINT NOT NULL CHECK (endurance > 0 AND endurance <= 150),
        intelligence SMALLINT NOT NULL CHECK (intelligence > 0 AND intelligence <= 150),
        faith SMALLINT NOT NULL CHECK (faith > 0 AND faith <= 150),
+       mana SMALLINT NOT NULL CHECK (mana > 0),
+       health SMALLINT NOT NULL CHECK (health > 0),
        FOREIGN KEY (name, username, e_mail) REFERENCES lyceum.character(name, username, e_mail),
        PRIMARY KEY(name, username, e_mail)
 );
@@ -104,6 +189,19 @@ CREATE OR REPLACE VIEW lyceum.view_character AS
 SELECT * FROM lyceum.character
 NATURAL JOIN lyceum.character_stats
 NATURAL JOIN lyceum.character_position;
+
+CREATE OR REPLACE VIEW lyceum.view_spell_destruction AS
+SELECT * FROM lyceum.spell
+NATURAL JOIN lyceum.spell_destruction;
+
+CREATE OR REPLACE VIEW lyceum.view_spell_conjuration AS
+SELECT * FROM lyceum.spell
+NATURAL JOIN lyceum.spell_conjuration;
+
+CREATE OR REPLACE VIEW lyceum.view_spell_restoration AS
+SELECT * FROM lyceum.spell
+NATURAL JOIN lyceum.spell_restoration;
+
 
 CREATE OR REPLACE FUNCTION lyceum.view_character_upsert() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -140,6 +238,52 @@ BEGIN
     -- Same issue here.
     -- WHERE name = NEW.name AND e_mail = NEW.e_mail AND username = NEW.username;
 
+    RETURN NEW;
+END
+$$;
+
+
+CREATE OR REPLACE FUNCTION lyceum.view_spell_destruction_upsert() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN      
+
+    INSERT INTO lyceum.spell(name, description, cost, duration, cast_time, kind, target)
+    VALUES (NEW.name, NEW.description, NEW.cost, NEW.duration, NEW.cast_time, NEW.kind, NEW.target)
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO lyceum.spell_destruction(name, base_damage, damage_kind, destruction_kind)
+    VALUES (NEW.name, NEW.base_damage, NEW.damage_kind, NEW.destruction_kind)
+    ON CONFLICT DO NOTHING;	       
+
+    RETURN NEW;
+END
+$$;
+
+CREATE OR REPLACE FUNCTION lyceum.view_spell_restoration_upsert() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN      
+
+    INSERT INTO lyceum.spell(name, description, cost, duration, cast_time, kind, target)
+    VALUES (NEW.name, NEW.description, NEW.cost, NEW.duration, NEW.cast_time, NEW.kind, NEW.target)
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO lyceum.spell_restoration(name, base_heal, restoration_kind)
+    VALUES (NEW.name, NEW.base_heal, NEW.restoration_kind)
+    ON CONFLICT DO NOTHING;	       
+
+    RETURN NEW;
+END
+$$;
+
+CREATE OR REPLACE FUNCTION lyceum.view_spell_conjuration_upsert() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN      
+
+    INSERT INTO lyceum.spell(name, description, cost, duration, cast_time, kind, target)
+    VALUES (NEW.name, NEW.description, NEW.cost, NEW.duration, NEW.cast_time, NEW.kind, NEW.target)
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO lyceum.spell_conjuration(name, conjuration_kind)
+    VALUES (NEW.name, NEW.conjuration_kind)
+    ON CONFLICT DO NOTHING;
+    
     RETURN NEW;
 END
 $$;
@@ -216,6 +360,19 @@ CREATE TABLE lyceum.character_equipment(
 CREATE OR REPLACE TRIGGER trigger_character_upsert
 INSTEAD OF INSERT ON lyceum.view_character
 FOR EACH ROW EXECUTE FUNCTION lyceum.view_character_upsert();
+
+CREATE OR REPLACE TRIGGER trigger_spell_destruction_upsert
+INSTEAD OF INSERT ON lyceum.view_spell_destruction
+FOR EACH ROW EXECUTE FUNCTION lyceum.view_spell_destruction_upsert();
+
+CREATE OR REPLACE TRIGGER trigger_spell_conjuration_upsert
+INSTEAD OF INSERT ON lyceum.view_spell_conjuration
+FOR EACH ROW EXECUTE FUNCTION lyceum.view_spell_conjuration_upsert();
+
+CREATE OR REPLACE TRIGGER trigger_spell_restoration_upsert
+INSTEAD OF INSERT ON lyceum.view_spell_restoration
+FOR EACH ROW EXECUTE FUNCTION lyceum.view_spell_restoration_upsert();
+
 
 -- INSERT INTO lyceum.user(username, e_mail, password)
 -- VALUES ('test', 'test@email.com', '123');
