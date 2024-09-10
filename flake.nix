@@ -147,6 +147,7 @@
               ];
               Env = [
                 "ERL_DIST_PORT=8001"
+                "HOME=/tmp"
               ];
               ExposedPorts = {
                 "8080/tcp" = { };
