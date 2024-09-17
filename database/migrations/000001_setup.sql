@@ -36,7 +36,7 @@ CREATE TABLE lyceum.spell(
        description VARCHAR(32) NOT NULL,
        cost SMALLINT NOT NULL CHECK (cost > 0),
        duration SMALLINT NOT NULL CHECK (duration >= 0),
-       cast_time SMALLINT NOT NULL CHECK (cast_time >= 0),              
+       cast_time SMALLINT NOT NULL CHECK (cast_time >= 0),
        kind lyceum.SPELL_TYPE NOT NULL,
        target lyceum.SPELL_TARGET NOT NULL,
        PRIMARY KEY (name)
@@ -99,19 +99,84 @@ CREATE TABLE lyceum.object(
        FOREIGN KEY (map_name) REFERENCES lyceum.map(name)
 );
 
+-- Get rid of this table for instantenous spells, and do instead:
+-- Make procedures for each name of spell, which will handle the entirety
+-- of the side effects of that specific spell.
+-- Things like target information come as arguments to the procedure
+-- We gotta check if we can store procedures in tables. If yes, we need tagged unions,
+-- If no, we may have to do the switching on Erlang.
+
+-- Instance that are not instanteneous
+CREATE TABLE lyceum.effect_instance(
+       id         SERIAL NOT NULL,
+       name       VARCHAR(16) NOT NULL,
+       duration   SMALLINT NOT NULL CHECK (duration >= 0),
+       map_name   VARCHAR(16) NOT NULL,
+       owner_id   SERIAL NOT NULL,
+       -- TODO: Targets can be something else, not only points
+       x_position SMALLINT NOT NULL,
+       y_position SMALLINT NOT NULL,       
+       FOREIGN KEY (name) REFERENCES lyceum.spell(name),
+       FOREIGN KEY (map_name) REFERENCES lyceum.map(name),
+       FOREIGN KEY (owner_id) REFERENCES lyceum.map(name),
+       FOREIGN KEY (map_name) REFERENCES lyceum.map(name),              
+       PRIMARY KEY (id)
+);
+
+CREATE OR REPLACE FUNCTION effect_to_projectile() RETURNS trigger AS $effect_to_projectile$
+DECLARE 
+    spell_type TEXT;
+    x_position SMALLINT;
+    y_position SMALLINT;    
+BEGIN
+    SELECT kind INTO spell_type FROM lyceum.spell WHERE name = NEW.name;
+
+    IF spell_type = 'PROJECTILE' THEN
+        SELECT x_position, y_position INTO x_position, y_position
+    	FROM lyceum.character
+	WHERE id = NEW.owner_id;
+
+       	INSERT INTO lyceum.projectile_instance (map_name, x_position, y_position, owner_id)
+       	VALUES (NEW.map_name, x_position, y_position, NEW.owner_id);
+    END IF;
+
+    RETURN NEW;
+END;
+$effect_to_projectile$ LANGUAGE plpgsql;
+
+CREATE TRIGGER effect_to_projectile BEFORE INSERT OR UPDATE ON lyceum.effect_instance
+FOR EACH ROW EXECUTE FUNCTION effect_to_projectile();
+
+-- - Do we need to record casted spells?
+--   * Depends on duration (are we making `owner VARCHAR(32) NULL`?)
+--   * Lifetime of spells may differ from their projectiles (if they are present)
+-- - How will a casted spell interact with a projectile?
+-- - How will we bind a projectile to an owner?
+-- - How (and should we) will bind spells to an owner?
+-- - How will NPCs cast spells? Yes, done below.
+
+CREATE TYPE lyceum.PROJECTILE_PATHS AS ENUM(
+       'LINEAR',
+       'CURVE',
+);
+
 CREATE TABLE lyceum.projectile(
-       map_name VARCHAR(16) NOT NULL,
-       velocity FLOAT(4) NOT NULL,
-       angle FLOAT(4) NOT NULL,
+       spell_name VARCHAR(16) NOT NULL,
+       initial_velocity FLOAT(4) NOT NULL,       
        duration SMALLINT NOT NULL CHECK (duration > 0),
+       path_function lyceum.PROJECTILE_PATHS NOT NULL,
+       PRIMARY KEY (spell_name),
+       FOREIGN KEY (spell_name) REFERENCES lyceum.spell(name)       
+);
+
+CREATE TABLE lyceum.projectile_instance(
+       id       SERIAL NOT NULL,
+       map_name VARCHAR(16) NOT NULL,
+       duration SMALLINT NOT NULL CHECK (duration > 0),       
        x_position SMALLINT NOT NULL,
        y_position SMALLINT NOT NULL,
-       -- ownership information goes here
-       action_name VARCHAR(16) NOT NULL,
-       -- path function should go here
-       PRIMARY KEY (map_name, x_position, y_position),
-       FOREIGN KEY (map_name) REFERENCES lyceum.map(name),
-       FOREIGN KEY (spell_name) REFERENCES lyceum.spell(name)       
+       owner_id   SERIAL NOT NULL,
+       PRIMARY KEY (id),
 );
 
 CREATE OR REPLACE FUNCTION map_object_overlap() RETURNS trigger AS $map_object_overlap$
@@ -134,14 +199,31 @@ CREATE TRIGGER map_object_overlap BEFORE INSERT OR UPDATE ON lyceum.object
 FOR EACH ROW EXECUTE FUNCTION map_object_overlap();
 
 CREATE TABLE lyceum.character(
+       id   SERIAL NOT NULL, 
        name VARCHAR(18) NOT NULL,
-       e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
-       username VARCHAR(32) NOT NULL,
        level SMALLINT NOT NULL DEFAULT 1 CHECK (level >= 1),
        mana SMALLINT NOT NULL DEFAULT 100,
        health SMALLINT NOT NULL DEFAULT 100,
+       PRIMARY KEY (id)	
+);
+
+-- CREATE TABLE lyceum.npc(
+--        name VARCHAR(18) NOT NULL,
+--        level SMALLINT NOT NULL DEFAULT 1 CHECK (level >= 1),
+--        mana SMALLINT NOT NULL DEFAULT 100,
+--        health SMALLINT NOT NULL DEFAULT 100,
+-- );
+
+CREATE TABLE lyceum.player(
+       name VARCHAR(18) NOT NULL,
+       level SMALLINT NOT NULL DEFAULT 1 CHECK (level >= 1),
+       mana SMALLINT NOT NULL DEFAULT 100,
+       health SMALLINT NOT NULL DEFAULT 100,
+       e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
+       username VARCHAR(32) NOT NULL,
        FOREIGN KEY (e_mail, username) REFERENCES lyceum.user(e_mail, username),
-       PRIMARY KEY(name, username, e_mail)
+       FOREIGN KEY (name, level, mana, health) REFERENCES lyceum.character(name, level, mana, health),       
+       PRIMARY KEY (name, username, e_mail)
 );
 
 -- HEALTH = CONSTITUTION + (99 - CONSTITUTION) / (1 + e^(50 - ENDURANCE) * 0.1) + (99 - CONSTITUTION) / (1 + e^(50 - STRENGTH) * 0.1)
