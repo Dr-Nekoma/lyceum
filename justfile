@@ -102,20 +102,11 @@ build-docker:
     nix build .#dockerImage
 
 # Updates Heroku's registry with the new image
-_update-registry:
+heroku-update-registry dyno="web":
     docker load < ./result
-    docker tag lyceum:latest registry.heroku.com/lyceum/web
-    docker push registry.heroku.com/lyceum/web
-
-update-registry: build-docker
-    _update-registry
-
-update-registry-ci:
-    _update-registry
+    docker tag lyceum:latest registry.heroku.com/lyceum/{{dyno}}
+    docker push registry.heroku.com/lyceum/{{dyno}}
 
 # Release app with the new docker image on Heroku
-heroku-release: update-registry
-    heroku container:release -a=lyceum web
-
-heroku-release-ci:
-    heroku container:release -a=lyceum web
+heroku-release dyno="web":
+    heroku container:release -a=lyceum {{dyno}}

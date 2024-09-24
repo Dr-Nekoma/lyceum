@@ -139,16 +139,28 @@
             tag = "latest";
             created = "now";
             # This will copy the compiled erlang release to the image
-            contents = [ server pkgs.coreutils pkgs.gawk pkgs.gnugrep pkgs.openssl ];
+            contents = [ server pkgs.coreutils pkgs.gawk pkgs.gnugrep pkgs.inotify-tools pkgs.openssl ];
+            # 
+            extraCommands = ''
+              mkdir app
+              cp -r ${server}/* app
+            '';
             config = {
               Cmd = [
-                "${server}/bin/server"
+                "/app/bin/server"
                 "foreground"
+              ];
+              Env = [
+                "ERL_DIST_PORT=8001"
+                "HOME=/app"
               ];
               ExposedPorts = {
                 "8080/tcp" = { };
               };
             };
+            # Heroku puts a limit on the max number of layers
+            # 
+            maxLayers = 30;
           };
 
           # TODO: Finish this, it's incomplete
