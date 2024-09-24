@@ -9,6 +9,7 @@ const state = @import("game/state.zig");
 const std = @import("std");
 const user = @import("menu/user.zig");
 const zerl = @import("zerl");
+const hub = @import("components/hub.zig");
 
 pub fn main() anyerror!void {
     rl.setConfigFlags(.{ .window_resizable = true });
@@ -38,30 +39,31 @@ pub fn main() anyerror!void {
         gameState.width = @floatFromInt(rl.getScreenWidth());
         gameState.height = @floatFromInt(rl.getScreenHeight());
 
-        switch (gameState.scene) {
-            .user_registry => {
-                rl.openURL("https://github.com/Dr-Nekoma/lyceum");
-                gameState.scene = .nothing;
-            },
-            .user_login => {
-                try user.login(&gameState);
-            },
-            .join => {
-                try character.join(&gameState);
-            },
-            .spawn => {
-                try game.spawn(&gameState);
-            },
-            .character_selection => {
-                try character.selection(&gameState);
-            },
-            .connect => {
-                try connection.connect(&gameState);
-            },
-            .nothing => {
-                mainMenu.spawn(&gameState);
-            },
-        }
+        try hub.at(&.{ "item1", "item2", "item3", "item4", "item5", "item6", "item7", "item8", "item9", "item10", "item11" }, gameState.width, gameState.height);
+        // switch (gameState.scene) {
+        //     .user_registry => {
+        //         rl.openURL("https://github.com/Dr-Nekoma/lyceum");
+        //         gameState.scene = .nothing;
+        //     },
+        //     .user_login => {
+        //         try user.login(&gameState);
+        //     },
+        //     .join => {
+        //         try character.join(&gameState);
+        //     },
+        //     .spawn => {
+        //         try game.spawn(&gameState);
+        //     },
+        //     .character_selection => {
+        //         try character.selection(&gameState);
+        //     },
+        //     .connect => {
+        //         try connection.connect(&gameState);
+        //     },
+        //     .nothing => {
+        //         mainMenu.spawn(&gameState);
+        //     },
+        // }
         connection.status(&gameState);
     }
 }
