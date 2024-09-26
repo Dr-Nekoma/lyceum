@@ -247,6 +247,22 @@
       }
     },
     "flake-utils_3": {
+      "locked": {
+        "lastModified": 1652776076,
+        "narHash": "sha256-gzTw/v1vj4dOVbpBSJX4J0DwUR6LIyXo7/SuuTJp1kM=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "04c1b180862888302ddfb2e3ad9eaa63afc60cf8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "ref": "v1.0.0",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "flake-utils_4": {
       "inputs": {
         "systems": "systems_2"
       },
@@ -651,6 +667,7 @@
     "root": {
       "inputs": {
         "devenv": "devenv",
+        "flake-utils": "flake-utils_3",
         "nixpkgs": "nixpkgs_3",
         "zig2nix": "zig2nix"
       }
@@ -687,7 +704,7 @@
     },
     "zig2nix": {
       "inputs": {
-        "flake-utils": "flake-utils_3",
+        "flake-utils": "flake-utils_4",
         "nixpkgs": "nixpkgs_4"
       },
       "locked": {

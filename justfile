@@ -61,6 +61,9 @@ client-build:
 client-test:
     cd client && zig build --search-prefix ${ERLANG_INTERFACE_PATH} --search-prefix ${RAYLIB_PATH} test -- \"$@\"
 
+client-deps:
+    cd client && nix run github:Cloudef/zig2nix#zon2nix -- build.zig.zon > zon-deps.nix
+
 # --------
 # Backend
 # --------
