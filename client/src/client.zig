@@ -9,7 +9,7 @@ const state = @import("game/state.zig");
 const std = @import("std");
 const user = @import("menu/user.zig");
 const zerl = @import("zerl");
-const hud = @import("components/hud.zig");
+const hud = @import("components/hud/main.zig");
 
 pub fn main() anyerror!void {
     rl.setConfigFlags(.{ .window_resizable = true });
