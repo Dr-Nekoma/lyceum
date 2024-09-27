@@ -29,7 +29,7 @@ pub fn main() anyerror!void {
     };
     @memset(gameState.menu.character.create.name, 0);
 
-    gameState.world.character.name = "Legion";
+    gameState.world.character.name = "Gaiseric";
     gameState.world.character.level = 15;
     gameState.world.character.health = 100;
     gameState.world.character.mana = 50;

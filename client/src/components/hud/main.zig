@@ -1,5 +1,6 @@
 const spells = @import("spells.zig");
 const consumables = @import("consumables.zig");
+const info = @import("info.zig");
 const GameState = @import("../../game/state.zig");
 
 pub fn at(
@@ -9,4 +10,5 @@ pub fn at(
 ) !void {
     try spells.at(character.inventory.hud.spells, width, height);
     try consumables.at(character.inventory.hud.consumables, height);
+    try info.at(character, width);
 }
