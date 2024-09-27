@@ -31,7 +31,7 @@ pub fn main() anyerror!void {
 
     gameState.world.character.name = "Gaiseric";
     gameState.world.character.level = 15;
-    gameState.world.character.health = 100;
+    gameState.world.character.health = 75;
     gameState.world.character.mana = 50;
     gameState.world.character.inventory = .{
         .hud = .{
