@@ -29,6 +29,16 @@ pub fn main() anyerror!void {
     };
     @memset(gameState.menu.character.create.name, 0);
 
+    gameState.world.character.name = "Legion";
+    gameState.world.character.level = 15;
+    gameState.world.character.health = 100;
+    gameState.world.character.mana = 50;
+    gameState.world.character.inventory = .{
+        .hud = .{
+            .spells = &.{ "item1", "item2", "item3", "item4", "item5", "item6", "item7", "item8", "item9", "item10" },
+            .consumables = &.{ "item11", "item12" },
+        },
+    };
     // try character.goToSpawn(&gameState);
     mainMenu.spawn(&gameState);
     while (!rl.windowShouldClose()) {
@@ -39,7 +49,7 @@ pub fn main() anyerror!void {
         gameState.width = @floatFromInt(rl.getScreenWidth());
         gameState.height = @floatFromInt(rl.getScreenHeight());
 
-        try hud.at(&.{ "item1", "item2", "item3", "item4", "item5", "item6", "item7", "item8", "item9", "item10", "item11" }, gameState.width, gameState.height);
+        try hud.at(gameState.world.character, gameState.width, gameState.height);
         // switch (gameState.scene) {
         //     .user_registry => {
         //         rl.openURL("https://github.com/Dr-Nekoma/lyceum");

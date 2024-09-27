@@ -35,6 +35,19 @@ pub const World = struct {
             .y = 0,
             .z = 0,
         },
+        // TODO: These things should come from the server
+        inventory: struct {
+            items: []const [:0]const u8 = &.{},
+            spells: []const [:0]const u8 = &.{},
+            hud: struct {
+                spells: []const [:0]const u8 = &.{},
+                consumables: []const [:0]const u8 = &.{},
+            } = .{},
+        } = .{},
+        name: [:0]const u8 = "",
+        level: u32 = 0,
+        health: u32 = 0,
+        mana: u32 = 0,
     };
     character: Character = .{},
     other_players: []const messages.Character_Info = &.{},

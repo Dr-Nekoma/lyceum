@@ -1,6 +1,7 @@
 const config = @import("../config.zig");
 const rl = @import("raylib");
 const std = @import("std");
+const GameState = @import("../game/state.zig");
 
 const slotBoxSize: rl.Vector2 = .{
     .x = 90,
@@ -48,7 +49,7 @@ fn drawBoundary(position: rl.Vector2) void {
     rl.drawLineEx(leftDownCorner, topLeftCorner, thickness, rl.Color.white);
 }
 
-fn highlightSlot(position: rl.Vector2, length: usize) void {
+fn highlightSpellSlots(position: rl.Vector2, length: usize) void {
     var boundaryPosition: rl.Vector2 = .{
         .x = position.x,
         .y = position.y,
@@ -106,12 +107,19 @@ fn highlightSlot(position: rl.Vector2, length: usize) void {
     }
 }
 
-pub fn at(
-    // TODO: String file names are temporary for item slots
-    slots: []const [:0]const u8,
-    width: f32,
-    height: f32,
-) !void {
+fn drawSlot(xPosition: f32, yPosition: f32, label: [:0]const u8) void {
+    rl.drawRectangleV(.{
+        .x = xPosition,
+        .y = yPosition,
+    }, slotInternalSize, rl.Color.blue);
+    rl.drawRectangleV(.{
+        .x = xPosition,
+        .y = yPosition,
+    }, textBoxSize, rl.Color.black);
+    rl.drawText(label, @intFromFloat(xPosition), @intFromFloat(yPosition), config.hubFontSize, rl.Color.white);
+}
+
+fn spellSlots(slots: []const [:0]const u8, width: f32, height: f32) !void {
     const length: f32 = if (slots.len <= 10) @floatFromInt(slots.len) else 10.0;
     const boundarySize: rl.Vector2 = .{
         .x = slotInternalSize.x * length + (internalPadding * (length + 1)),
@@ -130,17 +138,56 @@ pub fn at(
     const yPosition = boundaryPosition.y + internalPadding;
     for (0.., slots[0..@intFromFloat(length)]) |i, elem| {
         std.debug.print("{}: {s}\n", .{ i, elem });
-        rl.drawRectangleV(.{
-            .x = xPosition,
-            .y = yPosition,
-        }, slotInternalSize, rl.Color.blue);
-        rl.drawRectangleV(.{
-            .x = xPosition,
-            .y = yPosition,
-        }, textBoxSize, rl.Color.black);
         const strIndex = std.fmt.bufPrintZ(index[0..], "{d}", .{i + 1}) catch unreachable;
-        rl.drawText(strIndex, @intFromFloat(xPosition), @intFromFloat(yPosition), config.hubFontSize, rl.Color.white);
+        drawSlot(xPosition, yPosition, strIndex);
         xPosition += internalPadding + slotInternalSize.x;
     }
-    highlightSlot(boundaryPosition, slots.len);
+    highlightSpellSlots(boundaryPosition, slots.len);
+}
+
+const consumableKeys = .{ "Q", "E" };
+
+fn highlightConsumableSlots(position: rl.Vector2) void {
+    var boundaryPosition: rl.Vector2 = .{
+        .x = position.x,
+        .y = position.y,
+    };
+    if (rl.isKeyDown(.key_q)) {
+        boundaryPosition.x += 0;
+        drawBoundary(boundaryPosition);
+    } else if (rl.isKeyDown(.key_e)) {
+        boundaryPosition.x += slotInternalSize.x + internalPadding;
+        drawBoundary(boundaryPosition);
+    }
+}
+
+fn consumableSlots(slots: []const [:0]const u8, height: f32) !void {
+    const length: f32 = if (slots.len <= 2) @floatFromInt(slots.len) else 2.0;
+    const boundarySize: rl.Vector2 = .{
+        .x = slotInternalSize.x * length + (internalPadding * (length + 1)),
+        .y = slotInternalSize.y + 2 * internalPadding,
+    };
+    const boundaryPosition: rl.Vector2 = .{
+        .x = 250,
+        .y = height - slotBoxSize.y - config.menuButtonsPadding,
+    };
+
+    rl.drawRectangleV(boundaryPosition, boundarySize, config.ColorPalette.primary);
+
+    var xPosition = boundaryPosition.x + internalPadding;
+    const yPosition = boundaryPosition.y + internalPadding;
+
+    drawSlot(xPosition, yPosition, consumableKeys[0]);
+    xPosition += internalPadding + slotInternalSize.x;
+    drawSlot(xPosition, yPosition, consumableKeys[1]);
+    highlightConsumableSlots(boundaryPosition);
+}
+
+pub fn at(
+    character: GameState.World.Character,
+    width: f32,
+    height: f32,
+) !void {
+    try spellSlots(character.inventory.hud.spells, width, height);
+    try consumableSlots(character.inventory.hud.consumables, height);
 }

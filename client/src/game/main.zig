@@ -28,7 +28,7 @@ pub fn spawn(gameState: *GameState) !void {
     rl.drawGrid(20, 10.0);
     try protocol.pingUpdateCharacter(gameState);
     drawPlayers(gameState);
-    if (rl.isKeyDown(.key_q)) {
+    if (rl.isKeyDown(.key_esc)) {
         try protocol.pingExitMap(gameState);
         gameState.scene = .nothing;
     }
