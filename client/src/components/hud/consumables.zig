@@ -4,7 +4,7 @@ const rl = @import("raylib");
 
 const consumableKeys = .{ "Q", "E" };
 
-fn highlightConsumableSlots(position: rl.Vector2) void {
+fn hightlightSlots(position: rl.Vector2) void {
     var boundaryPosition: rl.Vector2 = .{
         .x = position.x,
         .y = position.y,
@@ -37,5 +37,5 @@ pub fn at(slots: []const [:0]const u8, height: f32) !void {
     common.drawSlot(xPosition, yPosition, consumableKeys[0]);
     xPosition += common.internalPadding + common.slotInternalSize.x;
     common.drawSlot(xPosition, yPosition, consumableKeys[1]);
-    highlightConsumableSlots(boundaryPosition);
+    hightlightSlots(boundaryPosition);
 }

@@ -3,7 +3,7 @@ const config = @import("../../config.zig");
 const rl = @import("raylib");
 const std = @import("std");
 
-fn highlightSpellSlots(position: rl.Vector2, length: usize) void {
+fn highlightSlots(position: rl.Vector2, length: usize) void {
     var boundaryPosition: rl.Vector2 = .{
         .x = position.x,
         .y = position.y,
@@ -84,5 +84,5 @@ pub fn at(slots: []const [:0]const u8, width: f32, height: f32) !void {
         common.drawSlot(xPosition, yPosition, strIndex);
         xPosition += common.internalPadding + common.slotInternalSize.x;
     }
-    highlightSpellSlots(boundaryPosition, slots.len);
+    highlightSlots(boundaryPosition, slots.len);
 }
