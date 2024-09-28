@@ -11,12 +11,6 @@ pub const heightAxis: rl.Vector3 = .{
 };
 
 pub const character = struct {
-    // pub const modelScale: rl.Vector3 = .{
-    //     .x = 1.75,
-    //     .y = 1.75,
-    //     .z = 1.75,
-    // };
-
     pub const modelScale: rl.Vector3 = .{
         .x = 18,
         .y = 18,

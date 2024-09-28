@@ -1,10 +1,28 @@
-name: Server
+name: "[Build] Server"
 
 on:
   push:
     branches: [ "master" ]
+    paths:
+      - .github/workflows/**
+      - database/**
+      - src/**
+      - rebar.config
+      - rebar.lock
+      - rebar-deps.nix
+      - flake.nix
+      - flake.lock
   pull_request:
     branches: [ "master" ]
+    paths:
+      - .github/workflows/**
+      - database/**
+      - src/**
+      - rebar.config
+      - rebar.lock
+      - rebar-deps.nix
+      - flake.nix
+      - flake.lock
 
 permissions:
   contents: read
@@ -12,12 +30,11 @@ permissions:
 env:
   PGHOST: localhost
   PGPORT: 5432
-  PGPASSWORD: sekryt
-  PGUSER: lyceum_ci
+  PGPASSWORD: admin
+  PGUSER: admin
   PGDATABASE: mmo
 
 jobs:
-
   build:
     name: Build and Test
     runs-on: ubuntu-latest
@@ -51,19 +68,10 @@ jobs:
       - name: Install Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - name: "[Erlang] build"
+      - name: "[Server] build"
         run: |
-          nix develop .#ci --impure -c just build
+          nix build .#server
 
-      - name: "[Erlang] tests"
+      - name: "[Server] tests"
         run: |
           nix develop .#ci --impure -c just test
-
-# Uncomment this trash when you fix the zig code
-#      - name: "[Zig] build"
-#        run: |
-#          nix develop .#ci --impure -c just client
-#
-#      - name: "[Zig] tests"
-#        run: |
-#          nix develop .#ci --impure -c just client-test
