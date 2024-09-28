@@ -11,8 +11,13 @@ const GameState = @import("../game/state.zig");
 
 pub fn goToSpawn(gameState: *GameState) !void {
     // Source: https://free3d.com/3d-model/knight-low-poly-542752.html
-    const model = try assets.model("knight.glb");
-    gameState.world.character.model = model;
+    // Source: https://bztsrc.gitlab.io/model3d/#models
+    // Source: https://youtu.be/gFf5eGCjUUg?si=cmJcKlSzoV4ES0p8
+
+    const character = &gameState.world.character;
+    character.animation.frames = try assets.animations("walker.m3d");
+    character.model = try assets.model("walker.m3d");
+
     rl.disableCursor();
     try protocol.pingJoinMap(gameState);
     gameState.scene = .spawn;
@@ -69,7 +74,7 @@ fn emptyCharacter(gameState: *GameState) !void {
             nameText.at(nameBoxPosition);
             gameState.world.character.stats.name = gameState.menu.character.create.name;
         } else {
-            std.debug.print("Not editable: .{s}\n", .{field.name});
+            // std.debug.print("Not editable: .{s}\n", .{field.name});
         }
     }
 }
@@ -159,14 +164,14 @@ pub fn join(gameState: *GameState) !void {
             // const teapotembed = @embedfile("../assets/teapot.png");
             // const teapotloaded = rl.loadimagefrommemory(".png", teapotembed, teapotembed.len);
 
-            const teapotTexture = try assets.texture("teapot.png");
+            const teapot = try assets.texture("teapot.png");
 
             var characters = std.ArrayList(GameState.World.Character).init(gameState.allocator);
 
             for (erlang_characters) |stats| {
                 try characters.append(.{
                     .stats = stats,
-                    .preview = teapotTexture,
+                    .preview = teapot,
                 });
             }
 

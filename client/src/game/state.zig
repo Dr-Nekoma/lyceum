@@ -20,6 +20,16 @@ pub const Scene = enum {
 
 pub const World = struct {
     pub const Character = struct {
+        pub const Animation = struct {
+            pub const State = enum {
+                walking,
+                idle,
+            };
+            frameCounter: i32 = 0,
+            state: State = .idle,
+            frames: []rl.ModelAnimation = &.{},
+        };
+        animation: Animation = .{},
         stats: messages.Character_Info = .{},
         model: ?rl.Model = null,
         // TODO: Remove this position and use spatial info from stats
