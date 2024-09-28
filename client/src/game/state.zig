@@ -32,19 +32,7 @@ pub const World = struct {
         animation: Animation = .{},
         stats: messages.Character_Info = .{},
         model: ?rl.Model = null,
-        // TODO: Remove this position and use spatial info from stats
-        position: rl.Vector3 = .{
-            .x = 0.0,
-            .y = physics.character.floorLevel,
-            .z = 0.0,
-        },
         preview: ?rl.Texture2D = null,
-        faceDirection: f32 = 270,
-        velocity: rl.Vector3 = .{
-            .x = 0,
-            .y = 0,
-            .z = 0,
-        },
     };
     character: Character = .{},
     other_players: []const messages.Character_Info = &.{},

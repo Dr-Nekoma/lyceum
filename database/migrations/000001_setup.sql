@@ -84,6 +84,8 @@ CREATE TABLE lyceum.character_position(
        username VARCHAR(32) NOT NULL,
        x_position SMALLINT NOT NULL,
        y_position SMALLINT NOT NULL,
+       x_velocity DECIMAL NOT NULL,
+       y_velocity DECIMAL NOT NULL,
        face_direction SMALLINT NOT NULL CHECK (face_direction >= 0 AND face_direction < 360),	
        map_name VARCHAR(64) NOT NULL,
        FOREIGN KEY (name, username, e_mail) REFERENCES lyceum.character(name, username, e_mail),
@@ -127,14 +129,16 @@ BEGIN
     -- Is this really necessary? The on conflict already catches this!
     -- WHERE name = NEW.name AND e_mail = NEW.e_mail AND username = NEW.username;
 
-    INSERT INTO lyceum.character_position(name, e_mail, username, x_position, y_position, map_name)
-    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.x_position, NEW.y_position, NEW.map_name)
+    INSERT INTO lyceum.character_position(name, e_mail, username, x_position, y_position, x_velocity, y_velocity, map_name)
+    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.x_position, NEW.y_position, NEW.x_velocity, NEW.y_velocity, NEW.map_name)
     ON CONFLICT (name, username, e_mail) DO UPDATE SET
            name = NEW.name,
            e_mail = NEW.e_mail,
            username = NEW.username,
            x_position = NEW.x_position,
            y_position = NEW.y_position,
+           x_velocity = NEW.x_velocity,
+           y_velocity = NEW.y_velocity,
            map_name = NEW.map_name;
 
     -- Same issue here.
