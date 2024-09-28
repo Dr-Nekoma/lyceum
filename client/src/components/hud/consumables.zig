@@ -37,5 +37,12 @@ pub fn at(slots: []const [:0]const u8, height: f32) !void {
     common.drawSlot(xPosition, yPosition, consumableKeys[0]);
     xPosition += common.internalPadding + common.slotInternalSize.x;
     common.drawSlot(xPosition, yPosition, consumableKeys[1]);
-    hightlightSlots(boundaryPosition);
+    const keys = [_]rl.KeyboardKey{
+        .key_q,
+        .key_e,
+    };
+    if (length < keys.len) {
+        return error.too_many_keys;
+    }
+    common.highlightSlots(boundaryPosition, &keys);
 }

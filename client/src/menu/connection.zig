@@ -60,7 +60,11 @@ pub fn connect(gameState: *GameState) !void {
         const connection_status = zerl.ei.ei_init();
         if (connection_status != 0) return error.ei_init_failed;
         const node = gameState.connection.node;
-        zerl.establish_connection(node, GameState.Connection.process_name, gameState.menu.server.address[0..gameState.menu.server.addressPosition]) catch |error_value| {
+        zerl.establish_connection(
+            node,
+            GameState.Connection.process_name,
+            gameState.menu.server.address[0..gameState.menu.server.addressPosition],
+        ) catch |error_value| {
             try print_connect_server_error(error_value);
             std.process.exit(2);
         };

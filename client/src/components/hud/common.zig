@@ -18,7 +18,7 @@ const textBoxSize: rl.Vector2 = .{
 
 pub const internalPadding = 5;
 
-pub fn drawBoundary(position: rl.Vector2) void {
+fn drawBoundary(position: rl.Vector2) void {
     var topLeftCorner: rl.Vector2 = .{
         .x = position.x,
         .y = position.y + 2.5,
@@ -45,6 +45,20 @@ pub fn drawBoundary(position: rl.Vector2) void {
     rl.drawLineEx(rightDownCorner, leftDownCorner, thickness, rl.Color.white);
     leftDownCorner.y += 1.75;
     rl.drawLineEx(leftDownCorner, topLeftCorner, thickness, rl.Color.white);
+}
+
+pub fn highlightSlots(position: rl.Vector2, keys: []const rl.KeyboardKey) void {
+    var boundaryPosition: rl.Vector2 = .{
+        .x = undefined,
+        .y = position.y,
+    };
+    for (keys, 0..) |key, pos| {
+        const pos_float: f32 = @floatFromInt(pos);
+        if (rl.isKeyDown(key)) {
+            boundaryPosition.x = position.x + pos_float * slotInternalSize.x + pos_float * internalPadding;
+            drawBoundary(boundaryPosition);
+        }
+    }
 }
 
 pub fn drawSlot(xPosition: f32, yPosition: f32, label: [:0]const u8) void {
