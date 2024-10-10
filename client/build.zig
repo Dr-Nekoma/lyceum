@@ -3,7 +3,7 @@ const std = @import("std");
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
 // runner.
-pub fn build(b: *std.Build) void {
+pub fn build(b: *std.Build) !void {
     // Standard target options allows the person running `zig build` to choose
     // what target to build for. Here we do not override the defaults, which
     // means any target is allowed, and the default is native. Other options
@@ -28,10 +28,10 @@ pub fn build(b: *std.Build) void {
         // TODO: double-check this
         exe.linkSystemLibrary("raylib");
     } else {
-        const raylib_dep = b.dependency("raylib-zig", .{
+        const raylib_dep = b.lazyDependency("raylib-zig", .{
             .target = target,
             .optimize = optimize,
-        });
+        }) orelse return;
 
         const raylib = raylib_dep.module("raylib"); // main raylib module
 
@@ -43,16 +43,17 @@ pub fn build(b: *std.Build) void {
         exe.root_module.addImport("raylib", raylib);
     }
 
-    const zerl_dep = b.dependency("zerl", .{
+    const zerl_dep = b.lazyDependency("zerl", .{
         .target = target,
         .optimize = optimize,
-    });
+    }) orelse return;
     const zerl = zerl_dep.module("zerl");
     exe.root_module.addImport("zerl", zerl);
 
+    try b.lazyImport(@This(), "zerl").?.add_erlang_paths(b);
+
     exe.linkLibC();
     exe.linkSystemLibrary("pthread");
-    exe.linkSystemLibrary("ei");
 
     // const strip = b.option(
     //     bool,

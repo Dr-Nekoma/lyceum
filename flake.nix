@@ -189,12 +189,12 @@
           # nix run .#build
           apps.build =
             env.app [ ]
-              "zig build --search-prefix ${erlangLatest} --search-prefix ${raylib} \"$@\"";
+              "zig build -fsys=raylib -- \"$@\"";
 
           # nix run .#test
           apps.test =
             env.app [ ]
-              "zig build --search-prefix ${erlangLatest} --search-prefix ${raylib} test -- \"$@\"";
+              "zig build -fsys=raylib test -- \"$@\"";
         };
 
         devShells =
