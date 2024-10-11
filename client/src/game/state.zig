@@ -42,7 +42,7 @@ pub const World = struct {
             hud: struct {
                 spells: []const [:0]const u8 = &.{},
                 consumables: []const [:0]const u8 = &.{},
-                map: [:0]const u8 = &.{}
+                map: [:0]const u8 = &.{},
             } = .{},
         } = .{},
         name: [:0]const u8 = "",
