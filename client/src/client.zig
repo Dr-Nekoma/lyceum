@@ -49,6 +49,7 @@ pub fn main() anyerror!void {
         gameState.width = @floatFromInt(rl.getScreenWidth());
         gameState.height = @floatFromInt(rl.getScreenHeight());
 
+        gameState.world.character.faceDirection = @floatCast(@mod(rl.getTime() * 25, 360));
         try hud.at(gameState.world.character, gameState.width, gameState.height);
         // switch (gameState.scene) {
         //     .user_registry => {
