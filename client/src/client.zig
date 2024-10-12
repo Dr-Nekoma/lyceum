@@ -37,6 +37,8 @@ pub fn main() anyerror!void {
         .hud = .{
             .spells = &.{ "item1", "item2", "item3", "item4", "item5", "item6", "item7", "item8", "item9", "item10" },
             .consumables = &.{ "item11", "item12" },
+            // TODO: use an actual map
+            .map = try assets.image("teapot.png"),
         },
     };
     // try character.goToSpawn(&gameState);

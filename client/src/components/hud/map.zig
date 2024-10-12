@@ -33,16 +33,43 @@ pub fn at(character: GameState.World.Character, width: f32, height: f32) !void {
         .y = height - innerRadius - 20,
     };
 
-    std.debug.print("top: {}, left: {}, right: {}\n", .{
-        triangle_top,
-        triangle_left,
-        triangle_right,
-    });
+    const map_x = center.x - outerRadius;
+    const map_y = center.y - outerRadius;
+    const map_mask = rl.Rectangle{
+        // this x and y are the coordinates in the map image
+        // TODO: dynamically compute x and y based on world coordinates
+        .x = 10,
+        .y = 10,
+        .width = outerRadius * 2,
+        .height = outerRadius * 2,
+    };
+    var map = rl.imageFromImage(character.inventory.hud.map.?, map_mask);
+    defer map.unload();
 
-    rl.drawCircleV(center, outerRadius, config.ColorPalette.primary);
+    var alpha_mask = rl.genImageColor(
+        @intFromFloat(map_mask.width),
+        @intFromFloat(map_mask.height),
+        rl.Color.black,
+    );
+    defer alpha_mask.unload();
+
+    alpha_mask.drawCircle(
+        outerRadius,
+        outerRadius,
+        innerRadius,
+        rl.Color.white,
+    );
+    map.alphaMask(alpha_mask);
+
+    const texture = map.toTexture();
+    // FIXME: we are leaking the texture
+    // unload() doesn't work because of timing issues
+    // defer texture.unload();
+
+    texture.draw(@intFromFloat(map_x), @intFromFloat(map_y), rl.Color.white);
+    rl.drawRing(center, innerRadius, outerRadius, 0, 360, 0, config.ColorPalette.primary);
     rl.drawCircleLinesV(center, innerRadius, rl.Color.white);
     rl.drawCircleLinesV(center, innerRadius - 1, rl.Color.white);
-    rl.drawCircleV(center, innerRadius - 2, rl.Color.sky_blue);
     rl.drawTriangle(
         center.add(triangle_top),
         center.add(triangle_left),

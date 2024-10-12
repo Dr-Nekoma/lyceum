@@ -20,8 +20,7 @@ pub fn at(slots: []const [:0]const u8, width: f32, height: f32) !void {
 
     var xPosition = boundaryPosition.x + common.internalPadding;
     const yPosition = boundaryPosition.y + common.internalPadding;
-    for (0.., slots[0..@intFromFloat(length)]) |i, elem| {
-        std.debug.print("{}: {s}\n", .{ i, elem });
+    for (0.., slots[0..@intFromFloat(length)]) |i, _| {
         const strIndex = std.fmt.bufPrintZ(index[0..], "{d}", .{i + 1}) catch unreachable;
         common.drawSlot(xPosition, yPosition, strIndex);
         xPosition += common.internalPadding + common.slotInternalSize.x;
