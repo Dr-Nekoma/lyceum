@@ -52,6 +52,9 @@ pub fn build(b: *std.Build) !void {
             try zerl_build.add_erlang_paths(b, path);
         }
     }
+    if (std.posix.getenv("RAYLIB_PATH")) |raylib_path| {
+        b.addSearchPrefix(raylib_path);
+    }
 
     // const strip = b.option(
     //     bool,
