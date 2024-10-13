@@ -53,13 +53,13 @@ postgres:
 # -------
 
 client:
-    cd client && zig build -fsys=raylib run -- \"$@\"
+    cd client && zig build run -- \"$@\"
 
 client-build:
-    cd client && zig build -fsys=raylib -- \"$@\"
+    cd client && zig build -- \"$@\"
 
 client-test:
-    cd client && zig build -fsys=raylib test -- \"$@\"
+    cd client && zig build test -- \"$@\"
 
 client-deps:
     cd client && nix run github:Cloudef/zig2nix#zon2nix -- build.zig.zon > zon-deps.nix

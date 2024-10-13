@@ -35,11 +35,11 @@ pub fn build(b: *std.Build) !void {
 
         const raylib = raylib_dep.module("raylib"); // main raylib module
 
-        if (b.systemIntegrationOption("raylib", .{}))
-            exe.linkLibrary(raylib_dep.artifact("raylib")) // raylib C library
-        else
+        if (b.systemIntegrationOption("raylib", .{})) {
             exe.linkSystemLibrary("raylib");
-
+        } else {
+            exe.linkLibrary(raylib_dep.artifact("raylib"));
+        }
         exe.root_module.addImport("raylib", raylib);
     }
 
