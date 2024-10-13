@@ -53,13 +53,13 @@ postgres:
 # -------
 
 client:
-    cd client && zig build run -- \"$@\"
+    cd client && zig build run -- "$@"
 
 client-build:
-    cd client && zig build -- \"$@\"
+    cd client && zig build -- "$@"
 
 client-test:
-    cd client && zig build test -- \"$@\"
+    cd client && zig build test -- "$@"
 
 client-deps:
     cd client && nix run github:Cloudef/zig2nix#zon2nix -- build.zig.zon > zon-deps.nix
