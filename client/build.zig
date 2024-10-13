@@ -53,9 +53,6 @@ pub fn build(b: *std.Build) !void {
         }
     }
 
-    exe.linkLibC();
-    exe.linkSystemLibrary("pthread");
-
     // const strip = b.option(
     //     bool,
     //     "strip",
