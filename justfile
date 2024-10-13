@@ -27,7 +27,7 @@ format source='client':
     t=$(echo {{ source }} | cut -f2 -d=)
     echo "Selected Target: $t"
     if [[ $t == "client" ]]; then
-        zig fmt $(find ./ -type f \( -iname \*.zig \))
+        zig fmt .
     elif [[ $t == "justfile" ]]; then
         just --fmt --unstable
     elif [[ $t == "server" ]]; then
