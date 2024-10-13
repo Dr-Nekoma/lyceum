@@ -164,11 +164,9 @@
               pkgs.makeBinaryWrapper
               zigLatest.hook
             ];
-            buildInputs = with pkgs; [
+            buildInputs = [
               raylib
               erlangLatest
-              xorg.libX11
-              libGL
             ];
 
             postPatch = ''
