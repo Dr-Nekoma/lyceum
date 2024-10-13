@@ -68,11 +68,11 @@ in linkFarm name [
     };
   }
   {
-    name = "12202212fcdb2223cf9b98dde0fcaf3c1567281a86391cc76987f6d2dc4e2e102fa8";
+    name = "1220cfbe4eeafbe0a1751b330b71707a145333d13aac0631f45934f668dc3ce28bb8";
     path = fetchZigArtifact {
       name = "zerl";
-      url = "https://github.com/dont-rely-on-nulls/zerl/archive/05393785ef61d616781d24466303be185da3fb91.tar.gz";
-      hash = "sha256-vIE24m85uxlXiIWpb/jTx7mTWjN2iWfd4+DzS6Lz/D4=";
+      url = "https://github.com/dont-rely-on-nulls/zerl/archive/7a3e727b1d615bd53527be5c3a6bdadb49f97cd3.tar.gz";
+      hash = "sha256-5D75EaLBYst18Dx/TuoW+dMPoeeRCn6pYnQqEn639t0=";
     };
   }
 ]

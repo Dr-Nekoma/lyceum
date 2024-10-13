@@ -24,33 +24,34 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
     });
 
-    if (b.systemIntegrationOption("raylib-zig", .{})) {
-        // TODO: double-check this
-        exe.linkSystemLibrary("raylib");
-    } else {
-        const raylib_dep = b.lazyDependency("raylib-zig", .{
-            .target = target,
-            .optimize = optimize,
-        }) orelse return;
-
-        const raylib = raylib_dep.module("raylib"); // main raylib module
-
+    // TODO: figure out how to properly link a zig system library
+    if (b.lazyDependency("raylib-zig", .{
+        .target = target,
+        .optimize = optimize,
+    })) |raylib_zig| {
         if (b.systemIntegrationOption("raylib", .{})) {
             exe.linkSystemLibrary("raylib");
         } else {
-            exe.linkLibrary(raylib_dep.artifact("raylib"));
+            exe.linkLibrary(raylib_zig.artifact("raylib"));
         }
-        exe.root_module.addImport("raylib", raylib);
+        exe.root_module.addImport("raylib", raylib_zig.module("raylib"));
     }
 
-    const zerl_dep = b.lazyDependency("zerl", .{
+    if (b.lazyDependency("zerl", .{
         .target = target,
         .optimize = optimize,
-    }) orelse return;
-    const zerl = zerl_dep.module("zerl");
-    exe.root_module.addImport("zerl", zerl);
+    })) |zerl| {
+        exe.root_module.addImport("zerl", zerl.module("zerl"));
+    }
 
-    try b.lazyImport(@This(), "zerl").?.add_erlang_paths(b);
+    if (b.lazyImport(@This(), "zerl")) |zerl_build| {
+        if (std.posix.getenv("LIBRARY_PATH")) |lib_path| {
+            try zerl_build.add_erlang_paths(b, lib_path);
+        }
+        if (std.posix.getenv("PATH")) |path| {
+            try zerl_build.add_erlang_paths(b, path);
+        }
+    }
 
     exe.linkLibC();
     exe.linkSystemLibrary("pthread");
