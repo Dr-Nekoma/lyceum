@@ -73,8 +73,6 @@
           # https://www.erlang.org/doc/man/kernel_app.html
           ERL_AFLAGS = "-kernel shell_history enabled";
           ERL_INCLUDE_PATH = "${erlangLatest}/lib/erlang/usr/include";
-          ERLANG_INTERFACE_PATH = "${erlangLibs.interface.path}";
-          ERLANG_PATH = "${erlangLatest}";
           RAYLIB_PATH = "${raylib}";
           # Devenv sets this to something else
           # https://www.postgresql.org/docs/7.0/libpq-envars.htm
@@ -189,12 +187,12 @@
           # nix run .#build
           apps.build =
             env.app [ ]
-              "zig build --search-prefix ${erlangLatest} --search-prefix ${raylib} \"$@\"";
+              "zig build -- \"$@\"";
 
           # nix run .#test
           apps.test =
             env.app [ ]
-              "zig build --search-prefix ${erlangLatest} --search-prefix ${raylib} test -- \"$@\"";
+              "zig build test -- \"$@\"";
         };
 
         devShells =

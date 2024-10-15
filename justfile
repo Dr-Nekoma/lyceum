@@ -27,7 +27,7 @@ format source='client':
     t=$(echo {{ source }} | cut -f2 -d=)
     echo "Selected Target: $t"
     if [[ $t == "client" ]]; then
-        zig fmt $(find ./ -type f \( -iname \*.zig \))
+        zig fmt .
     elif [[ $t == "justfile" ]]; then
         just --fmt --unstable
     elif [[ $t == "server" ]]; then
@@ -53,13 +53,19 @@ postgres:
 # -------
 
 client:
-    cd client && zig build --search-prefix ${ERLANG_INTERFACE_PATH} --search-prefix ${RAYLIB_PATH} run -- \"$@\"
+    cd client && zig build run
 
 client-build:
-    cd client && zig build --search-prefix ${ERLANG_INTERFACE_PATH} --search-prefix ${RAYLIB_PATH} -- \"$@\"
+    cd client && zig build
 
 client-test:
-    cd client && zig build --search-prefix ${ERLANG_INTERFACE_PATH} --search-prefix ${RAYLIB_PATH} test -- \"$@\"
+    cd client && zig build test
+
+client-build-ci:
+    cd client && zig build -fsys=raylib
+
+client-test-ci:
+    cd client && zig build test -fsys=raylib
 
 client-deps:
     cd client && nix run github:Cloudef/zig2nix#zon2nix -- build.zig.zon > zon-deps.nix
