@@ -80,7 +80,7 @@ epgsql_query_fun(Conn) ->
     end.
 
 database_connect() ->
-    io:format("Connecting to: ~p~n", [?PGHOST]),
+    io:format("Connecting to ~p at ~p~n", [?PGHOST, ?PGPORT]),
     {ok, Connection} =
         epgsql:connect(#{host => ?PGHOST,
                          username => ?PGUSER,

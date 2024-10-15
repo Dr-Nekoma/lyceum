@@ -262,6 +262,8 @@
                     scripts = {
                       build.exec = "just build";
                       server.exec = "just server";
+                      db-up.exec = "just db-up";
+                      db-down.exec = "just db-down";
                     };
 
                     enterShell = ''

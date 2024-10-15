@@ -84,6 +84,14 @@ server: build
 test:
     rebar3 do eunit, ct
 
+# Migrates the DB (up)
+db-up:
+    ./migrate_up.sh
+
+# Nukes the DB
+db-down:
+    ./migrate_down.sh
+
 # --------
 # Releases
 # --------
