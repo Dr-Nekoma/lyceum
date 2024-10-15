@@ -7,13 +7,7 @@
 
 -behaviour(application).
 
--export([start/2, stop/1, main/1, handle_master/1, handle_user/1, migrate/0]).
-
-%% This is here just to be called from the outside, in a script-like
-%% fashion
-migrate() ->
-    Connection = database:database_connect(),
-    database:migrate(Connection).
+-export([start/2, stop/1, main/1, handle_master/1, handle_user/1]).
 
 %% TODO: We shall remove the cookie given that this is a public game, lmao
 start(_, _) ->
