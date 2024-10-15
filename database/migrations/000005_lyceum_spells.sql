@@ -16,6 +16,18 @@ CREATE TYPE lyceum.SPELL_HEAL_TYPE AS ENUM(
        'BLESSING'
 );
 
+CREATE TYPE lyceum.SPELL_TYPE AS ENUM(
+       'PROJECTILE',
+       'AREA',
+       'BUFF'
+);
+
+CREATE TYPE lyceum.SPELL_TARGET AS ENUM(
+       'SINGULAR',
+       'VICINITY',
+       'SELF'
+);
+
 CREATE TABLE lyceum.spell(
        name VARCHAR(16) NOT NULL,
        description VARCHAR(32) NOT NULL,
@@ -67,8 +79,7 @@ CREATE TABLE lyceum.effect_instance(
        y_position SMALLINT NOT NULL,       
        FOREIGN KEY (name) REFERENCES lyceum.spell(name),
        FOREIGN KEY (map_name) REFERENCES lyceum.map(name),
-       FOREIGN KEY (owner_id) REFERENCES lyceum.map(name),
-       FOREIGN KEY (map_name) REFERENCES lyceum.map(name),              
+       --FOREIGN KEY (owner_id) REFERENCES lyceum.map(name),
        PRIMARY KEY (id)
 );
 
@@ -106,7 +117,7 @@ FOR EACH ROW EXECUTE FUNCTION effect_to_projectile();
 
 CREATE TYPE lyceum.PROJECTILE_PATHS AS ENUM(
        'LINEAR',
-       'CURVE',
+       'CURVE'
 );
 
 CREATE TABLE lyceum.projectile(
@@ -125,13 +136,8 @@ CREATE TABLE lyceum.projectile_instance(
        x_position SMALLINT NOT NULL,
        y_position SMALLINT NOT NULL,
        owner_id   SERIAL NOT NULL,
-       PRIMARY KEY (id),
+       PRIMARY KEY (id)
 );
-
-CREATE OR REPLACE VIEW lyceum.view_character AS
-SELECT * FROM lyceum.character
-NATURAL JOIN lyceum.character_stats
-NATURAL JOIN lyceum.character_position;
 
 CREATE OR REPLACE VIEW lyceum.view_spell_destruction AS
 SELECT * FROM lyceum.spell
