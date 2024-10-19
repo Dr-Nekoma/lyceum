@@ -6,6 +6,12 @@ pub const angleCameraVector: rl.Vector3 = .{
     .z = 20,
 };
 
+pub const map = struct {
+    pub const max_width = 1000;
+    pub const border_thickness = 140;
+    pub const max_height = 1000;
+};
+
 pub const buttonFontSize = 20;
 pub const textFontSize = 20;
 pub const hubFontSize = 6;

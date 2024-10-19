@@ -4,6 +4,13 @@ const rl = @import("raylib");
 const std = @import("std");
 const GameState = @import("../../game/state.zig");
 
+pub fn init_map_texture() rl.Texture {
+    const side = config.map.border_thickness * 2;
+    const img = rl.genImageColor(side, side, rl.Color.black);
+    defer img.unload();
+    return img.toTexture();
+}
+
 fn rotate_point(
     position: rl.Vector2,
     origin: rl.Vector2,
@@ -18,10 +25,20 @@ fn rotate_point(
     };
 }
 
+pub fn add_borders(image: *rl.Image) void {
+    const thickness = config.map.border_thickness;
+    const width = image.width + 2 * thickness;
+    const height = image.height + 2 * thickness;
+    return image.resizeCanvas(width, height, thickness, thickness, rl.Color.black);
+}
+
 pub fn at(character: GameState.World.Character, width: f32, height: f32) !void {
     const face_direction = character.faceDirection;
-    const innerRadius = 130;
-    const outerRadius = innerRadius + 10;
+    const character_x: f32 = @floatFromInt(character.stats.x_position);
+    const character_y: f32 = @floatFromInt(character.stats.y_position);
+    const outerRadius = config.map.border_thickness;
+    const innerRadius = outerRadius - 10;
+    const map_image = character.inventory.hud.map.?;
 
     const origin = .{ .x = 0, .y = 0 };
     const triangle_top = rotate_point(.{ .y = -8, .x = 0 }, origin, face_direction);
@@ -33,15 +50,23 @@ pub fn at(character: GameState.World.Character, width: f32, height: f32) !void {
         .y = height - innerRadius - 20,
     };
 
+    const normalized_x = character_x * @as(
+        f32,
+        @as(f32, @floatFromInt(map_image.width - 2 * config.map.border_thickness)) /
+            @as(f32, @floatFromInt(config.map.max_width)),
+    );
+    const normalized_y = character_y * @as(
+        f32,
+        @as(f32, @floatFromInt(map_image.height - 2 * config.map.border_thickness)) /
+            @as(f32, @floatFromInt(config.map.max_height)),
+    );
     const map_x = center.x - outerRadius;
     const map_y = center.y - outerRadius;
     const map_mask = rl.Rectangle{
-        // this x and y are the coordinates in the map image
-        // TODO: dynamically compute x and y based on world coordinates
-        .x = 10,
-        .y = 10,
-        .width = outerRadius * 2,
-        .height = outerRadius * 2,
+        .x = normalized_x,
+        .y = normalized_y,
+        .width = @floatFromInt(@min(outerRadius * 2, map_image.width)),
+        .height = @floatFromInt(@min(outerRadius * 2, map_image.height)),
     };
     var map = rl.imageFromImage(character.inventory.hud.map.?, map_mask);
     defer map.unload();
@@ -61,10 +86,9 @@ pub fn at(character: GameState.World.Character, width: f32, height: f32) !void {
     );
     map.alphaMask(alpha_mask);
 
-    const texture = map.toTexture();
-    // FIXME: we are leaking the texture
-    // unload() doesn't work because of timing issues
-    // defer texture.unload();
+    const pixels = try rl.loadImageColors(map);
+    const texture = character.inventory.hud.texture.?;
+    rl.updateTexture(texture, pixels.ptr);
 
     texture.draw(@intFromFloat(map_x), @intFromFloat(map_y), rl.Color.white);
     rl.drawRing(center, innerRadius, outerRadius, 0, 360, 0, config.ColorPalette.primary);

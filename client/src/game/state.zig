@@ -43,6 +43,7 @@ pub const World = struct {
                 spells: []const [:0]const u8 = &.{},
                 consumables: []const [:0]const u8 = &.{},
                 map: ?rl.Image = null,
+                texture: ?rl.Texture = null,
             } = .{},
         } = .{},
         name: [:0]const u8 = "",

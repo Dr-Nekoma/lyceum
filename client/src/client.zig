@@ -5,11 +5,13 @@ const connection = @import("menu/connection.zig");
 const game = @import("game/main.zig");
 const mainMenu = @import("menu/main.zig");
 const rl = @import("raylib");
+const rm = rl.math;
 const state = @import("game/state.zig");
 const std = @import("std");
 const user = @import("menu/user.zig");
 const zerl = @import("zerl");
 const hud = @import("components/hud/main.zig");
+const map = @import("components/hud/map.zig");
 
 pub fn main() anyerror!void {
     rl.setConfigFlags(.{ .window_resizable = true });
@@ -39,19 +41,40 @@ pub fn main() anyerror!void {
             .consumables = &.{ "item11", "item12" },
             // TODO: use an actual map
             .map = try assets.image("teapot.png"),
+            .texture = map.init_map_texture(),
         },
     };
+    map.add_borders(&gameState.world.character.inventory.hud.map.?);
     // try character.goToSpawn(&gameState);
     mainMenu.spawn(&gameState);
     while (!rl.windowShouldClose()) {
         rl.beginDrawing();
         defer rl.endDrawing();
 
+        const x = &gameState.world.character.stats.x_position;
+        const y = &gameState.world.character.stats.y_position;
+        if (rl.isKeyDown(.key_w)) {
+            y.* -= 1;
+            gameState.world.character.faceDirection = 0;
+        }
+        if (rl.isKeyDown(.key_s)) {
+            y.* += 1;
+            gameState.world.character.faceDirection = 180;
+        }
+        if (rl.isKeyDown(.key_a)) {
+            x.* -= 1;
+            gameState.world.character.faceDirection = 270;
+        }
+        if (rl.isKeyDown(.key_d)) {
+            x.* += 1;
+            gameState.world.character.faceDirection = 90;
+        }
+        x.* = @intFromFloat(rm.clamp(@floatFromInt(x.*), 0, config.map.max_width));
+        y.* = @intFromFloat(rm.clamp(@floatFromInt(y.*), 0, config.map.max_height));
         rl.clearBackground(config.ColorPalette.background);
         gameState.width = @floatFromInt(rl.getScreenWidth());
         gameState.height = @floatFromInt(rl.getScreenHeight());
 
-        gameState.world.character.faceDirection = @floatCast(@mod(rl.getTime() * 25, 360));
         try hud.at(gameState.world.character, gameState.width, gameState.height);
         // switch (gameState.scene) {
         //     .user_registry => {
