@@ -12,6 +12,7 @@ const user = @import("menu/user.zig");
 const zerl = @import("zerl");
 const hud = @import("components/hud/main.zig");
 const map = @import("components/hud/map.zig");
+const chat = @import("components/hud/Chat.zig");
 
 pub fn main() anyerror!void {
     rl.setConfigFlags(.{ .window_resizable = true });
@@ -29,6 +30,7 @@ pub fn main() anyerror!void {
         },
         .assets = try mainMenu.loadAssets(),
     };
+
     @memset(gameState.menu.character.create.name, 0);
 
     gameState.world.character.name = "Gaiseric";
@@ -42,8 +44,17 @@ pub fn main() anyerror!void {
             // TODO: use an actual map
             .map = try assets.image("teapot.png"),
             .texture = map.init_map_texture(),
+            .chat = .{
+                .in = chat{
+                    .content = try gameState.allocator.allocSentinel(u8, config.messageSize, 0),
+                    .position = &gameState.world.character.inventory.hud.chat.position,
+                    .messages = std.ArrayList(chat.Message).init(gameState.allocator),
+                },
+            },
         },
     };
+    @memset(gameState.world.character.inventory.hud.chat.in.content, 0);
+
     map.add_borders(&gameState.world.character.inventory.hud.map.?);
     // try character.goToSpawn(&gameState);
     mainMenu.spawn(&gameState);
@@ -75,7 +86,7 @@ pub fn main() anyerror!void {
         gameState.width = @floatFromInt(rl.getScreenWidth());
         gameState.height = @floatFromInt(rl.getScreenHeight());
 
-        try hud.at(gameState.world.character, gameState.width, gameState.height);
+        try hud.at(&gameState.world.character, gameState.width, gameState.height);
         // switch (gameState.scene) {
         //     .user_registry => {
         //         rl.openURL("https://github.com/Dr-Nekoma/lyceum");

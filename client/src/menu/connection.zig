@@ -42,11 +42,11 @@ pub fn connect(gameState: *GameState) !void {
         .content = &gameState.menu.server.address,
         .position = &gameState.menu.server.addressPosition,
     };
-    serverInfoText.at(serverInfoBoxPosition);
+    serverInfoText.at(serverInfoBoxPosition, text.menuTextBoxSize);
 
     const buttonPosition: rl.Vector2 = .{
         .x = (gameState.width / 2) - (buttonSize.x / 2),
-        .y = serverInfoBoxPosition.y + text.textBoxSize.y + 5 * config.menuButtonsPadding,
+        .y = serverInfoBoxPosition.y + text.menuTextBoxSize.y + 5 * config.menuButtonsPadding,
     };
     const connectButton = Button.Clickable{
         .disabled = !(serverInfoText.position.* > 0),

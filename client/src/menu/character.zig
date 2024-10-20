@@ -66,7 +66,7 @@ fn emptyCharacter(gameState: *GameState) !void {
                 .content = gameState.menu.character.create.name,
                 .position = &gameState.menu.character.create.name_position,
             };
-            nameText.at(nameBoxPosition);
+            nameText.at(nameBoxPosition, text.menuTextBoxSize);
             gameState.world.character.stats.name = gameState.menu.character.create.name;
         } else {
             std.debug.print("Not editable: .{s}\n", .{field.name});

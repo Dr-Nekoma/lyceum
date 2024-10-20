@@ -1,3 +1,4 @@
+const chat = @import("../components/hud/Chat.zig");
 const mainMenu = @import("../menu/main.zig");
 const messages = @import("../server_messages.zig");
 const physics = @import("physics.zig");
@@ -19,6 +20,11 @@ pub const Scene = enum {
 };
 
 pub const World = struct {
+    pub const Chat = struct {
+        in: chat = undefined,
+        position: usize = 0,
+        mode: chat.Mode = .idle,
+    };
     pub const Character = struct {
         stats: messages.Character_Info = .{},
         model: ?rl.Model = null,
@@ -44,6 +50,7 @@ pub const World = struct {
                 consumables: []const [:0]const u8 = &.{},
                 map: ?rl.Image = null,
                 texture: ?rl.Texture = null,
+                chat: Chat = .{},
             } = .{},
         } = .{},
         name: [:0]const u8 = "",

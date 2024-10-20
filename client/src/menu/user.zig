@@ -32,7 +32,7 @@ pub fn login(gameState: *GameState) !void {
         .content = &gameState.menu.credentials.username,
         .position = &gameState.menu.credentials.usernamePosition,
     };
-    usernameText.at(usernameBoxPosition);
+    usernameText.at(usernameBoxPosition, text.menuTextBoxSize);
 
     const passwordLabel = "Password";
     const passwordLabelSize: f32 = @floatFromInt(rl.measureText(passwordLabel, config.textFontSize));
@@ -40,7 +40,7 @@ pub fn login(gameState: *GameState) !void {
     const passwordLabelPositionX =
         (gameState.width / 2) - (passwordLabelSize / 2);
     const passwordLabelPositionY =
-        usernameBoxPosition.y + text.textBoxSize.y + 2 * config.menuButtonsPadding;
+        usernameBoxPosition.y + text.menuTextBoxSize.y + 2 * config.menuButtonsPadding;
 
     const passwordBoxPosition: rl.Vector2 = .{
         .x = gameState.width / 2,
@@ -57,11 +57,11 @@ pub fn login(gameState: *GameState) !void {
         .content = &gameState.menu.credentials.password,
         .position = &gameState.menu.credentials.passwordPosition,
     };
-    passwordText.at(passwordBoxPosition);
+    passwordText.at(passwordBoxPosition, text.menuTextBoxSize);
 
     const buttonPosition: rl.Vector2 = .{
         .x = (gameState.width / 2) - (buttonSize.x / 2),
-        .y = passwordBoxPosition.y + text.textBoxSize.y + 5 * config.menuButtonsPadding,
+        .y = passwordBoxPosition.y + text.menuTextBoxSize.y + 5 * config.menuButtonsPadding,
     };
     const loginButton = Button.Clickable{
         .disabled = !(passwordText.position.* > 0 and usernameText.position.* > 0),
