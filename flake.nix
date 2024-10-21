@@ -241,6 +241,7 @@
                         just
                         rebar3
                         dbeaver-bin
+                        raylib
                       ]
                       ++ lib.optionals stdenv.isLinux (linuxPkgs)
                       ++ lib.optionals stdenv.isDarwin darwinPkgs;
