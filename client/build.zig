@@ -3,7 +3,7 @@ const std = @import("std");
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
 // runner.
-pub fn build(b: *std.Build) void {
+pub fn build(b: *std.Build) !void {
     // Standard target options allows the person running `zig build` to choose
     // what target to build for. Here we do not override the defaults, which
     // means any target is allowed, and the default is native. Other options
@@ -24,35 +24,34 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    if (b.systemIntegrationOption("raylib-zig", .{})) {
-        // TODO: double-check this
-        exe.linkSystemLibrary("raylib");
-    } else {
-        const raylib_dep = b.dependency("raylib-zig", .{
-            .target = target,
-            .optimize = optimize,
-        });
-
-        const raylib = raylib_dep.module("raylib"); // main raylib module
-
-        if (b.systemIntegrationOption("raylib", .{}))
-            exe.linkLibrary(raylib_dep.artifact("raylib")) // raylib C library
-        else
-            exe.linkSystemLibrary("raylib");
-
-        exe.root_module.addImport("raylib", raylib);
-    }
-
-    const zerl_dep = b.dependency("zerl", .{
+    // TODO: figure out how to properly link a zig system library
+    if (b.lazyDependency("raylib-zig", .{
         .target = target,
         .optimize = optimize,
-    });
-    const zerl = zerl_dep.module("zerl");
-    exe.root_module.addImport("zerl", zerl);
+    })) |raylib_zig| {
+        if (b.systemIntegrationOption("raylib", .{})) {
+            exe.linkSystemLibrary("raylib");
+        } else {
+            exe.linkLibrary(raylib_zig.artifact("raylib"));
+        }
+        exe.root_module.addImport("raylib", raylib_zig.module("raylib"));
+    }
 
-    exe.linkLibC();
-    exe.linkSystemLibrary("pthread");
-    exe.linkSystemLibrary("ei");
+    if (b.lazyDependency("zerl", .{
+        .target = target,
+        .optimize = optimize,
+    })) |zerl| {
+        exe.root_module.addImport("zerl", zerl.module("zerl"));
+    }
+
+    if (b.lazyImport(@This(), "zerl")) |zerl_build| {
+        if (std.posix.getenv("LIBRARY_PATH")) |lib_path| {
+            try zerl_build.add_erlang_paths(b, lib_path);
+        }
+        if (std.posix.getenv("PATH")) |path| {
+            try zerl_build.add_erlang_paths(b, path);
+        }
+    }
 
     // const strip = b.option(
     //     bool,
