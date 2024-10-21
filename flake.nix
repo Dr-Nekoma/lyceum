@@ -73,7 +73,6 @@
           # https://www.erlang.org/doc/man/kernel_app.html
           ERL_AFLAGS = "-kernel shell_history enabled";
           ERL_INCLUDE_PATH = "${erlangLatest}/lib/erlang/usr/include";
-          RAYLIB_PATH = "${raylib}";
           # Devenv sets this to something else
           # https://www.postgresql.org/docs/7.0/libpq-envars.htm
           PGHOST = "127.0.0.1";
@@ -223,6 +222,7 @@
                 just
                 rebar3
                 zigLatest
+                raylib
               ];
             };
 
