@@ -1,0 +1,13 @@
+.direnv
+.devenv
+.git
+.gitignore
+.github
+.vs
+.vscode
+client
+result
+_build
+LICENSE
+README.org
+deploy.sh

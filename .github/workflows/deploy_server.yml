@@ -1,4 +1,4 @@
-name: "[Server] Deploy"
+name: "[Deploy] Server"
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    name: Build Container
+    name: Deploy Server
     runs-on: ubuntu-latest
 
     steps:
@@ -28,14 +28,28 @@ jobs:
       - name: Install Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - name: "[Server] Build Container Image"
+      - name: "[Deploy] Build the new release"
         run: |
-          nix build .#dockerImage
+          nix build .#server
 
-      - name: "[Heroku] Update container image"
+      - name: "[Deploy] Add SSH key"
+        env:
+            SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          just update-registry-ci
+            mkdir -p ~/.ssh
+            echo "${{ secrets.KNOWN_HOSTS }}"  >> ~/.ssh/known_hosts
+            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+            chmod 600 ~/.ssh/id_ed25519
+            ssh-agent -a $SSH_AUTH_SOCK > /dev/null	
+            ssh-add ~/.ssh/id_ed25519
 
-      - name: "[Heroku] Create Release"
+      - name: "[Server] Push release to the server"
         run: |
-          just heroku-release-ci
+          nix develop --impure -c just deploy
+        env:
+            SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
+      - name: "[Cleanup] (...)"
+        run: |
+          rm -f ~/.ssh/id_ed25519
+          rm -f ~/.ssh/know_hosts
