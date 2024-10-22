@@ -23,6 +23,11 @@ while [[ "$#" -gt 0 ]]; do
     esac
 done
 
+if [[ -z "$DEPLOY_HOST" ]]; then
+    echo "Usage: $0 --deploy-host <hostname> --deploy-user <user>"
+    exit 1
+fi
+
 # TODO: Copy the /ebin folder
 echo "[SYNC] Pushing new version to server..."
 rsync \
@@ -34,5 +39,3 @@ rsync \
     $DEPLOY_USER@$DEPLOY_HOST:~/$PROJECT_NAME
 
 echo "[DEPLOY] ..."
-
-
