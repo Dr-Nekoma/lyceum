@@ -31,6 +31,8 @@ Then simply interact with ~/localhost:8080/~. For more commands, make sure to ch
     just
 #+END_SRC
 
+to migrate the local dababase, you can use ~just db-up~ or ~db-up~.
+
 *** Nix Builds
 
 You can also build the server and related OCI images with Nix.
