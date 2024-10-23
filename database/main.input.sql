@@ -37,7 +37,7 @@ VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Vandal''s Prima', 
        ('Legion', 'lambdu@example.com', 'lambdu', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::lyceum.equipment_kind);
 
 -- Insert into lyceum.view_spell_destruction
-INSERT INTO lyceum.view_spell_destruction (name, description, cost, duration, cast_time, kind, target, base_damage, damage_kind, destruction_kind)
-VALUES ('Fire Ball', 'Something cool', 10, 50, 1, 'PROJECTILE'::lyceum.spell_type, 'SINGULAR'::lyceum.spell_target, 100, 'FIRE'::lyceum.spell_damage_type, 'MAGIC'::lyceum.spell_destruction_type),
-       ('Ice Ball', 'Another cool thing', 10, 50, 1, 'PROJECTILE'::lyceum.spell_type, 'SINGULAR'::lyceum.spell_target, 100, 'FIRE'::lyceum.spell_damage_type, 'MAGIC'::lyceum.spell_destruction_type);
+-- INSERT INTO lyceum.view_spell_destruction (name, description, cost, duration, cast_time, kind, target, base_damage, damage_kind, destruction_kind)
+-- VALUES ('Fire Ball', 'Something cool', 10, 50, 1, 'PROJECTILE'::lyceum.spell_type, 'SINGULAR'::lyceum.spell_target, 100, 'FIRE'::lyceum.spell_damage_type, 'MAGIC'::lyceum.spell_destruction_type),
+--        ('Ice Ball', 'Another cool thing', 10, 50, 1, 'PROJECTILE'::lyceum.spell_type, 'SINGULAR'::lyceum.spell_target, 100, 'FIRE'::lyceum.spell_damage_type, 'MAGIC'::lyceum.spell_destruction_type);
 

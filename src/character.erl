@@ -1,6 +1,6 @@
 -module(character).
 
--export([create/2, player_characters/3, update/2, updateTemp/2, retrieve_near_players/3, activate/3, deactivate/2, retrieve/2]).
+-export([create/2, player_characters/3, update/2,retrieve_near_players/3, activate/3, deactivate/2]).
 
 create(#{name := Name, 
 	 username := Username, 
@@ -35,27 +35,19 @@ deactivate(UserPid, Connection) ->
     ok.
 
 update(#{name := Name, 
-	 username := Username, 
-	 email := Email,
-	 map_name := MapName,
-	 x_position := XPosition,
-	 y_position := YPosition}, Connection) ->
-    Query = "UPDATE lyceum.view_character SET x_position = $1::SMALLINT, y_position = $2::SMALLINT \ 
-             WHERE name = $3::VARCHAR(18) AND e_mail = $4::TEXT AND username = $5::VARCHAR(32) AND map_name = $6::VARCHAR(64)",
-    {ok, _} = epgsql:equery(Connection, Query, [XPosition, YPosition, Name, Email, Username, MapName]).
-
-updateTemp(#{name := Name, 
 	     username := Username, 
 	     email := Email,
 	     map_name := MapName,
 	     face_direction := FaceDirection,
+	     x_velocity := XVelocity,
+	     y_velocity := YVelocity,
 	     x_position := XPosition,
 	     y_position := YPosition}, Connection) ->
     %% io:format("x: ~p, y: ~p\n", [XPosition, YPosition]),
-    Query = "UPDATE lyceum.character_position SET x_position = $1::SMALLINT, y_position = $2::SMALLINT, face_direction = $7::SMALLINT \ 
+    Query = "UPDATE lyceum.character_position SET x_position = $1::SMALLINT, y_position = $2::SMALLINT, x_velocity = $8::DECIMAL, y_velocity = $9::DECIMAL, face_direction = $7::SMALLINT \ 
              WHERE name = $3::VARCHAR(18) AND e_mail = $4::TEXT AND username = $5::VARCHAR(32) AND map_name = $6::VARCHAR(64)",
     {ok, _} = epgsql:with_transaction(Connection, 
-				      fun (Conn) -> epgsql:equery(Conn, Query, [XPosition, YPosition, Name, Email, Username, MapName, FaceDirection]) 
+				      fun (Conn) -> epgsql:equery(Conn, Query, [XPosition, YPosition, Name, Email, Username, MapName, FaceDirection, XVelocity, YVelocity]) 
 				      end,
 				      #{ begin_opts => "ISOLATION LEVEL READ UNCOMMITTED"}),
     ok = epgsql:sync(Connection).
@@ -71,22 +63,14 @@ retrieve_near_players(#{map_name := MapName}, UserPid, Connection) ->
                     lyceum.view_character.faith, \
                     lyceum.view_character.x_position, \
                     lyceum.view_character.y_position, \
+                    lyceum.view_character.x_velocity, \
+                    lyceum.view_character.y_velocity, \
                     lyceum.view_character.map_name, \
                     lyceum.view_character.face_direction \
              FROM lyceum.view_character \
              NATURAL JOIN lyceum.active_characters \
              WHERE map_name = $1::VARCHAR(64) AND user_pid <> $2::VARCHAR(50)",
     {ok, FullColumns, Values} = epgsql:equery(Connection, Query, [MapName, UserPid]),
-    util:columns_and_rows(FullColumns, Values).
-
-retrieve(#{name := Name, 
-	   username := Username, 
-	   email := Email,
-	   map_name := MapName}, Connection) ->
-    Query = "SELECT lyceum.view_character.x_position, \
-                    lyceum.view_character.y_position  \
-             WHERE name = $1::VARCHAR(18), e_mail = $2::TEXT, username = $3::VARCHAR(32), map_name = $4::VARCHAR(64)",
-    {ok, FullColumns, Values} = epgsql:equery(Connection, Query, [Name, Email, Username, MapName]),
     util:columns_and_rows(FullColumns, Values).
 
 player_characters(Username, Email, Connection) ->

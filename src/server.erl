@@ -71,7 +71,7 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
             exit(0);
         {update_character, Character_Map} ->
             io:format("Character will be updated. User: ~p\n", [UserPid]),
-            character:updateTemp(Character_Map, Connection),
+            character:update(Character_Map, Connection),
             io:format("Retrieving nearby characters...\n"),
             Players =
                 character:retrieve_near_players(Character_Map,
