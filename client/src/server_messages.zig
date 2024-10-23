@@ -81,6 +81,8 @@ pub const Character_Info = struct {
     faith: u8 = 0,
     x_position: i16 = 0,
     y_position: i16 = 0,
+    x_velocity: f32 = 0,
+    y_velocity: f32 = 0,
     face_direction: u16 = 270,
     map_name: [:0]const u8 = "",
 };
@@ -96,6 +98,8 @@ pub const Character_Update = struct {
     name: [:0]const u8,
     x_position: i16,
     y_position: i16,
+    x_velocity: f32,
+    y_velocity: f32,
     map_name: [:0]const u8,
     username: []const u8,
     face_direction: u16 = 270,

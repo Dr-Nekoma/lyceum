@@ -1,3 +1,4 @@
+const config = @import("../config.zig");
 const mainMenu = @import("../menu/main.zig");
 const messages = @import("../server_messages.zig");
 const physics = @import("physics.zig");
@@ -17,6 +18,8 @@ pub const Scene = enum {
     character_selection,
     connect,
 };
+
+pub const Character_Table = std.StringHashMap(World.Character);
 
 pub const World = struct {
     pub const Character = struct {
@@ -39,7 +42,6 @@ pub const World = struct {
             .z = 0.0,
         },
         preview: ?rl.Texture2D = null,
-        faceDirection: f32 = 270,
         velocity: rl.Vector3 = .{
             .x = 0,
             .y = 0,
@@ -47,7 +49,7 @@ pub const World = struct {
         },
     };
     character: Character = .{},
-    other_players: []const messages.Character_Info = &.{},
+    other_players: Character_Table,
     camera: rl.Camera = undefined,
     cameraDistance: f32 = 60,
 };
@@ -78,7 +80,12 @@ pub fn send_with_self(state: *@This(), message: messages.Payload) !void {
     try state.send(.{ try state.connection.node.self(), message });
 }
 
-pub fn init(width: f32, height: f32, node: *zerl.Node) !@This() {
+pub fn init(
+    allocator: std.mem.Allocator,
+    width: f32,
+    height: f32,
+    node: *zerl.Node,
+) !@This() {
     const camera: rl.Camera = .{
         .position = .{ .x = 50.0, .y = 50.0, .z = 50.0 },
         .target = .{ .x = 0.0, .y = 10.0, .z = 0.0 },
@@ -88,10 +95,24 @@ pub fn init(width: f32, height: f32, node: *zerl.Node) !@This() {
     };
     if (width < 0) return error.negative_width;
     if (height < 0) return error.negative_height;
+    const name = try allocator.allocSentinel(u8, config.nameSize, 0);
+    @memset(name, 0);
     return .{
         .width = width,
         .height = height,
+        .allocator = allocator,
         .connection = .{ .node = node },
-        .world = .{ .camera = camera },
+        .world = .{
+            .camera = camera,
+            .other_players = Character_Table.init(allocator),
+        },
+        .menu = .{
+            .assets = try mainMenu.loadAssets(),
+            .character = .{
+                .create = .{
+                    .name = name,
+                },
+            },
+        },
     };
 }

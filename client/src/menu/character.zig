@@ -36,7 +36,15 @@ fn emptyCharacter(gameState: *GameState) !void {
     };
     const fieldPadding = 25;
     inline for (std.meta.fields(messages.Character_Info)) |field| {
-        if (comptime isDifferent(field.name, &.{ "name", "map_name", "x_position", "y_position", "face_direction" })) {
+        if (comptime isDifferent(field.name, &.{
+            "name",
+            "map_name",
+            "x_position",
+            "y_position",
+            "x_velocity",
+            "y_velocity",
+            "face_direction",
+        })) {
             const mutable_name: [:0]u8 = try gameState.allocator.allocSentinel(u8, field.name.len, 0);
             std.mem.copyForwards(u8, mutable_name, field.name);
             mutable_name[0] = std.ascii.toUpper(mutable_name[0]);

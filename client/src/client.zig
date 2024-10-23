@@ -17,16 +17,12 @@ pub fn main() anyerror!void {
     rl.setTargetFPS(60);
     var node = try zerl.Node.init("lyceum");
 
-    var gameState = try state.init(config.Screen.initialWidth, config.Screen.initialHeight, &node);
-    gameState.menu = .{
-        .character = .{
-            .create = .{
-                .name = try gameState.allocator.allocSentinel(u8, config.nameSize, 0),
-            },
-        },
-        .assets = try mainMenu.loadAssets(),
-    };
-    @memset(gameState.menu.character.create.name, 0);
+    var gameState = try state.init(
+        std.heap.c_allocator, // Revisit this later
+        config.Screen.initialWidth,
+        config.Screen.initialHeight,
+        &node,
+    );
 
     // try character.goToSpawn(&gameState);
     mainMenu.spawn(&gameState);

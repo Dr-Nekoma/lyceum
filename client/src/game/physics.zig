@@ -94,6 +94,8 @@ pub const character = struct {
             entity.position = tempPosition;
             entity.stats.x_position = @intFromFloat(tempPosition.x);
             entity.stats.y_position = @intFromFloat(tempPosition.z);
+            entity.stats.x_velocity = velocity.x;
+            entity.stats.y_velocity = velocity.z;
         }
     }
 };

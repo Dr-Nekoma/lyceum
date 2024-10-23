@@ -13,10 +13,10 @@ VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta'),
        ('Gaiseric', 'mmagueta@example.com', 'mmagueta'),
        ('Legion', 'lambdu@example.com', 'lambdu');
 
-INSERT INTO lyceum.character_stats (name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith, mana, health)
-VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 100, 110, 95, 120, 105, 100, 100, 100),
-       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 60, 110, 55, 150, 150, 50, 100, 100),
-       ('Legion', 'lambdu@example.com', 'lambdu', 60, 110, 55, 150, 150, 50, 100, 100);
+INSERT INTO lyceum.character_stats (name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith)
+VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 100, 110, 95, 120, 105, 100),
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 60, 110, 55, 150, 150, 50),
+       ('Legion', 'lambdu@example.com', 'lambdu', 60, 110, 55, 150, 150, 50);
 
 INSERT INTO lyceum.character_position (name, e_mail, username, x_position, y_position, map_name, face_direction)
 VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 10, 20, 'CASTLE_HALL', 270),

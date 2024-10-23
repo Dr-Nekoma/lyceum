@@ -6,15 +6,13 @@ const rl = @import("raylib");
 const GameState = @import("../game/state.zig");
 
 fn drawPlayers(gameState: *GameState) void {
-    for (gameState.world.other_players) |player| {
+    var player_iterator = gameState.world.other_players.valueIterator();
+    while (player_iterator.next()) |player| {
         const maybeModel = gameState.world.character.model;
         if (maybeModel) |model| {
-            const position: rl.Vector3 = .{
-                .x = @floatFromInt(player.x_position),
-                .y = physics.character.floorLevel,
-                .z = @floatFromInt(player.y_position),
-            };
-            rl.drawModelEx(model, position, physics.heightAxis, @floatFromInt(player.face_direction), physics.character.modelScale, rl.Color.white);
+            player.model = model;
+            player.animation.frames = gameState.world.character.animation.frames;
+            physics.character.draw(player);
         }
     }
 }

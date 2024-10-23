@@ -44,7 +44,7 @@ update(#{name := Name,
 	     x_position := XPosition,
 	     y_position := YPosition}, Connection) ->
     %% io:format("x: ~p, y: ~p\n", [XPosition, YPosition]),
-    Query = "UPDATE lyceum.character_position SET x_position = $1::SMALLINT, y_position = $2::SMALLINT, x_velocity = $8::DECIMAL, y_velocity = $9::DECIMAL, face_direction = $7::SMALLINT \ 
+    Query = "UPDATE lyceum.character_position SET x_position = $1::SMALLINT, y_position = $2::SMALLINT, x_velocity = $8::REAL, y_velocity = $9::REAL, face_direction = $7::SMALLINT \ 
              WHERE name = $3::VARCHAR(18) AND e_mail = $4::TEXT AND username = $5::VARCHAR(32) AND map_name = $6::VARCHAR(64)",
     {ok, _} = epgsql:with_transaction(Connection, 
 				      fun (Conn) -> epgsql:equery(Conn, Query, [XPosition, YPosition, Name, Email, Username, MapName, FaceDirection, XVelocity, YVelocity]) 
@@ -83,6 +83,8 @@ player_characters(Username, Email, Connection) ->
                     lyceum.view_character.faith, \
                     lyceum.view_character.x_position, \
                     lyceum.view_character.y_position, \
+                    lyceum.view_character.x_velocity, \
+                    lyceum.view_character.y_velocity, \
                     lyceum.view_character.map_name, \
                     lyceum.view_character.face_direction \
              FROM lyceum.view_character WHERE username = $1::VARCHAR(32) AND e_mail = $2::TEXT",
