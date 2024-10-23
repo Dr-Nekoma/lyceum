@@ -30,27 +30,22 @@ pub const character = struct {
     pub fn draw(entity: *GameState.World.Character) void {
         var tempAngle = entity.stats.face_direction;
         const velocity = &entity.velocity;
+        const state = &entity.stats.state_type;
         const deltaTime = rl.getFrameTime();
         const deltaVelocity = deltaTime * acceleration;
 
         if (rl.isKeyDown(.key_d)) {
-            entity.animation.state = .walking;
             velocity.z -= deltaVelocity;
             tempAngle = 180;
         } else if (rl.isKeyDown(.key_a)) {
-            entity.animation.state = .walking;
             velocity.z += deltaVelocity;
             tempAngle = 0;
         } else if (rl.isKeyDown(.key_w)) {
-            entity.animation.state = .walking;
             velocity.x -= deltaVelocity;
             tempAngle = 270;
         } else if (rl.isKeyDown(.key_s)) {
-            entity.animation.state = .walking;
             velocity.x += deltaVelocity;
             tempAngle = 90;
-        } else {
-            entity.animation.state = .idle;
         }
         if (rl.isKeyDown(.key_space)) {
             velocity.y += deltaVelocity;
@@ -58,8 +53,6 @@ pub const character = struct {
         if (rl.isKeyDown(.key_left_control)) {
             velocity.y -= deltaVelocity;
         }
-
-        animate.character.update(entity);
 
         const frictionFactor = deltaVelocity * 0.65;
 
@@ -79,6 +72,7 @@ pub const character = struct {
 
         var tempPosition: rl.Vector3 = rm.vector3Add(entity.position, rm.vector3Scale(velocity.*, deltaTime));
         tempPosition.y = rm.clamp(tempPosition.y, floorLevel, ceilingLevel);
+        state.* = if (rm.vector3Equals(entity.position, tempPosition) == 0) .walking else .idle;
 
         const previous = &entity.stats.face_direction;
         if (previous.* != tempAngle) {
@@ -86,7 +80,7 @@ pub const character = struct {
                 rl.drawModelEx(model, entity.position, heightAxis, @floatFromInt(previous.*), modelScale, rl.Color.blue);
             }
             previous.* = tempAngle;
-            entity.animation.state = .idle;
+            state.* = .idle;
         } else {
             if (entity.model) |model| {
                 rl.drawModelEx(model, tempPosition, heightAxis, @floatFromInt(tempAngle), modelScale, rl.Color.blue);
@@ -97,5 +91,6 @@ pub const character = struct {
             entity.stats.x_velocity = velocity.x;
             entity.stats.y_velocity = velocity.z;
         }
+        animate.character.update(entity);
     }
 };

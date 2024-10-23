@@ -44,6 +44,7 @@ fn emptyCharacter(gameState: *GameState) !void {
             "x_velocity",
             "y_velocity",
             "face_direction",
+            "state_type",
         })) {
             const mutable_name: [:0]u8 = try gameState.allocator.allocSentinel(u8, field.name.len, 0);
             std.mem.copyForwards(u8, mutable_name, field.name);

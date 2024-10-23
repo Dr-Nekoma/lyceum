@@ -1,6 +1,7 @@
 const rl = @import("raylib");
 const std = @import("std");
 const zerl = @import("zerl");
+const GameState = @import("game/state.zig");
 
 fn createAnonymousStruct(comptime T: type, comptime keys: []const [:0]const u8) type {
     const struct_info = @typeInfo(T).Struct;
@@ -85,6 +86,7 @@ pub const Character_Info = struct {
     y_velocity: f32 = 0,
     face_direction: u16 = 270,
     map_name: [:0]const u8 = "",
+    state_type: GameState.World.Character.Animation.State = .idle,
 };
 
 pub const Characters_Request = struct {
@@ -104,6 +106,7 @@ pub const Character_Update = struct {
     username: []const u8,
     face_direction: u16 = 270,
     email: []const u8,
+    state_type: GameState.World.Character.Animation.State = .idle,
 };
 
 // Central place to send game's data

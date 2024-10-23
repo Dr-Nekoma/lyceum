@@ -29,7 +29,6 @@ pub const World = struct {
                 idle,
             };
             frameCounter: i32 = 0,
-            state: State = .idle,
             frames: []rl.ModelAnimation = &.{},
         };
         animation: Animation = .{},
