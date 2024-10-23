@@ -1,6 +1,6 @@
 -module(util).
 
--export([columns_and_rows/2]).
+-export([columns_and_rows/2, transform_character_map/1]).
 
 column_names(Columns) ->    
     lists:map(fun ({_,Name,Type,_,_,_,_,_,_}) -> {Type, erlang:binary_to_atom(Name)} end, Columns).
@@ -19,3 +19,7 @@ columns_and_rows(FullColumns, Rows) ->
 	 end),
     Values = lists:map(F, Rows),
     lists:map(fun maps:from_list/1, Values).
+
+transform_character_map(List) ->
+    F = (fun (Map) -> Map#{state_type := erlang:binary_to_atom(maps:get(state_type, Map))} end),
+    lists:map(F, List).
