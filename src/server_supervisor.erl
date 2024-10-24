@@ -7,29 +7,30 @@
 
 -behaviour(supervisor).
 
--export([start_link/0]).
-
--export([init/1]).
+-export([start_link/0, init/1]).
 
 -define(SERVER, ?MODULE).
 
 start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
-%% sup_flags() = #{strategy => strategy(),         % optional
-%%                 intensity => non_neg_integer(), % optional
-%%                 period => pos_integer()}        % optional
-%% child_spec() = #{id => child_id(),       % mandatory
-%%                  start => mfargs(),      % mandatory
-%%                  restart => restart(),   % optional
-%%                  shutdown => shutdown(), % optional
-%%                  type => worker(),       % optional
-%%                  modules => modules()}   % optional
 init([]) ->
-    SupFlags = #{strategy => one_for_all,
-                 intensity => 0,
-                 period => 1},
-    ChildSpecs = [],
-    {ok, {SupFlags, ChildSpecs}}.
+    %% https://www.erlang.org/doc/system/sup_princ.html#supervisor-flags
+    SupFlags = {one_for_one, 2, 10},
+    %% https://www.erlang.org/doc/system/sup_princ.html#child-specification
+    ChildSpec =
+        {server,
+         {server, start_link, []},
+         %% The process will always be restarted
+         permanent,
+         %% Time (in ms) to wait between restarts
+         2000,
+         %% Type
+         worker,
+         [server]},
+
+    {ok,
+     {SupFlags,
+      [ChildSpec]}}.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          %% The process will always be restarted
 
 %% internal functions
