@@ -136,14 +136,15 @@ BEGIN
     -- Is this really necessary? The on conflict already catches this!
     -- WHERE name = NEW.name AND e_mail = NEW.e_mail AND username = NEW.username;
 
-    INSERT INTO lyceum.character_position(name, e_mail, username, x_position, y_position, map_name)
-    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.x_position, NEW.y_position, NEW.map_name)
+    INSERT INTO lyceum.character_position(name, e_mail, username, x_position, y_position, map_name, state_type)
+    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.x_position, NEW.y_position, NEW.map_name, NEW.state_type)
     ON CONFLICT (name, username, e_mail) DO UPDATE SET
            name = NEW.name,
            e_mail = NEW.e_mail,
            username = NEW.username,
            x_position = NEW.x_position,
            y_position = NEW.y_position,
+           state_type = NEW.state_type,
            map_name = NEW.map_name;
 
     -- Same issue here.
