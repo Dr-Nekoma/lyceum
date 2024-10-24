@@ -35,7 +35,9 @@ rsync \
     --mkpath \
     --delete \
     --exclude-from .rsyncignore \
-    . \
+    ./result \
     $DEPLOY_USER@$DEPLOY_HOST:~/$PROJECT_NAME
 
 echo "[DEPLOY] ..."
+echo "[DEPLOY] TODO""
+
