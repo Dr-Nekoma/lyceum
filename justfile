@@ -98,6 +98,13 @@ db-up:
 db-down:
     ./migrate_down.sh
 
+# Populate DB
+db-input:
+	./migrate_input.sh
+
+# Hard reset DB
+db-reset: db-down db-up db-input
+	
 # --------
 # Releases
 # --------
