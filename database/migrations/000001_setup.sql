@@ -22,8 +22,8 @@ CREATE TYPE lyceum.TILE_TYPE AS ENUM(
 CREATE TABLE lyceum.tile(
        map_name VARCHAR(16) NOT NULL, 
        kind lyceum.TILE_TYPE NOT NULL,
-       x_position SMALLINT NOT NULL,
-       y_position SMALLINT NOT NULL,
+       x_position REAL NOT NULL,
+       y_position REAL NOT NULL,
        PRIMARY KEY(map_name, kind, x_position, y_position),
        FOREIGN KEY (map_name) REFERENCES lyceum.map(name)
 );
@@ -31,8 +31,8 @@ CREATE TABLE lyceum.tile(
 CREATE TABLE lyceum.object(
        map_name VARCHAR(16) NOT NULL, 
        name VARCHAR(16) NOT NULL,
-       x_position SMALLINT NOT NULL,
-       y_position SMALLINT NOT NULL,
+       x_position REAL NOT NULL,
+       y_position REAL NOT NULL,
        PRIMARY KEY(map_name, x_position, y_position),
        FOREIGN KEY (map_name) REFERENCES lyceum.map(name)
 );
@@ -88,8 +88,9 @@ CREATE TABLE lyceum.character_position(
        name VARCHAR(18) NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
        username VARCHAR(32) NOT NULL,
-       x_position SMALLINT NOT NULL,
-       y_position SMALLINT NOT NULL,
+       x_position REAL NOT NULL,
+       -- TODO: Turn this back into integers when the time comes
+       y_position REAL NOT NULL,
        x_velocity REAL NOT NULL DEFAULT 0,
        y_velocity REAL NOT NULL DEFAULT 0,
        state_type lyceum.STATE_TYPE NOT NULL DEFAULT 'idle', 
@@ -137,15 +138,15 @@ BEGIN
     -- WHERE name = NEW.name AND e_mail = NEW.e_mail AND username = NEW.username;
 
     INSERT INTO lyceum.character_position(name, e_mail, username, x_position, y_position, x_velocity, y_velocity, map_name, state_type)
-    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.x_position, NEW.y_position, NEW.x_velocity, NEW.y_velocity, NEW.map_name, NEW.state_type)
+    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.x_position, NEW.y_position, NEW.map_name, NEW.state_type)
     ON CONFLICT (name, username, e_mail) DO UPDATE SET
            name = NEW.name,
            e_mail = NEW.e_mail,
            username = NEW.username,
            x_position = NEW.x_position,
            y_position = NEW.y_position,
-           x_velocity = NEW.x_velocity,
-           y_velocity = NEW.y_velocity,
+           x_position = NEW.x_position,
+           y_position = NEW.y_position,	   
            state_type = NEW.state_type,
            map_name = NEW.map_name;
 
