@@ -40,16 +40,17 @@ update(#{name := Name,
 	 map_name := MapName,
 	 face_direction := FaceDirection,
 	 state_type := StateType,
-	 x_velocity := XVelocity,
-	 y_velocity := YVelocity,
 	 x_position := XPosition,
-	 y_position := YPosition}, Connection) ->
-    %% io:format("x: ~p, y: ~p\n", [XPosition, YPosition]),
-    Query = "UPDATE lyceum.character_position SET x_position = $1::SMALLINT, y_position = $2::SMALLINT, \
-             x_velocity = $8::REAL, y_velocity = $9::REAL, face_direction = $7::SMALLINT, state_type = $10::lyceum.STATE_TYPE \ 
-             WHERE name = $3::VARCHAR(18) AND e_mail = $4::TEXT AND username = $5::VARCHAR(32) AND map_name = $6::VARCHAR(64)",
+	 y_position := YPosition,
+	 x_velocity := XVelocity,
+	 y_velocity := YVelocity}, Connection) ->
+    io:format("x: ~p, y: ~p, state_type: ~p\n", [XVelocity, YVelocity, StateType]),
+    Query = "UPDATE lyceum.character_position SET x_position = $1::REAL, y_position = $2::REAL, \
+             x_velocity = $3::REAL, y_velocity = $4::REAL, \
+             face_direction = $5::SMALLINT, state_type = $6::lyceum.STATE_TYPE \ 
+             WHERE name = $7::VARCHAR(18) AND e_mail = $8::TEXT AND username = $9::VARCHAR(32) AND map_name = $10::VARCHAR(64)",
     {ok, _} = epgsql:with_transaction(Connection, 
-				      fun (Conn) -> epgsql:equery(Conn, Query, [XPosition, YPosition, Name, Email, Username, MapName, FaceDirection, XVelocity, YVelocity, StateType]) 
+				      fun (Conn) -> epgsql:equery(Conn, Query, [XPosition, YPosition, XVelocity, YVelocity, FaceDirection, StateType, Name, Email, Username, MapName])
 				      end,
 				      #{ begin_opts => "ISOLATION LEVEL READ UNCOMMITTED"}),
     ok = epgsql:sync(Connection).
