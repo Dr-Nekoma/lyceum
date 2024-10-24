@@ -28,14 +28,10 @@ jobs:
       - name: Install Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - name: "[Server] Build Container Image"
+      - name: "[Server] Build the new release"
         run: |
-          nix build .#dockerImage
+          nix build .#server
 
-      - name: "[Heroku] Update container image"
-        run: |
-          just update-registry-ci
-
-      - name: "[Heroku] Create Release"
+      - name: "[Server] Push release to the server"
         run: |
           just heroku-release-ci

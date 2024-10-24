@@ -221,6 +221,7 @@
                 heroku
                 just
                 rebar3
+                rsync
                 zigLatest
                 raylib
               ];
