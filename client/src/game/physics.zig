@@ -1,7 +1,5 @@
-const animate = @import("animation.zig");
 const rl = @import("raylib");
 const rm = rl.math;
-const std = @import("std");
 const GameState = @import("../game/state.zig");
 
 pub const heightAxis: rl.Vector3 = .{
@@ -23,36 +21,15 @@ pub const character = struct {
         .z = 120,
     };
 
-    const acceleration = 120;
+    pub const acceleration = 120;
     pub const floorLevel = 12;
     const ceilingLevel = 48;
 
-    pub fn draw(entity: *GameState.World.Character) void {
-        var tempAngle = entity.stats.face_direction;
+    pub fn draw(entity: *GameState.World.Character, tempAngle: u16) void {
         const velocity = &entity.velocity;
         const state = &entity.stats.state_type;
         const deltaTime = rl.getFrameTime();
         const deltaVelocity = deltaTime * acceleration;
-
-        if (rl.isKeyDown(.key_d)) {
-            velocity.z -= deltaVelocity;
-            tempAngle = 180;
-        } else if (rl.isKeyDown(.key_a)) {
-            velocity.z += deltaVelocity;
-            tempAngle = 0;
-        } else if (rl.isKeyDown(.key_w)) {
-            velocity.x -= deltaVelocity;
-            tempAngle = 270;
-        } else if (rl.isKeyDown(.key_s)) {
-            velocity.x += deltaVelocity;
-            tempAngle = 90;
-        }
-        if (rl.isKeyDown(.key_space)) {
-            velocity.y += deltaVelocity;
-        }
-        if (rl.isKeyDown(.key_left_control)) {
-            velocity.y -= deltaVelocity;
-        }
 
         const frictionFactor = deltaVelocity * 0.65;
 
@@ -70,9 +47,10 @@ pub const character = struct {
 
         velocity.* = rm.vector3Clamp(velocity.*, rm.vector3Scale(velocityCeiling, -1), velocityCeiling);
 
+        state.* = if (rm.vector3Equals(velocity.*, rm.vector3Zero()) == 0) .walking else .idle;
+
         var tempPosition: rl.Vector3 = rm.vector3Add(entity.position, rm.vector3Scale(velocity.*, deltaTime));
         tempPosition.y = rm.clamp(tempPosition.y, floorLevel, ceilingLevel);
-        state.* = if (rm.vector3Equals(entity.position, tempPosition) == 0) .walking else .idle;
 
         const previous = &entity.stats.face_direction;
         if (previous.* != tempAngle) {
@@ -85,11 +63,10 @@ pub const character = struct {
                 rl.drawModelEx(model, tempPosition, heightAxis, @floatFromInt(tempAngle), modelScale, rl.Color.blue);
             }
             entity.position = tempPosition;
-            entity.stats.x_position = @intFromFloat(tempPosition.x);
-            entity.stats.y_position = @intFromFloat(tempPosition.z);
+            entity.stats.x_position = tempPosition.x;
+            entity.stats.y_position = tempPosition.z;
             entity.stats.x_velocity = velocity.x;
             entity.stats.y_velocity = velocity.z;
         }
-        animate.character.update(entity);
     }
 };

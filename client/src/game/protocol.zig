@@ -1,7 +1,9 @@
+const assets = @import("../assets.zig");
 const messages = @import("../server_messages.zig");
+const physics = @import("physics.zig");
+const rl = @import("raylib");
 const std = @import("std");
 const GameState = @import("../game/state.zig");
-const physics = @import("physics.zig");
 
 pub fn pingUpdateCharacter(gameState: *GameState) !void {
     // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
@@ -30,28 +32,33 @@ pub fn pingUpdateCharacter(gameState: *GameState) !void {
                     var next_player = current_player;
                     next_player.stats = player;
                     next_player.position = .{
-                        .x = @floatFromInt(player.x_position),
+                        .x = player.x_position,
                         .y = next_player.position.y,
-                        .z = @floatFromInt(player.y_position),
+                        .z = player.y_position,
                     };
                     next_player.velocity = .{
                         .x = player.x_velocity,
-                        .y = 0,
+                        .y = next_player.velocity.y,
                         .z = player.y_velocity,
                     };
                     other_players.putAssumeCapacity(player.name, next_player);
                 } else {
                     const new_character = GameState.World.Character{
                         .position = .{
-                            .x = @floatFromInt(player.x_position),
+                            .x = player.x_position,
                             .y = physics.character.floorLevel,
-                            .z = @floatFromInt(player.y_position),
+                            .z = player.y_position,
                         },
-                        .stats = player,
                         .velocity = .{
                             .x = player.x_velocity,
                             .y = 0,
                             .z = player.y_velocity,
+                        },
+                        .stats = player,
+                        .model = try assets.model("walker.m3d"),
+                        .animation = .{
+                            // We can do this because all players use the same model + animations for now
+                            .frames = gameState.world.character.animation.frames,
                         },
                     };
                     try other_players.put(player.name, new_character);
