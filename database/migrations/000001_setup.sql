@@ -60,6 +60,9 @@ CREATE TABLE lyceum.character(
        name VARCHAR(18) NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
        username VARCHAR(32) NOT NULL,
+       level SMALLINT NOT NULL DEFAULT 1 CHECK (level >= 1),
+       mana SMALLINT NOT NULL DEFAULT 100,
+       health SMALLINT NOT NULL DEFAULT 100,
        FOREIGN KEY (e_mail, username) REFERENCES lyceum.user(e_mail, username),
        PRIMARY KEY(name, username, e_mail)
 );
@@ -74,6 +77,8 @@ CREATE TABLE lyceum.character_stats(
        endurance SMALLINT NOT NULL CHECK (endurance > 0 AND endurance <= 150),
        intelligence SMALLINT NOT NULL CHECK (intelligence > 0 AND intelligence <= 150),
        faith SMALLINT NOT NULL CHECK (faith > 0 AND faith <= 150),
+       mana SMALLINT NOT NULL CHECK (mana > 0),
+       health SMALLINT NOT NULL CHECK (health > 0),
        FOREIGN KEY (name, username, e_mail) REFERENCES lyceum.character(name, username, e_mail),
        PRIMARY KEY(name, username, e_mail)
 );
