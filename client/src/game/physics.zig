@@ -80,7 +80,6 @@ pub const character = struct {
                 rl.drawModelEx(model, entity.position, heightAxis, @floatFromInt(previous.*), modelScale, rl.Color.blue);
             }
             previous.* = tempAngle;
-            state.* = .idle;
         } else {
             if (entity.model) |model| {
                 rl.drawModelEx(model, tempPosition, heightAxis, @floatFromInt(tempAngle), modelScale, rl.Color.blue);
