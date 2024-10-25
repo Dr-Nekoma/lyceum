@@ -5,26 +5,36 @@
 
 -module(server).
 
--behaviour(application).
+-behaviour(gen_server).
 
--export([start/2, stop/1, main/1, handle_master/1, handle_user/1]).
+%% API
+-export([start_link/0, login/0, stop/0]).
 
-%% TODO: We shall remove the cookie given that this is a public game, lmao
-start(_, _) ->
-    Connection = database:database_connect(),
-    database:migrate(Connection),
-    Pid = spawn(?MODULE, handle_master, [Connection]),
-    erlang:register(lyceum_server, Pid),
-    {ok, Pid}.
+%% Internal
+%-export([start/2, stop/1, main/1, handle_master/1, handle_user/1]).
 
-%% stream_user_data(#{user_pid := UserPid, connection := Connection} = State) ->
-%%     {ok, Data} = epgsql:set_notice_receiver(Connection, self()),
-%%     io:format("Data: ~p\n", [Data]),
-%%     %% UserPid ! {ok, Data},
-%%     stream_user_data(State).
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, terminate/2, code_change/3]).
 
-%% timeout_user(State) ->
+%% Records
+-record(state, {connection}).
 
+%-----------%
+%%%% API %%%%
+%-----------%
+
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+login() ->
+    gen_server:call(?MODULE, login).
+
+stop() ->
+    gen_server:cast(?MODULE, stop).
+
+%----------------%
+%%%% Internal %%%%
+%----------------%
 % TODO: We should not just keep passing Connections here, this is dangerous for interactive stuff
 handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
     receive
@@ -112,8 +122,36 @@ handle_master(Connection) ->
     end,
     handle_master(Connection).
 
-stop(_) ->
-    ok.
+%------------------%
+%%%% Gen Server %%%%
+%------------------%
+init([]) ->
+    case database:database_connect() of
+        {ok, Conn} ->
+            database:migrate(Conn),
+            Pid = spawn(?MODULE, handle_master, [Conn]),
+            erlang:register(lyceum_server, Pid),
+            {ok, Pid};
+        {error, _Reason} ->
+            %% If connection fails, crash to trigger restart
+            {stop, failed_to_connect}
+    end.
 
-main(_) ->
-    start(none, none).
+handle_call(login, _From, State) ->
+    {reply, ok, State}.
+
+handle_cast(stop, State) ->
+    %% Gracefully close connection if stopping
+    {ok, _} = epgsql:close(State#state.connection),
+    {stop, normal, State}.
+
+terminate(_Reason, State) ->
+    case State#state.connection of
+        undefined ->
+            ok;
+        _ ->
+            epgsql:close(State#state.connection)
+    end.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.

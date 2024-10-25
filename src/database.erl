@@ -81,14 +81,20 @@ epgsql_query_fun(Conn) ->
 
 database_connect() ->
     io:format("Connecting to ~p at ~p~n", [?PGHOST, ?PGPORT]),
-    {ok, Connection} =
-        epgsql:connect(#{host => ?PGHOST,
-                         username => ?PGUSER,
-                         password => ?PGPASSWORD,
-                         database => ?PGDATABASE,
-                         timeout => 4000}),
-    io:format("Connected to ~p with USER = ~p~n", [?PGHOST, ?PGUSER]),
-    Connection.
+    Connection =
+        #{host => ?PGHOST,
+          username => ?PGUSER,
+          password => ?PGPASSWORD,
+          database => ?PGDATABASE,
+          timeout => 4000},
+    case epgsql:connect(Connection) of
+        {ok, Conn} ->
+            io:format("Connected to ~p~n", [?PGHOST]),
+            {ok, Conn};
+        {error, Reason} ->
+            io:format("Failed to connect to PostgreSQL: ~p~n", [Reason]),
+            {error, Reason}
+    end.
 
 migrate(Conn) ->
     io:format("Finding migration scripts... ~n"),
