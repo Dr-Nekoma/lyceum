@@ -10,10 +10,14 @@ check_user(#{username := Username, password := Password}, Connection) ->
     [UserData | _] = util:columns_and_rows(FullColumns, Values),
     maps:get(e_mail, UserData).
 
-insert_user(#{username := Username,
-              email := Email,
-              password := Password},
-            Connection) ->
+insert_user(
+    #{
+        username := Username,
+        email := Email,
+        password := Password
+    },
+    Connection
+) ->
     Query =
         "INSERT INTO player.record (username, e-mail, password) VALUES "
         "($1::VARCHAR(32), $2::TEXT, $3::TEXT)",

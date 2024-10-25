@@ -32,7 +32,7 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
             io:format("Querying user's characters...\n"),
             io:format("Map: ~p\n", [Something]),
             Characters = character:player_characters(Username, Email, Connection),
-	    io:format("Characters: ~p\n", [Characters]),
+            io:format("Characters: ~p\n", [Characters]),
             UserPid ! {ok, Characters};
         {create_character, Character_Map} ->
             io:format("This character logged"),
@@ -52,8 +52,10 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
                     exit(2)
             end;
         exit_map ->
-            case character:deactivate(
-                     erlang:pid_to_list(UserPid), Connection)
+            case
+                character:deactivate(
+                    erlang:pid_to_list(UserPid), Connection
+                )
             of
                 ok ->
                     UserPid ! ok;
@@ -66,7 +68,8 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
             end;
         disconnect ->
             character:deactivate(
-                erlang:pid_to_list(UserPid), Connection),
+                erlang:pid_to_list(UserPid), Connection
+            ),
             epgsql:close(Connection),
             UserPid ! ok,
             exit(0);
@@ -75,9 +78,11 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
             character:update(Character_Map, Connection),
             io:format("Retrieving nearby characters...\n"),
             Players =
-                character:retrieve_near_players(Character_Map,
-                                                erlang:pid_to_list(UserPid),
-                                                Connection),
+                character:retrieve_near_players(
+                    Character_Map,
+                    erlang:pid_to_list(UserPid),
+                    Connection
+                ),
             io:format("Everything went ok!\n"),
             UserPid ! {ok, Players}
     end,
@@ -86,24 +91,31 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
 handle_master(Connection) ->
     receive
         {Pid,
-         {register,
-          #{username := Username,
-            email := Email,
-            password := Password}}} ->
+            {register, #{
+                username := Username,
+                email := Email,
+                password := Password
+            }}} ->
             io:format("This user now exists: ~p", [Username]),
-            registry:insert_user(#{username => Username,
-                                   password => Password,
-                                   email => Email},
-                                 Connection),
+            registry:insert_user(
+                #{
+                    username => Username,
+                    password => Password,
+                    email => Email
+                },
+                Connection
+            ),
             Response = "I registered " ++ Username,
             Pid ! {self(), Response};
         {Pid, {login, #{username := Username, password := Password}}} ->
             io:format("This user logged: ~p\n", [Username]),
             Email = registry:check_user(#{username => Username, password => Password}, Connection),
             NewPid =
-                spawn(?MODULE,
-                      handle_user,
-                      [#{user_pid => Pid, connection => database:database_connect()}]),
+                spawn(
+                    ?MODULE,
+                    handle_user,
+                    [#{user_pid => Pid, connection => database:database_connect()}]
+                ),
             io:format("User's email: ~p\n", [Email]),
             Pid ! {ok, {NewPid, Email}};
         {Pid, Value} ->

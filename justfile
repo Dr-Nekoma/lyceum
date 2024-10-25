@@ -31,7 +31,7 @@ format source='client':
     elif [[ $t == "justfile" ]]; then
         just --fmt --unstable
     elif [[ $t == "server" ]]; then
-        rebar3 fmt
+        erlfmt -w $(find ./server/src/ -type f \( -iname \*.erl -o -iname \*.hrl \))
     else
         echo "No formating selected, skipping step..."
     fi
@@ -124,22 +124,3 @@ release-nix:
 # Builds the deployment docker image with Nix
 build-docker:
     nix build .#dockerImage
-
-# Updates Heroku's registry with the new image
-_update-registry:
-    docker load < ./result
-    docker tag lyceum:latest registry.heroku.com/lyceum/web
-    docker push registry.heroku.com/lyceum/web
-
-update-registry: build-docker
-    _update-registry
-
-update-registry-ci:
-    _update-registry
-
-# Release app with the new docker image on Heroku
-heroku-release: update-registry
-    heroku container:release -a=lyceum web
-
-heroku-release-ci:
-    heroku container:release -a=lyceum web
