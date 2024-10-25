@@ -4,7 +4,7 @@
 
 check_user(#{username := Username, password := Password}, Connection) ->
     Query =
-        "SELECT * FROM lyceum.user WHERE username = $1::VARCHAR(32) "
+        "SELECT * FROM player.record WHERE username = $1::VARCHAR(32) "
         "AND password = $2::TEXT",
     {ok, FullColumns, Values} = epgsql:equery(Connection, Query, [Username, Password]),
     [UserData | _] = util:columns_and_rows(FullColumns, Values),
@@ -15,6 +15,6 @@ insert_user(#{username := Username,
               password := Password},
             Connection) ->
     Query =
-        "INSERT INTO lyceum.user  (username, e-mail, password) VALUES "
+        "INSERT INTO player.record (username, e-mail, password) VALUES "
         "($1::VARCHAR(32), $2::TEXT, $3::TEXT)",
     {ok, _, _} = epgsql:equery(Connection, Query, [Username, Email, Password]).
