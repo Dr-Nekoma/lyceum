@@ -50,4 +50,4 @@ BEGIN
         EXECUTE sql_command.truncation_command;
     END LOOP;
 END $$;
-TRUNCATE database_migrations_history RESTART IDENTITY;
+DROP TABLE IF EXISTS database_migrations_history;

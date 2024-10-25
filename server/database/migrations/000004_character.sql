@@ -36,7 +36,7 @@ CREATE TABLE character.position(
        x_velocity REAL NOT NULL DEFAULT 0,
        y_velocity REAL NOT NULL DEFAULT 0,
        -- TODO: Wtf is happening. Why can't this be namespaced? Look in equipment schema file bro xD
-       state_type STATE_TYPE NOT NULL DEFAULT 'idle', 
+       state_type "character".STATE_TYPE NOT NULL DEFAULT 'idle', 
        face_direction SMALLINT NOT NULL CHECK (face_direction >= 0 AND face_direction < 360),	
        map_name VARCHAR(64) NOT NULL,
        FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
