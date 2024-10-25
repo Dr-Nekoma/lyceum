@@ -1,12 +1,12 @@
-{application, server,
+{application, server_app,
  [{description, "An OTP Lyceum Server"},
   {vsn, "0.1.0"},
-  {registered, []},
-  {mod, {server, []}},
+  {registered, [server]},
+  {mod, {server_app, []}},
   {applications,
    [kernel,stdlib,pure_migrations,epgsql,sasl]},
   {env,[ {migrations_path, "../database/migrations/"} ]},
-  {modules, []},
+  {modules, [server, server_sup, server_app, database, registry, character, utils]},
   {licenses, ["Apache-2.0"]},
   {links, []}
  ]}.

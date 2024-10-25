@@ -1,142 +1,168 @@
 %%%-------------------------------------------------------------------
-%% @doc server public API
+%% @doc Public Server API, I don't have time to refactor this into a
+%%      proper gen_server, at least not until the demo happens.
 %% @end
 %%%-------------------------------------------------------------------
 
 -module(server).
 
--behaviour(application).
+% API
+-export([start_link/0]).
+% Internal
+-export([init/1, handle_user/1]).
 
--export([start/2, stop/1, main/1, handle_master/1, handle_user/1]).
+%% Records & Types
+-include("types.hrl").
 
-%% TODO: We shall remove the cookie given that this is a public game, lmao
-start(_, _) ->
-    Connection = database:database_connect(),
-    %% database:migrate(Connection),
-    Pid = spawn(?MODULE, handle_master, [Connection]),
-    erlang:register(lyceum_server, Pid),
-    {ok, Pid}.
+%% Macros
+-define(SERVER, lyceum_server).
 
-%% stream_user_data(#{user_pid := UserPid, connection := Connection} = State) ->
-%%     {ok, Data} = epgsql:set_notice_receiver(Connection, self()),
-%%     io:format("Data: ~p\n", [Data]),
-%%     %% UserPid ! {ok, Data},
-%%     stream_user_data(State).
+%%%===================================================================
+%%% API functions
+%%%===================================================================
 
-%% timeout_user(State) ->
+%%--------------------------------------------------------------------
+%% @doc
+%% Starts the process
+%%--------------------------------------------------------------------
+start_link() ->
+    proc_lib:start_link(?MODULE, init, [self()]).
 
-% TODO: We should not just keep passing Connections here, this is dangerous for interactive stuff
-handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+init(Parent) ->
+    Pid = self(),
+    register(?SERVER, Pid),
+    Debug = sys:debug_options([]),
+    proc_lib:init_ack(Parent, {ok, Pid}),
+    % Setup a DB connection and bootstrap process state
+    {ok, Connection} = database:database_connect(),
+    % This is a temporary solution using the built-in k/v store
+    Table = ets:new(?MODULE, [named_table, private, set]),
+    State =
+        #state{connection = Connection,
+               table = Table,
+               pid = Pid},
+    io:format("[~p] Starting at ~p...~n", [?SERVER, Pid]),
+    main(Parent, Debug, State).
+
+% Main Game Loop
+main(Parent, Debug, State) ->
     receive
-        {list_characters, Character_Map} ->
-            io:format("Querying user's characters...\n"),
-            io:format("Map: ~p\n", [Character_Map]),
-            Result = character:player_characters(Character_Map, Connection),
-            io:format("Characters: ~p\n", [Result]),
-            UserPid ! Result;
-        {create_character, Character_Map} ->
-            io:format("This character logged"),
-            Result = character:create(Character_Map, Connection),
-            UserPid ! Result;
-        {joining_map, Character_Map} ->
-            io:format("User is about to join a world!\n"),
-            case character:activate(Character_Map, erlang:pid_to_list(UserPid), Connection) of
-                ok ->
-                    io:format("Everything went ok with User: ~p!\n", [UserPid]),
-                    io:format("Retriving character's updated info...", []),
-                    Result = character:player_character(Character_Map, Connection),
-                    io:format("Got: ~p\n", [Result]),
-                    UserPid ! Result;
-                {error, Message} ->
-                    io:format("Unexpected Error: ~p\n", [Message]),
-                    UserPid ! {error, "Could not join map"}
-            end;
+        {From, {login, Request}} ->
+            login(State, From, Request);
+        {list_characters, Request} ->
+            list_characters(State, Request);
+        {joining_map, Request} ->
+            joining_map(State, Request);
+        {update_character, CharacterMap} ->
+            update(State, CharacterMap);
+        {system, From, Request} ->
+            sys:handle_system_msg(Request, From, Parent, ?MODULE, Debug, State);
+        Request ->
+            io:format("[~p] Sent an unsuppoted request: ~p~n", [?SERVER, Request])
+    end,
+    main(Parent, Debug, State).
+
+% Initial Flow
+login(State, From, #{username := Username, password := _Password} = Request) ->
+    io:format("[~p] User ~p is attemptig to login from ~p~n", [?SERVER, Username, From]),
+    case registry:check_user(Request, State#state.connection) of
+        {ok, Email} ->
+            io:format("[~p] USER: ~p successfully logged in!~n", [?SERVER, Email]),
+            ets:insert(?MODULE, {Email, From}),
+            io:format("[~p] <Email=~p, PID=~p> inserted...~n", [?SERVER, Email, From]),
+            {ok, Connection} = database:database_connect(),
+            Pid = proc_lib:spawn(?MODULE,
+                                 handle_user,
+                                 [#state{pid = From, connection = Connection}]),
+            From ! {ok, {Pid, Email}};
+        {error, Message} ->
+            io:format("Unexpected Error: ~p~n", [Message]),
+            From ! {error, Message}
+    end.
+
+handle_user(State) ->
+    receive
+        {list_characters, Request} ->
+            list_characters(State, Request);
+        {joining_map, Request} ->
+            joining_map(State, Request);
+        {update_character, CharacterMap} ->
+            update(State, CharacterMap);
         exit_map ->
-            case
-                character:deactivate(
-                    erlang:pid_to_list(UserPid), Connection
-                )
-            of
-                ok ->
-                    UserPid ! ok;
-                {error, Message} ->
-                    io:format("Unexpected Error: ~p\n", [Message]),
-                    exit(2)
-            end;
+            exit_map(State);
         logout ->
-            epgsql:close(Connection),
-            UserPid ! ok,
-            exit(0);
+            logout(State);
         %% TODO: We should better handle double login. Client can't know the difference between errors
         {_, {login, _}} ->
-            UserPid ! {error, "User already logged in"};
-        {update_character, Character_Map} ->
-            %% io:format("Character will be updated. User: ~p\n", [UserPid]),
-            case character:update(Character_Map, Connection) of
-                ok ->
-                    %% io:format("Retrieving nearby characters...\n"),
-                    Result =
-                        character:retrieve_near_players(
-                            Character_Map,
-                            erlang:pid_to_list(UserPid),
-                            Connection
-                        ),
-                    %% io:format("Everything went ok!\n"),
-                    UserPid ! Result;
-                {error, Message} ->
-                    %% io:format("Unexpected Error: ~p\n", [Message]),
-                    UserPid ! {error, Message}
-            end
+            State#state.pid ! {error, "User already logged in"};
+        Request ->
+            io:format("[~p] Sent an unsuppoted request: ~p~n", [State#state.pid, Request])
     end,
     handle_user(State).
 
-handle_master(Connection) ->
-    receive
-        {Pid,
-            {register, #{
-                username := Username,
-                email := Email,
-                password := Password
-            }}} ->
-            io:format("This user now exists: ~p", [Username]),
-            case
-                registry:insert_user(
-                    #{
-                        username => Username,
-                        password => Password,
-                        email => Email
-                    },
-                    Connection
-                )
-            of
-                ok ->
-                    Response = "I registered " ++ Username,
-                    Pid ! {self(), Response};
-                {error, Message} ->
-                    io:format("Unexpected Error: ~p\n", [Message]),
-                    Pid ! {self(), Message}
-            end;
-        {Pid, {login, #{username := Username, password := Password}}} ->
-            io:format("This user logged: ~p\n", [Username]),
-            case registry:check_user(#{username => Username, password => Password}, Connection) of
-                {ok, Email} ->
-                    NewPid =
-                        spawn(
-                            ?MODULE,
-                            handle_user,
-                            [#{user_pid => Pid, connection => database:database_connect()}]
-                        ),
-                    io:format("User's email: ~p\n", [Email]),
-                    Pid ! {ok, {NewPid, Email}};
-                {error, Message} ->
-                    io:format("Unexpected Error: ~p\n", [Message]),
-                    Pid ! {error, Message}
-            end
-    end,
-    handle_master(Connection).
+% Game State Changes
+list_characters(State, #{email := _Email, username := Username} = Request) ->
+    io:format("[~p] Querying ~p's characters...~n", [?SERVER, Username]),
+    Reply = character:player_characters(Request, State#state.connection),
+    io:format("[~p] Characters: ~p~n", [?SERVER, Reply]),
+    State#state.pid ! Reply.
 
-stop(_) ->
-    ok.
+joining_map(State,
+            #{username := _Username,
+              email := _Email,
+              name := Name} =
+                Request) ->
+    Pid = State#state.pid,
+    case character:activate(Request, erlang:pid_to_list(Pid), State#state.connection) of
+        ok ->
+            io:format("[~p] Retriving ~p's updated info...", [?SERVER, Name]),
+            Result = character:player_character(Request, State#state.connection),
+            io:format("Got: ~p~n", [Result]),
+            Pid ! Result;
+        {error, Message} ->
+            io:format("Unexpected Error: ~p\n", [Message]),
+            Pid ! {error, "Could not join map"}
+    end.
 
-main(_) ->
-    start(none, none).
+update(State, CharacterMap) ->
+    Pid = State#state.pid,
+    case character:update(CharacterMap, State#state.connection) of
+        ok ->
+            Result =
+                character:retrieve_near_players(CharacterMap,
+                                                erlang:pid_to_list(Pid),
+                                                State#state.connection),
+            Pid ! Result;
+        {error, Message} ->
+            Pid ! {error, Message}
+    end.
+
+exit_map(State) ->
+    Pid = State#state.pid,
+    case character:deactivate(
+             erlang:pid_to_list(Pid), State#state.connection)
+    of
+        ok ->
+            Pid ! ok;
+        {error, Message} ->
+            io:format("Unexpected Error: ~p\n", [Message]),
+            exit(2)
+    end.
+
+logout(State) ->
+    Pid = State#state.pid,
+    Connection = State#state.connection,
+    case character:deactivate(
+             erlang:pid_to_list(Pid), Connection)
+    of
+        ok ->
+            epgsql:close(Connection),
+            Pid ! ok,
+            exit(0);
+        {error, Message} ->
+            Pid ! {error, Message},
+            exit(2)
+    end.
