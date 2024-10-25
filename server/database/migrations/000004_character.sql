@@ -1,6 +1,7 @@
+DROP TYPE IF EXISTS "character.STATE_TYPE";
 CREATE TYPE character.STATE_TYPE AS ENUM(
-    'IDLE',
-    'WALKING'
+    'idle',
+    'walking'
 );
 
 CREATE TABLE character.instance(
