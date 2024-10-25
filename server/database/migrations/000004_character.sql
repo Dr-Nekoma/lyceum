@@ -1,3 +1,8 @@
+CREATE TYPE character.STATE_TYPE AS ENUM(
+    'idle',
+    'walking'
+);
+
 CREATE TABLE character.instance(
        name VARCHAR(18) NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
@@ -18,11 +23,6 @@ CREATE TABLE character.stats(
        faith SMALLINT NOT NULL CHECK (faith > 0 AND faith <= 150),
        FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
        PRIMARY KEY(name, username, e_mail)
-);
-
-CREATE TYPE character.STATE_TYPE AS ENUM(
-       'idle',
-       'walking'
 );
 
 CREATE TABLE character.position(
