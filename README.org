@@ -1,4 +1,4 @@
-#+TITLE: Lyceum Server 🏛️
+#+TITLE: Lyceum 🏛️
 
 #+html: <a href="https://builtwithnix.org"><img alt="built with nix" src="https://builtwithnix.org/badge.svg" /></a><br>
 #+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/build_client.yml"> <img alt="[Build] Client" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/build_client.yml/badge.svg" /></a>

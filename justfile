@@ -8,7 +8,7 @@ set export := true
 # Application
 
 database := justfile_directory() + "/database"
-server := justfile_directory() + "/src"
+server := justfile_directory() + "/server"
 client := justfile_directory() + "/client"
 server_port := "8080"
 
@@ -31,7 +31,7 @@ format source='client':
     elif [[ $t == "justfile" ]]; then
         just --fmt --unstable
     elif [[ $t == "server" ]]; then
-        rebar3 fmt
+        erlfmt -w $(find ./server/src/ -type f \( -iname \*.erl -o -iname \*.hrl \))
     else
         echo "No formating selected, skipping step..."
     fi
@@ -75,32 +75,32 @@ client-deps:
 # --------
 
 build:
-    rebar3 compile
+    cd server && rebar3 compile
 
 # Fetches rebar3 dependencies, updates both the rebar and nix lockfiles
-deps:
-    rebar3 get-deps
-    rebar3 nix lock
+deps: 
+    cd server && rebar3 get-deps
+    cd server && rebar3 nix lock
 
 # Runs ther erlang server (inside the rebar shell)
 server: build
-    rebar3 shell
+    cd server && rebar3 shell
 
 # Runs unit tests in the server
-test:
-    rebar3 do eunit, ct
+test: 
+    cd server && rebar3 do eunit, ct
 
 # Migrates the DB (up)
 db-up:
-    ./migrate_up.sh
+    ./database/migrate_up.sh
 
 # Nukes the DB
 db-down:
-    ./migrate_down.sh
+    ./database/migrate_down.sh
 
 # Populate DB
 db-input:
-	./migrate_input.sh
+	./database/migrate_input.sh
 
 # Hard reset DB
 db-reset: db-down db-up db-input
@@ -124,22 +124,3 @@ release-nix:
 # Builds the deployment docker image with Nix
 build-docker:
     nix build .#dockerImage
-
-# Updates Heroku's registry with the new image
-_update-registry:
-    docker load < ./result
-    docker tag lyceum:latest registry.heroku.com/lyceum/web
-    docker push registry.heroku.com/lyceum/web
-
-update-registry: build-docker
-    _update-registry
-
-update-registry-ci:
-    _update-registry
-
-# Release app with the new docker image on Heroku
-heroku-release: update-registry
-    heroku container:release -a=lyceum web
-
-heroku-release-ci:
-    heroku container:release -a=lyceum web
