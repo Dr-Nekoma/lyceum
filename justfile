@@ -8,7 +8,7 @@ set export := true
 # Application
 
 database := justfile_directory() + "/database"
-server := justfile_directory() + "/src"
+server := justfile_directory() + "/server"
 client := justfile_directory() + "/client"
 server_port := "8080"
 
@@ -75,32 +75,32 @@ client-deps:
 # --------
 
 build:
-    rebar3 compile
+    cd server && rebar3 compile
 
 # Fetches rebar3 dependencies, updates both the rebar and nix lockfiles
-deps:
-    rebar3 get-deps
-    rebar3 nix lock
+deps: 
+    cd server && rebar3 get-deps
+    cd server && rebar3 nix lock
 
 # Runs ther erlang server (inside the rebar shell)
 server: build
-    rebar3 shell
+    cd server && rebar3 shell
 
 # Runs unit tests in the server
-test:
-    rebar3 do eunit, ct
+test: 
+    cd server && rebar3 do eunit, ct
 
 # Migrates the DB (up)
 db-up:
-    ./migrate_up.sh
+    ./database/migrate_up.sh
 
 # Nukes the DB
 db-down:
-    ./migrate_down.sh
+    ./database/migrate_down.sh
 
 # Populate DB
 db-input:
-	./migrate_input.sh
+	./database/migrate_input.sh
 
 # Hard reset DB
 db-reset: db-down db-up db-input

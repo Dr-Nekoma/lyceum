@@ -87,7 +87,7 @@
           # nix build .#server
           server =
             let
-              deps = import ./rebar-deps.nix { inherit (pkgs) fetchHex fetchFromGitHub fetchgit; };
+              deps = import ./server/rebar-deps.nix { inherit (pkgs) fetchHex fetchFromGitHub fetchgit; };
             in
             pkgs.stdenv.mkDerivation {
               name = "server";
