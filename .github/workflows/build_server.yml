@@ -33,7 +33,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16-bookworm
         env:
           POSTGRES_PASSWORD: ${{ env.PGPASSWORD }}
           POSTGRES_USER: ${{ env.PGUSER }}

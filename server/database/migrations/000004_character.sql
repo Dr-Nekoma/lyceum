@@ -1,6 +1,6 @@
 CREATE TYPE character.STATE_TYPE AS ENUM(
-    'idle',
-    'walking'
+    'IDLE',
+    'WALKING'
 );
 
 CREATE TABLE character.instance(
