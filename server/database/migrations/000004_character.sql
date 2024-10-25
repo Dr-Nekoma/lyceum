@@ -1,3 +1,9 @@
+DROP TYPE IF EXISTS "character.STATE_TYPE";
+CREATE TYPE character.STATE_TYPE AS ENUM(
+    'idle',
+    'walking'
+);
+
 CREATE TABLE character.instance(
        name VARCHAR(18) NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
@@ -20,11 +26,6 @@ CREATE TABLE character.stats(
        PRIMARY KEY(name, username, e_mail)
 );
 
-CREATE TYPE character.STATE_TYPE AS ENUM(
-       'idle',
-       'walking'
-);
-
 CREATE TABLE character.position(
        name VARCHAR(18) NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
@@ -35,7 +36,7 @@ CREATE TABLE character.position(
        x_velocity REAL NOT NULL DEFAULT 0,
        y_velocity REAL NOT NULL DEFAULT 0,
        -- TODO: Wtf is happening. Why can't this be namespaced? Look in equipment schema file bro xD
-       state_type STATE_TYPE NOT NULL DEFAULT 'idle', 
+       state_type "character".STATE_TYPE NOT NULL DEFAULT 'idle', 
        face_direction SMALLINT NOT NULL CHECK (face_direction >= 0 AND face_direction < 360),	
        map_name VARCHAR(64) NOT NULL,
        FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),

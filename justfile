@@ -7,7 +7,7 @@ set export := true
 # --------------
 # Application
 
-database := justfile_directory() + "/database"
+database := justfile_directory() + "server/database"
 server := justfile_directory() + "/server"
 client := justfile_directory() + "/client"
 server_port := "8080"
@@ -78,7 +78,7 @@ build:
     cd server && rebar3 compile
 
 # Fetches rebar3 dependencies, updates both the rebar and nix lockfiles
-deps: 
+deps:
     cd server && rebar3 get-deps
     cd server && rebar3 nix lock
 
@@ -87,24 +87,24 @@ server: build
     cd server && rebar3 shell
 
 # Runs unit tests in the server
-test: 
+test:
     cd server && rebar3 do eunit, ct
 
 # Migrates the DB (up)
 db-up:
-    ./database/migrate_up.sh
+    ./server/database/migrate_up.sh
 
 # Nukes the DB
 db-down:
-    ./database/migrate_down.sh
+    ./server/database/migrate_down.sh
 
 # Populate DB
 db-input:
-	./database/migrate_input.sh
+    ./server/database/migrate_input.sh
 
 # Hard reset DB
 db-reset: db-down db-up db-input
-	
+
 # --------
 # Releases
 # --------

@@ -1,13 +1,13 @@
-CREATE TABLE map.instance(
-       name VARCHAR(16) NOT NULL,
-       PRIMARY KEY(name)
-);
-
 CREATE TYPE map.TILE_TYPE AS ENUM(
        'WATER',
        'GRASS',
        'SAND',
        'ROCK'
+);
+
+CREATE TABLE map.instance(
+       name VARCHAR(16) NOT NULL,
+       PRIMARY KEY(name)
 );
 
 CREATE TABLE map.tile(

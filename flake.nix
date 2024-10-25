@@ -92,12 +92,11 @@
             pkgs.stdenv.mkDerivation {
               name = "server";
               version = "0.0.1";
-              src = pkgs.lib.cleanSource ./.;
+              src = pkgs.lib.cleanSource ./server;
               buildInputs = with pkgs; [
                 erlangLatest
                 pkgs.stdenv.cc.cc.lib
                 rebar3
-                just
                 gnutar
               ];
               nativeBuildInputs = with pkgs; [
@@ -116,7 +115,7 @@
                     cp -R --no-preserve=mode ${v} _checkouts/${k}
                   '') deps
                 )}
-                just release-nix
+                rebar3 as prod tar
               '';
               installPhase = ''
                 mkdir -p $out
@@ -184,14 +183,10 @@
           };
 
           # nix run .#build
-          apps.build =
-            env.app [ ]
-              "zig build -- \"$@\"";
+          apps.build = env.app [ ] "zig build -- \"$@\"";
 
           # nix run .#test
-          apps.test =
-            env.app [ ]
-              "zig build test -- \"$@\"";
+          apps.test = env.app [ ] "zig build test -- \"$@\"";
         };
 
         devShells =
@@ -240,7 +235,6 @@
                         erlfmt
                         just
                         rebar3
-                        dbeaver-bin
                         raylib
                       ]
                       ++ lib.optionals stdenv.isLinux (linuxPkgs)

@@ -5,22 +5,14 @@ on:
     branches: [ "master" ]
     paths:
       - .github/workflows/**
-      - database/**
-      - src/**
-      - rebar.config
-      - rebar.lock
-      - rebar-deps.nix
+      - server/**
       - flake.nix
       - flake.lock
   pull_request:
     branches: [ "master" ]
     paths:
       - .github/workflows/**
-      - database/**
-      - src/**
-      - rebar.config
-      - rebar.lock
-      - rebar-deps.nix
+      - server/**
       - flake.nix
       - flake.lock
 
@@ -41,7 +33,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16-bookworm
         env:
           POSTGRES_PASSWORD: ${{ env.PGPASSWORD }}
           POSTGRES_USER: ${{ env.PGUSER }}
@@ -76,6 +68,10 @@ jobs:
         run: |
           nix develop .#ci --impure -c just test
 
-      - name: "[Server] Check Migrations"
+      - name: "[Database] Check Migrations"
         run: |
           nix develop .#ci --impure -c just db-up
+
+      - name: "[Database] Check Input Generation"
+        run: |
+          nix develop .#ci --impure -c just db-input
