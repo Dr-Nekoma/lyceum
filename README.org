@@ -7,7 +7,7 @@
 
 * About
 
-This is an MMO Server written in Erlang, for a game called Lyceum.
+This is Lyceum --- an MMO game with the server written in Erlang and the client written in Zig superchanged with [[https://github.com/raysan5/raylib][raylib]].
 
 * How to run
 
