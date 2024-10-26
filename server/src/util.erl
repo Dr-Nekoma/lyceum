@@ -37,27 +37,13 @@ transform_character_map(List) ->
     F = (fun(Map) -> Map#{state_type := erlang:binary_to_atom(maps:get(state_type, Map))} end),
     lists:map(F, List).
 
-process_postgres_result(Result, Tag, Fun) ->
-    case Tag of
-	select -> case Result of
-		      {ok, FullColumns, Values} -> Fun(FullColumns, Values);
-		      _ -> {error, "Unexpected result from Select"}
-		  end;
-	update -> case Result of
-		      {ok, Count} -> Fun(Count);
-		      _ -> {error, "Unexpected result from Update"}
-		  end;
-	delete -> case Result of
-		      {ok, Count} -> Fun(Count);
-		      _ -> {error, "Unexpected result from Delete"}
-		  end;
-	insert -> case Result of
-		      {ok, Count, Columns, Rows} -> Fun(Count, Columns, Rows);
-		      _ -> {error, "Unexpected result from Insert"}
-		  end;
-	_ -> {error, "Unrecognized operation in Server side"}
-    end.
-			  
-			   
-
+process_postgres_result({ok, FullColumns, Values}, select, Fun) ->
+    Fun(FullColumns, Values);
+process_postgres_result({ok, Count}, update, Fun) ->
+    Fun(Count);
+process_postgres_result({ok, Count}, delete, Fun) ->
+    Fun(Count);
+process_postgres_result({ok, Count, Columns, Rows}, insert, Fun) ->
+    Fun(Count, Columns, Rows);
+process_postgres_result(Error, _, _) -> {error, Error}.
 		    
