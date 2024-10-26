@@ -74,15 +74,21 @@ pub fn login(gameState: *GameState) !void {
     )) {
         // TODO: Add loading animation to wait for response
         // TODO: Add a timeout for login
-        try gameState.send_with_self(.{
+        gameState.send_with_self(.{
             .login = .{
                 .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
                 .password = gameState.menu.credentials.password[0..gameState.menu.credentials.passwordPosition],
             },
-        });
+        }) catch {
+            gameState.errorElem.update(.login_send);
+            return;
+        };
         const node = gameState.connection.node;
         gameState.connection.handler, gameState.menu.credentials.email =
-            try messages.receive_login_response(gameState.allocator, node);
+            messages.receive_login_response(gameState.allocator, node) catch {
+            gameState.errorElem.update(.login_receive);
+            return;
+        };
         gameState.scene = .join;
     }
 }

@@ -112,14 +112,15 @@ pub const Character_Update = struct {
 // Central place to send game's data
 
 pub const Payload = union(enum) {
-    register: Registry_Request,
-    login: Login_Request,
-    list_characters: Characters_Request,
-    // create_character:
-    joining_map: Character_Update,
-    update_character: Character_Update,
-    exit_map: void,
     debug: [:0]const u8,
+    exit_map: void,
+    joining_map: Character_Update,
+    list_characters: Characters_Request,
+    login: Login_Request,
+    logout: void,
+    register: Registry_Request,
+    // create_character:
+    update_character: Character_Update,
 };
 
 // Central place to receive game's data

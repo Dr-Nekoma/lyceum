@@ -1,6 +1,7 @@
 const assets = @import("../assets.zig");
 const attribute = @import("../components/attribute.zig");
 const config = @import("../config.zig");
+const mainMenu = @import("main.zig");
 const messages = @import("../server_messages.zig");
 const protocol = @import("../game/protocol.zig");
 const rl = @import("raylib");
@@ -15,17 +16,24 @@ pub fn goToSpawn(gameState: *GameState) !void {
     // Source: https://youtu.be/gFf5eGCjUUg?si=cmJcKlSzoV4ES0p8
 
     const character = &gameState.world.character;
-    character.animation.frames = try assets.animations("walker.m3d");
-    character.model = try assets.model("walker.m3d");
+    character.animation.frames = assets.animations("walker.m3d") catch {
+        gameState.errorElem.update(.loading_assets);
+        return;
+    };
+    character.model = assets.model("walker.m3d") catch {
+        gameState.errorElem.update(.loading_assets);
+        return;
+    };
 
-    rl.disableCursor();
     try protocol.pingJoinMap(gameState);
+    rl.disableCursor();
     gameState.scene = .spawn;
 }
 
 // TODO: add limit for total number of points when creating a character
 // TODO: add create button available to click when character is valid
 fn emptyCharacter(gameState: *GameState) !void {
+    mainMenu.userLogoutButton(gameState);
     var currentTextPosition: rl.Vector2 = .{
         .x = 50,
         .y = 150,
@@ -98,6 +106,7 @@ fn isDifferent(string: [:0]const u8, forbiddens: []const [:0]const u8) bool {
 }
 
 pub fn selection(gameState: *GameState) !void {
+    mainMenu.userLogoutButton(gameState);
     const buttonSize = Button.Sizes.large(gameState);
     const characterButtonY = (gameState.height / 10) - (buttonSize.y / 2);
     var buttonPosition: rl.Vector2 = .{

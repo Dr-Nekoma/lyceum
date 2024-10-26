@@ -8,7 +8,7 @@ const GameState = @import("../game/state.zig");
 pub fn pingUpdateCharacter(gameState: *GameState) !void {
     // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
     // if we are not overwhelming the database
-    try gameState.send(messages.Payload{
+    gameState.send(messages.Payload{
         .update_character = .{
             .name = gameState.world.character.stats.name,
             .x_position = gameState.world.character.stats.x_position,
@@ -21,9 +21,15 @@ pub fn pingUpdateCharacter(gameState: *GameState) !void {
             .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
             .email = gameState.menu.credentials.email,
         },
-    });
+    }) catch {
+        gameState.errorElem.update(.update_character_send);
+        return;
+    };
     const node = gameState.connection.node;
-    const server_response = try messages.receive_characters_list(gameState.allocator, node);
+    const server_response = messages.receive_characters_list(gameState.allocator, node) catch {
+        gameState.errorElem.update(.update_character_receive);
+        return;
+    };
     switch (server_response) {
         .ok => |players| {
             const other_players = &gameState.world.other_players;
@@ -68,7 +74,7 @@ pub fn pingUpdateCharacter(gameState: *GameState) !void {
         .@"error" => |msg| {
             defer gameState.allocator.free(msg);
             std.debug.print("[ERROR]: {s}\n", .{msg});
-            gameState.scene = .nothing;
+            return error.update_character;
         },
     }
 }
@@ -76,7 +82,7 @@ pub fn pingUpdateCharacter(gameState: *GameState) !void {
 pub fn pingJoinMap(gameState: *GameState) !void {
     // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
     // if we are not overwhelming the database
-    try gameState.send(messages.Payload{
+    gameState.send(messages.Payload{
         .joining_map = .{
             .name = gameState.world.character.stats.name,
             .x_position = gameState.world.character.stats.x_position,
@@ -89,15 +95,21 @@ pub fn pingJoinMap(gameState: *GameState) !void {
             .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
             .email = gameState.menu.credentials.email,
         },
-    });
+    }) catch {
+        gameState.errorElem.update(.joining_map_send);
+        return;
+    };
     const node = gameState.connection.node;
-    const server_response = try messages.receive_standard_response(gameState.allocator, node);
+    const server_response = messages.receive_standard_response(gameState.allocator, node) catch {
+        gameState.errorElem.update(.joining_map_receive);
+        return;
+    };
     switch (server_response) {
         .ok => {},
         .@"error" => |msg| {
             defer gameState.allocator.free(msg);
             std.debug.print("[ERROR]: {s}\n", .{msg});
-            gameState.scene = .nothing;
+            return error.joining_map;
         },
     }
 }
@@ -105,15 +117,46 @@ pub fn pingJoinMap(gameState: *GameState) !void {
 pub fn pingExitMap(gameState: *GameState) !void {
     // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
     // if we are not overwhelming the database
-    try gameState.send(messages.Payload.exit_map);
+    gameState.send(messages.Payload.exit_map) catch {
+        gameState.errorElem.update(.exit_send);
+        return;
+    };
     const node = gameState.connection.node;
-    const server_response = try messages.receive_standard_response(gameState.allocator, node);
+    const server_response = messages.receive_standard_response(gameState.allocator, node) catch {
+        gameState.errorElem.update(.exit_receive);
+        return;
+    };
     switch (server_response) {
         .ok => {},
         .@"error" => |msg| {
             defer gameState.allocator.free(msg);
             std.debug.print("[ERROR]: {s}\n", .{msg});
-            gameState.scene = .nothing;
+            return error.exit;
         },
+    }
+}
+
+pub fn logout(gameState: *GameState) void {
+    if (gameState.connection.handler != null) {
+        gameState.send(messages.Payload.logout) catch {
+            gameState.errorElem.update(.logout_send);
+            return;
+        };
+        const node = gameState.connection.node;
+        const server_response = messages.receive_standard_response(gameState.allocator, node) catch {
+            gameState.errorElem.update(.logout_receive);
+            return;
+        };
+        switch (server_response) {
+            .ok => {
+                gameState.connection.handler = null;
+                gameState.scene = .nothing;
+            },
+            .@"error" => |msg| {
+                defer gameState.allocator.free(msg);
+                std.debug.print("[ERROR]: {s}\n", .{msg});
+                return;
+            },
+        }
     }
 }
