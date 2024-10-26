@@ -5,7 +5,6 @@ const std = @import("std");
 pub const defaultErrorDuration = 3;
 const padding = 2;
 const fontSize = 22;
-const errorBackgroundColor = rl.Color.init(0, 0, 0, 255);
 
 const Error = @Type(.{ .Enum = .{
     .is_exhaustive = true,
@@ -38,11 +37,13 @@ pub const errorMessage = struct {
 };
 
 expiration: f64 = 0,
+transparency: u8 = 255,
 type: ?Error = null,
 
 pub fn update(self: *@This(), tag: Error) void {
     self.expiration = rl.getTime() + defaultErrorDuration;
     self.type = tag;
+    self.transparency = 255;
 }
 
 fn error_message(kind: Error) [:0]const u8 {
@@ -71,13 +72,16 @@ pub fn at(
                 .y = height / 4 - size.y / 2,
             };
 
-            rl.drawRectangleV(position, size, errorBackgroundColor);
+            const black = rl.Color.init(0, 0, 0, self.transparency);
+            const red = rl.Color.init(255, 0, 0, self.transparency);
+
+            rl.drawRectangleV(position, size, black);
             rl.drawRectangleLines(
                 @intFromFloat(position.x),
                 @intFromFloat(position.y),
                 @intFromFloat(size.x),
                 @intFromFloat(size.y),
-                rl.Color.red,
+                red,
             );
 
             const messageX = position.x + size.x / 2 - textSize / 2;
@@ -88,8 +92,10 @@ pub fn at(
                 @intFromFloat(messageX),
                 @intFromFloat(messageY),
                 fontSize,
-                rl.Color.red,
+                red,
             );
+
+            self.transparency -= 1;
         }
     }
 }
