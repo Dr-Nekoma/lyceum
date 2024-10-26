@@ -27,7 +27,7 @@ activate(#{name := Name,
              ON CONFLICT (name, username, e_mail) \
              DO UPDATE SET user_pid = $4::VARCHAR(50)",
     Result = epgsql:equery(Connection, Query, [Name, Email, Username, UserPid]),
-    Fun = (fun (_, _, _) -> ok end),
+    Fun = (fun (_) -> ok end),
     util:process_postgres_result(Result, insert, Fun).
 
 %% TODO: Add a Select first in order to check already being deactivated
@@ -51,7 +51,7 @@ update(#{name := Name,
     io:format("x: ~p, y: ~p, state_type: ~p\n", [XVelocity, YVelocity, StateType]),
     Query = "UPDATE character.position SET x_position = $1::REAL, y_position = $2::REAL, \
              x_velocity = $3::REAL, y_velocity = $4::REAL, \
-             face_direction = $5::SMALLINT, state_type = $6::STATE_TYPE \ 
+             face_direction = $5::SMALLINT, state_type = $6::\"character\".STATE_TYPE \ 
              WHERE name = $7::VARCHAR(18) AND e_mail = $8::TEXT AND username = $9::VARCHAR(32) AND map_name = $10::VARCHAR(64)",
     Result = epgsql:with_transaction(Connection, 
 				      fun (Conn) -> epgsql:equery(Conn, Query, [XPosition, YPosition, XVelocity, YVelocity, FaceDirection, StateType, Name, Email, Username, MapName])

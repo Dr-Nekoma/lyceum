@@ -40,13 +40,13 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
             UserPid ! Result;
         {joining_map, Character_Map} ->
             io:format("User is about to join a world!\n"),
-	    case character:activate(Character_Map, erlang:pid_to_list(UserPid), Connection) of
+            case character:activate(Character_Map, erlang:pid_to_list(UserPid), Connection) of
                 ok ->
                     io:format("Everything went ok with User: ~p!\n", [UserPid]),
                     UserPid ! ok;
                 {error, Message} ->
                     io:format("Unexpected Error: ~p\n", [Message]),
-		    UserPid ! {error, "Could not join map"}
+                    UserPid ! {error, "Could not join map"}
             end;
         exit_map ->
             case
@@ -54,35 +54,36 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
                     erlang:pid_to_list(UserPid), Connection
                 )
             of
-                ok -> UserPid ! ok;
+                ok ->
+                    UserPid ! ok;
                 {error, Message} ->
                     io:format("Unexpected Error: ~p\n", [Message]),
                     exit(2)
-            end;       
-	logout ->
-	    epgsql:close(Connection), 
-	    UserPid ! ok,
-	    exit(0);
+            end;
+        logout ->
+            epgsql:close(Connection),
+            UserPid ! ok,
+            exit(0);
         %% TODO: We should better handle double login. Client can't know the difference between errors
-	{_, {login, _}} ->	
-	    UserPid ! {error, "User already logged in"}; 
+        {_, {login, _}} ->
+            UserPid ! {error, "User already logged in"};
         {update_character, Character_Map} ->
             io:format("Character will be updated. User: ~p\n", [UserPid]),
             case character:update(Character_Map, Connection) of
-		ok ->
-		    io:format("Retrieving nearby characters...\n"),
-		    Result =
-			character:retrieve_near_players(
-			  Character_Map,
-			  erlang:pid_to_list(UserPid),
-			  Connection
-			 ),
-		    io:format("Everything went ok!\n"),
-		    UserPid ! Result;
-		{error, Message} ->
-		    io:format("Unexpected Error: ~p\n", [Message]),
-		    UserPid ! {error, Message}
-	    end
+                ok ->
+                    io:format("Retrieving nearby characters...\n"),
+                    Result =
+                        character:retrieve_near_players(
+                            Character_Map,
+                            erlang:pid_to_list(UserPid),
+                            Connection
+                        ),
+                    io:format("Everything went ok!\n"),
+                    UserPid ! Result;
+                {error, Message} ->
+                    io:format("Unexpected Error: ~p\n", [Message]),
+                    UserPid ! {error, Message}
+            end
     end,
     handle_user(State).
 
@@ -95,37 +96,39 @@ handle_master(Connection) ->
                 password := Password
             }}} ->
             io:format("This user now exists: ~p", [Username]),
-	    case registry:insert_user(
-                #{
-                    username => Username,
-                    password => Password,
-                    email => Email
-                },
-                Connection
-            ) of
-		ok ->
-		    Response = "I registered " ++ Username,
-		    Pid ! {self(), Response};
-		{error, Message} ->
-		    io:format("Unexpected Error: ~p\n", [Message]),
-		    Pid ! {self(), Message}
-	    end;
+            case
+                registry:insert_user(
+                    #{
+                        username => Username,
+                        password => Password,
+                        email => Email
+                    },
+                    Connection
+                )
+            of
+                ok ->
+                    Response = "I registered " ++ Username,
+                    Pid ! {self(), Response};
+                {error, Message} ->
+                    io:format("Unexpected Error: ~p\n", [Message]),
+                    Pid ! {self(), Message}
+            end;
         {Pid, {login, #{username := Username, password := Password}}} ->
             io:format("This user logged: ~p\n", [Username]),
             case registry:check_user(#{username => Username, password => Password}, Connection) of
-		{ok, Email} ->
-		    NewPid =
-			spawn(
-			  ?MODULE,
-			  handle_user,
-			  [#{user_pid => Pid, connection => database:database_connect()}]
-			 ),
-		    io:format("User's email: ~p\n", [Email]),
-		    Pid ! {ok, {NewPid, Email}};       
-		{error, Message} ->
-		    io:format("Unexpected Error: ~p\n", [Message]),
-		    Pid ! {error, Message}
-	    end
+                {ok, Email} ->
+                    NewPid =
+                        spawn(
+                            ?MODULE,
+                            handle_user,
+                            [#{user_pid => Pid, connection => database:database_connect()}]
+                        ),
+                    io:format("User's email: ~p\n", [Email]),
+                    Pid ! {ok, {NewPid, Email}};
+                {error, Message} ->
+                    io:format("Unexpected Error: ~p\n", [Message]),
+                    Pid ! {error, Message}
+            end
     end,
     handle_master(Connection).
 
