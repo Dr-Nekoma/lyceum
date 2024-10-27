@@ -56,7 +56,6 @@ pub fn spawn(gameState: *GameState) !void {
     if (rl.isKeyDown(.key_q)) {
         try server.character.exitMap(gameState);
         rl.enableCursor();
-        gameState.scene = .nothing;
     }
 
     rl.drawGrid(20, 10.0);

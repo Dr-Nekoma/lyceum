@@ -27,7 +27,6 @@ pub fn goToSpawn(gameState: *GameState) !void {
 
     try server.character.joinMap(gameState);
     rl.disableCursor();
-    gameState.scene = .spawn;
 }
 
 // TODO: add limit for total number of points when creating a character

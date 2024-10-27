@@ -108,6 +108,7 @@ pub const character = struct {
                 gameState.world.character.stats.faith = info.faith;
                 gameState.world.character.stats.map_name = info.map_name;
                 updatePhysicsStats(&gameState.world.character, info);
+                gameState.scene = .spawn;
             },
             .@"error" => |msg| {
                 defer gameState.allocator.free(msg);
@@ -130,7 +131,9 @@ pub const character = struct {
             return;
         };
         switch (server_response) {
-            .ok => {},
+            .ok => {
+                gameState.scene = .nothing;
+            },
             .@"error" => |msg| {
                 defer gameState.allocator.free(msg);
                 std.debug.print("[ERROR]: {s}\n", .{msg});
