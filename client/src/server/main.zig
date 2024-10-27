@@ -147,7 +147,7 @@ pub const character = struct {
 };
 
 pub const user = struct {
-    pub fn login(gameState: *GameState) void {
+    pub fn login(gameState: *GameState) !void {
         gameState.send_with_self(.{
             .login = .{
                 .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
@@ -165,7 +165,7 @@ pub const user = struct {
         switch (server_response) {
             .ok => |item| {
                 gameState.connection.handler, gameState.menu.credentials.email = item;
-                gameState.scene = .join;
+                try getCharacters(gameState);
             },
             .@"error" => |msg| {
                 defer gameState.allocator.free(msg);

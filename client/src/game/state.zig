@@ -18,7 +18,6 @@ pub const Scene = enum {
     user_registry,
     user_login,
     nothing,
-    join,
     spawn,
     character_selection,
     connect,

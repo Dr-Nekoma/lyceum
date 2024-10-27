@@ -71,7 +71,7 @@ fn userRegistryButton(gameState: *GameState) void {
     )) gameState.scene = .user_registry;
 }
 
-fn userLoginButton(gameState: *GameState) void {
+fn userLoginButton(gameState: *GameState) !void {
     const buttonSize = Button.Sizes.extraLarge(gameState);
     const createUserButtonX = (gameState.width / 2) - (buttonSize.x / 2);
     const createUserButtonY = (gameState.height / 2) - (buttonSize.y / 2);
@@ -80,7 +80,7 @@ fn userLoginButton(gameState: *GameState) void {
         .y = createUserButtonY + buttonSize.y + config.menuButtonsPadding,
     };
 
-    const label, const next_scene: GameState.Scene = if (gameState.connection.handler == null) .{ "Login", .user_login } else .{ "Select Character", .join };
+    const label, const next_scene: GameState.Scene = if (gameState.connection.handler == null) .{ "Login", .user_login } else .{ "Select Character", .character_selection };
     const loginButton = &gameState.menu.credentials.login_button;
     loginButton.disabled = !gameState.connection.is_connected;
     if (loginButton.at(
@@ -88,7 +88,10 @@ fn userLoginButton(gameState: *GameState) void {
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
-    )) gameState.scene = next_scene;
+    )) {
+        if (next_scene == .character_selection) try server.user.getCharacters(gameState);
+        gameState.scene = next_scene;
+    }
 }
 
 pub fn userLogoutButton(gameState: *GameState) void {
@@ -135,9 +138,9 @@ fn userConnectButton(gameState: *GameState) void {
     }
 }
 
-pub fn spawn(gameState: *GameState) void {
+pub fn spawn(gameState: *GameState) !void {
     userRegistryButton(gameState);
-    userLoginButton(gameState);
+    try userLoginButton(gameState);
     userConnectButton(gameState);
     userLogoutButton(gameState);
 }

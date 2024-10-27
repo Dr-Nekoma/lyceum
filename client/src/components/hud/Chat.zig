@@ -56,7 +56,7 @@ pub fn at(
     } else if (self.mode.* == .idle and self.position.* > 0) {
         const message: Message = .{
             .author = name,
-            .content = try std.heap.page_allocator.allocSentinel(u8, self.position.*, 0),
+            .content = try std.heap.c_allocator.allocSentinel(u8, self.position.*, 0),
         };
         std.mem.copyForwards(u8, message.content, self.content[0..self.position.*]);
         try self.messages.append(message);

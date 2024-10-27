@@ -75,6 +75,6 @@ pub fn login(gameState: *GameState) !void {
     )) {
         // TODO: Add loading animation to wait for response
         // TODO: Add a timeout for login
-        server.user.login(gameState);
+        try server.user.login(gameState);
     }
 }

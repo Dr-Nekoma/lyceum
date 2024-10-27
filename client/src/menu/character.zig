@@ -111,6 +111,7 @@ fn isDifferent(string: [:0]const u8, forbiddens: []const [:0]const u8) bool {
 
 pub fn selection(gameState: *GameState) !void {
     mainMenu.userLogoutButton(gameState);
+
     const buttonSize = Button.Sizes.large(gameState);
     const characterButtonY = (gameState.height / 10) - (buttonSize.y / 2);
     var buttonPosition: rl.Vector2 = .{

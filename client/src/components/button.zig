@@ -116,7 +116,7 @@ pub const Clickable = struct {
             const isHovered = draw(height);
             if (isHovered and rl.isMouseButtonPressed(.mouse_button_left)) {
                 scene.* = switch (scene.*) {
-                    .user_registry, .user_login, .nothing, .join, .spawn, .character_selection, .connect => .nothing,
+                    .user_registry, .user_login, .nothing, .spawn, .character_selection, .connect => .nothing,
                 };
             }
         }
