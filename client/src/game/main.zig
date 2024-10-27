@@ -1,9 +1,9 @@
 const animate = @import("animation.zig");
-const camera = @import("../game/camera.zig");
-const physics = @import("../game/physics.zig");
-const protocol = @import("../game/protocol.zig");
+const camera = @import("camera.zig");
+const physics = @import("physics.zig");
 const rl = @import("raylib");
-const GameState = @import("../game/state.zig");
+const server = @import("../server/main.zig");
+const GameState = @import("state.zig");
 
 fn drawPlayers(gameState: *GameState) void {
     var player_iterator = gameState.world.other_players.valueIterator();
@@ -49,13 +49,13 @@ pub fn spawn(gameState: *GameState) !void {
     physics.character.draw(&gameState.world.character, tempAngle);
     animate.character.update(&gameState.world.character);
     camera.update(gameState);
-    try protocol.pingUpdateCharacter(gameState);
+    try server.character.update(gameState);
 
     drawPlayers(gameState);
 
     if (rl.isKeyDown(.key_q)) {
-        try protocol.pingExitMap(gameState);
-        gameState.scene = .nothing;
+        try server.character.exitMap(gameState);
+        rl.enableCursor();
     }
 
     rl.drawGrid(20, 10.0);

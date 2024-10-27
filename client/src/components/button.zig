@@ -44,10 +44,84 @@ pub const Sizes = struct {
             .y = (gameState.height / 12),
         };
     }
+
+    pub fn tiny(gameState: *const GameState) rl.Vector2 {
+        return .{
+            .x = (gameState.width / 9),
+            .y = (gameState.height / 15),
+        };
+    }
 };
 
 pub const Clickable = struct {
     disabled: bool = false,
+    pub const Back = struct {
+        fn draw(height: f32) bool {
+            const size: rl.Vector2 = .{
+                .x = height / 15,
+                .y = height / 10,
+            };
+            const position: rl.Vector2 = .{
+                .x = height / 40,
+                .y = height / 20,
+            };
+            const buttonArea = rl.Rectangle.init(
+                position.x,
+                position.y,
+                size.x,
+                size.y,
+            );
+            const isHovered = rl.checkCollisionPointRec(
+                rl.getMousePosition(),
+                buttonArea,
+            );
+            if (isHovered) {
+                const time = rl.getTime();
+                const offset: f32 = @floatCast(2 * @sin(2 * time) + 3);
+                highlighting(position, size, offset);
+            }
+            rl.drawRectangleV(position, size, config.ColorPalette.primary);
+
+            const triangle_top: rl.Vector2 = .{
+                .x = 2 * size.x / 3 + position.x,
+                .y = size.y / 6 + position.y,
+            };
+            const triangle_bottom: rl.Vector2 = .{
+                .x = 2 * size.x / 3 + position.x,
+                .y = 5 * size.y / 6 + position.y,
+            };
+            const triangle_left: rl.Vector2 = .{
+                .x = size.x / 3 + position.x,
+                .y = size.y / 2 + position.y,
+            };
+
+            rl.drawTriangle(
+                triangle_top,
+                triangle_left,
+                triangle_bottom,
+                rl.Color.white,
+            );
+
+            return isHovered;
+        }
+
+        pub fn at(
+            scene: *GameState.Scene,
+            height: f32,
+        ) void {
+            switch (scene.*) {
+                .nothing, .spawn => return,
+                else => {},
+            }
+            const isHovered = draw(height);
+            if (isHovered and rl.isMouseButtonPressed(.mouse_button_left)) {
+                scene.* = switch (scene.*) {
+                    .user_registry, .user_login, .nothing, .join, .spawn, .character_selection, .connect => .nothing,
+                };
+            }
+        }
+    };
+
     pub fn at(
         self: @This(),
         message: [:0]const u8,
@@ -61,13 +135,13 @@ pub const Clickable = struct {
             size.x,
             size.y,
         );
-        const isSelected = rl.checkCollisionPointRec(
+        const isHovered = rl.checkCollisionPointRec(
             rl.getMousePosition(),
             buttonArea,
         );
         var color = activeColor;
         if (!self.disabled) {
-            if (isSelected) {
+            if (isHovered) {
                 const time = rl.getTime();
                 const offset: f32 = @floatCast(2 * @sin(2 * time) + 3);
                 highlighting(position, size, offset);
@@ -87,7 +161,7 @@ pub const Clickable = struct {
             config.buttonFontSize,
             config.ColorPalette.secondary,
         );
-        return !self.disabled and (isSelected and rl.isMouseButtonPressed(.mouse_button_left));
+        return !self.disabled and (isHovered and rl.isMouseButtonPressed(.mouse_button_left));
     }
 };
 

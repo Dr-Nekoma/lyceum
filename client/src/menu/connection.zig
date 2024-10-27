@@ -1,7 +1,7 @@
 const config = @import("../config.zig");
 const connection = @import("../components/connection_status.zig");
 const menu = @import("main.zig");
-const messages = @import("../server_messages.zig");
+const messages = @import("../server/messages.zig");
 const rl = @import("raylib");
 const std = @import("std");
 const text = @import("../components/text.zig");
@@ -57,15 +57,19 @@ pub fn connect(gameState: *GameState) !void {
         buttonSize,
         config.ColorPalette.primary,
     )) {
-        const connection_status = zerl.ei.ei_init();
-        if (connection_status != 0) return error.ei_init_failed;
+        const node_status = zerl.ei.ei_init();
+        if (node_status != 0) {
+            gameState.errorElem.update(.node_status);
+            return;
+        }
         const node = gameState.connection.node;
         zerl.establish_connection(node, GameState.Connection.process_name, gameState.menu.server.address[0..gameState.menu.server.addressPosition]) catch |error_value| {
             try print_connect_server_error(error_value);
-            std.process.exit(2);
+            gameState.errorElem.update(.node_connection);
+            return;
         };
-        gameState.connection.is_connected = true;
         gameState.scene = .nothing;
+        gameState.connection.is_connected = true;
     }
 }
 

@@ -1,6 +1,7 @@
 const config = @import("../config.zig");
+const errorC = @import("../components/error.zig");
 const mainMenu = @import("../menu/main.zig");
-const messages = @import("../server_messages.zig");
+const messages = @import("../server/messages.zig");
 const physics = @import("physics.zig");
 const rl = @import("raylib");
 const std = @import("std");
@@ -67,6 +68,7 @@ allocator: std.mem.Allocator = std.heap.c_allocator,
 scene: Scene = .nothing,
 connection: Connection,
 world: World = undefined,
+errorElem: *errorC,
 
 pub fn send(state: *@This(), data: anytype) !void {
     try if (state.connection.handler) |*pid|
@@ -84,6 +86,7 @@ pub fn init(
     width: f32,
     height: f32,
     node: *zerl.Node,
+    errorElem: *errorC,
 ) !@This() {
     const camera: rl.Camera = .{
         .position = .{ .x = 50.0, .y = 50.0, .z = 50.0 },
@@ -113,5 +116,6 @@ pub fn init(
                 },
             },
         },
+        .errorElem = errorElem,
     };
 }
