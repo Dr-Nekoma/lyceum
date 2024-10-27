@@ -58,7 +58,7 @@ pub const Login_Request = struct {
     password: []const u8,
 };
 
-pub const Login_Info = std.meta.Tuple(&.{ zerl.ei.erlang_pid, [:0]const u8 });
+const Login_Info = std.meta.Tuple(&.{ zerl.ei.erlang_pid, [:0]const u8 });
 pub const Login_Response = Tuple_Response(Login_Info);
 
 pub const Registry_Request = struct {
