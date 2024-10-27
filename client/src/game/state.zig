@@ -132,7 +132,9 @@ pub fn init(
             .character = .{
                 .inventory = .{
                     .hud = .{
+                        // TODO: use actual items
                         .spells = &.{ "item1", "item2", "item3", "item4", "item5" },
+                        // TODO: use actual consumables
                         .consumables = &.{ "item6", "item7" },
                         // TODO: use an actual map
                         .map = try assets.image("teapot.png"),
