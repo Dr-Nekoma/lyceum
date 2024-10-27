@@ -96,6 +96,14 @@ pub const Characters_Request = struct {
 
 pub const Characters_Response = Tuple_Response([]const Character_Info);
 
+pub const Character_Join = struct {
+    username: []const u8,
+    email: []const u8,
+    name: []const u8,
+};
+
+pub const Character_Join_Response = Tuple_Response(Character_Info);
+
 pub const Character_Update = struct {
     name: [:0]const u8,
     x_position: f32 = 0,
@@ -114,7 +122,7 @@ pub const Character_Update = struct {
 pub const Payload = union(enum) {
     debug: [:0]const u8,
     exit_map: void,
-    joining_map: Character_Update,
+    joining_map: Character_Join,
     list_characters: Characters_Request,
     login: Login_Request,
     logout: void,
@@ -127,6 +135,10 @@ pub const Payload = union(enum) {
 
 pub fn receive_standard_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Erlang_Response {
     return ec.receive(Erlang_Response, allocator);
+}
+
+pub fn receive_joining_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Character_Join_Response {
+    return ec.receive(Character_Join_Response, allocator);
 }
 
 pub fn receive_login_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Login_Info {

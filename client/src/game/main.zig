@@ -55,6 +55,7 @@ pub fn spawn(gameState: *GameState) !void {
 
     if (rl.isKeyDown(.key_q)) {
         try protocol.pingExitMap(gameState);
+        rl.enableCursor();
         gameState.scene = .nothing;
     }
 

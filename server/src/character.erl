@@ -1,6 +1,6 @@
 -module(character).
 
--export([create/2, player_characters/3, update/2,retrieve_near_players/3, activate/3, deactivate/2]).
+-export([create/2, player_characters/2, player_character/2, update/2, retrieve_near_players/3, activate/3, deactivate/2]).
 
 create(#{name := Name, 
 	 username := Username, 
@@ -35,7 +35,7 @@ deactivate(UserPid, Connection) ->
     Query = "DELETE FROM character.active \ 
              WHERE user_pid = $1::VARCHAR(50)",
     Result = epgsql:equery(Connection, Query, [UserPid]),
-    Fun = (fun (_, _, _) -> ok end),
+    Fun = (fun (_) -> ok end),
     util:process_postgres_result(Result, insert, Fun).
 
 update(#{name := Name, 
@@ -48,7 +48,7 @@ update(#{name := Name,
 	 y_position := YPosition,
 	 x_velocity := XVelocity,
 	 y_velocity := YVelocity}, Connection) ->
-    io:format("x: ~p, y: ~p, state_type: ~p\n", [XVelocity, YVelocity, StateType]),
+    %% io:format("x: ~p, y: ~p, state_type: ~p\n", [XVelocity, YVelocity, StateType]),
     Query = "UPDATE character.position SET x_position = $1::REAL, y_position = $2::REAL, \
              x_velocity = $3::REAL, y_velocity = $4::REAL, \
              face_direction = $5::SMALLINT, state_type = $6::\"character\".STATE_TYPE \ 
@@ -59,7 +59,6 @@ update(#{name := Name,
 				      #{ begin_opts => "ISOLATION LEVEL READ UNCOMMITTED"}),
     Fun = (fun (_) -> epgsql:sync(Connection) end),
     util:process_postgres_result(Result, update, Fun).
-
 
 retrieve_near_players(#{map_name := MapName}, UserPid, Connection) ->
     Query = "SELECT character.view.name, \
@@ -83,8 +82,8 @@ retrieve_near_players(#{map_name := MapName}, UserPid, Connection) ->
     Fun = (fun (FullColumns, Values) -> {ok, util:transform_character_map(util:columns_and_rows(FullColumns, Values))} end),
     util:process_postgres_result(Result, select, Fun).
 
-
-player_characters(Username, Email, Connection) ->
+player_characters(#{username := Username, 
+		    email := Email}, Connection) ->
     Query = "SELECT character.view.name, \
                     character.view.constitution, \
                     character.view.wisdom, \
@@ -102,6 +101,33 @@ player_characters(Username, Email, Connection) ->
              FROM character.view WHERE username = $1::VARCHAR(32) AND e_mail = $2::TEXT",
     Result = epgsql:equery(Connection, Query, [Username, Email]),
     Fun = (fun (FullColumns, Values) -> {ok, util:transform_character_map(util:columns_and_rows(FullColumns, Values))} end),
+    util:process_postgres_result(Result, select, Fun).
+    %% io:format("Username: ~p, Email: ~p, Data: ~p\n", [Username, Email, Something]),    
+
+
+player_character(#{name := Name, 
+		   username := Username, 
+		   email := Email}, Connection) ->
+    Query = "SELECT character.view.constitution, \
+                    character.view.wisdom, \
+                    character.view.strength, \
+                    character.view.endurance, \
+                    character.view.intelligence, \
+                    character.view.faith, \
+                    character.view.x_position, \
+                    character.view.y_position, \
+                    character.view.map_name, \
+                    character.view.face_direction, \
+                    character.view.state_type \
+             FROM character.view WHERE username = $1::VARCHAR(32) AND e_mail = $2::TEXT AND name = $3::TEXT",
+    Result = epgsql:equery(Connection, Query, [Username, Email, Name]),
+    Fun = (fun (FullColumns, Values) -> 
+		   case util:transform_character_map(util:columns_and_rows(FullColumns, Values)) of
+		       [C|[]] -> {ok, C};
+		       [] -> {error, "Updated Character not found!"};
+		       _ -> {error, "Found more than one Character!"}
+		   end
+	   end),
     util:process_postgres_result(Result, select, Fun).
     %% io:format("Username: ~p, Email: ~p, Data: ~p\n", [Username, Email, Something]),    
 

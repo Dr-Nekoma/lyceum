@@ -5,6 +5,19 @@ const rl = @import("raylib");
 const std = @import("std");
 const GameState = @import("../game/state.zig");
 
+fn updatePhysicsStats(player: *GameState.World.Character, stats: messages.Character_Info) void {
+    player.position = .{
+        .x = stats.x_position,
+        .y = player.position.y,
+        .z = stats.y_position,
+    };
+    player.velocity = .{
+        .x = stats.x_velocity,
+        .y = player.velocity.y,
+        .z = stats.y_velocity,
+    };
+}
+
 pub fn pingUpdateCharacter(gameState: *GameState) !void {
     // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
     // if we are not overwhelming the database
@@ -37,29 +50,10 @@ pub fn pingUpdateCharacter(gameState: *GameState) !void {
                 if (other_players.get(player.name)) |current_player| {
                     var next_player = current_player;
                     next_player.stats = player;
-                    next_player.position = .{
-                        .x = player.x_position,
-                        .y = next_player.position.y,
-                        .z = player.y_position,
-                    };
-                    next_player.velocity = .{
-                        .x = player.x_velocity,
-                        .y = next_player.velocity.y,
-                        .z = player.y_velocity,
-                    };
+                    updatePhysicsStats(&next_player, player);
                     other_players.putAssumeCapacity(player.name, next_player);
                 } else {
-                    const new_character = GameState.World.Character{
-                        .position = .{
-                            .x = player.x_position,
-                            .y = physics.character.floorLevel,
-                            .z = player.y_position,
-                        },
-                        .velocity = .{
-                            .x = player.x_velocity,
-                            .y = 0,
-                            .z = player.y_velocity,
-                        },
+                    var new_character = GameState.World.Character{
                         .stats = player,
                         .model = try assets.model("walker.m3d"),
                         .animation = .{
@@ -67,6 +61,7 @@ pub fn pingUpdateCharacter(gameState: *GameState) !void {
                             .frames = gameState.world.character.animation.frames,
                         },
                     };
+                    updatePhysicsStats(&new_character, player);
                     try other_players.put(player.name, new_character);
                 }
             }
@@ -85,13 +80,6 @@ pub fn pingJoinMap(gameState: *GameState) !void {
     gameState.send(messages.Payload{
         .joining_map = .{
             .name = gameState.world.character.stats.name,
-            .x_position = gameState.world.character.stats.x_position,
-            .y_position = gameState.world.character.stats.y_position,
-            .x_velocity = gameState.world.character.stats.x_velocity,
-            .y_velocity = gameState.world.character.stats.y_velocity,
-            .state_type = gameState.world.character.stats.state_type,
-            .map_name = gameState.world.character.stats.map_name,
-            .face_direction = gameState.world.character.stats.face_direction,
             .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
             .email = gameState.menu.credentials.email,
         },
@@ -100,12 +88,27 @@ pub fn pingJoinMap(gameState: *GameState) !void {
         return;
     };
     const node = gameState.connection.node;
-    const server_response = messages.receive_standard_response(gameState.allocator, node) catch {
+    const server_response = messages.receive_joining_response(gameState.allocator, node) catch {
         gameState.errorElem.update(.joining_map_receive);
         return;
     };
     switch (server_response) {
-        .ok => {},
+        .ok => |info| {
+            gameState.world.character.stats.x_position = info.x_position;
+            gameState.world.character.stats.y_position = info.y_position;
+            gameState.world.character.stats.x_velocity = 0;
+            gameState.world.character.stats.y_velocity = 0;
+            gameState.world.character.stats.state_type = .idle;
+            gameState.world.character.stats.face_direction = info.face_direction;
+            gameState.world.character.stats.constitution = info.constitution;
+            gameState.world.character.stats.wisdom = info.wisdom;
+            gameState.world.character.stats.strength = info.strength;
+            gameState.world.character.stats.endurance = info.endurance;
+            gameState.world.character.stats.intelligence = info.intelligence;
+            gameState.world.character.stats.faith = info.faith;
+            gameState.world.character.stats.map_name = info.map_name;
+            updatePhysicsStats(&gameState.world.character, info);
+        },
         .@"error" => |msg| {
             defer gameState.allocator.free(msg);
             std.debug.print("[ERROR]: {s}\n", .{msg});

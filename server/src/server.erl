@@ -28,10 +28,10 @@ start(_, _) ->
 % TODO: We should not just keep passing Connections here, this is dangerous for interactive stuff
 handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
     receive
-        {list_characters, #{username := Username, email := Email} = Something} ->
+        {list_characters, Character_Map} ->
             io:format("Querying user's characters...\n"),
-            io:format("Map: ~p\n", [Something]),
-            Result = character:player_characters(Username, Email, Connection),
+            io:format("Map: ~p\n", [Character_Map]),
+            Result = character:player_characters(Character_Map, Connection),
             io:format("Characters: ~p\n", [Result]),
             UserPid ! Result;
         {create_character, Character_Map} ->
@@ -43,7 +43,10 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
             case character:activate(Character_Map, erlang:pid_to_list(UserPid), Connection) of
                 ok ->
                     io:format("Everything went ok with User: ~p!\n", [UserPid]),
-                    UserPid ! ok;
+                    io:format("Retriving character's updated info...", []),
+                    Result = character:player_character(Character_Map, Connection),
+                    io:format("Got: ~p\n", [Result]),
+                    UserPid ! Result;
                 {error, Message} ->
                     io:format("Unexpected Error: ~p\n", [Message]),
                     UserPid ! {error, "Could not join map"}
@@ -68,20 +71,20 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
         {_, {login, _}} ->
             UserPid ! {error, "User already logged in"};
         {update_character, Character_Map} ->
-            io:format("Character will be updated. User: ~p\n", [UserPid]),
+            %% io:format("Character will be updated. User: ~p\n", [UserPid]),
             case character:update(Character_Map, Connection) of
                 ok ->
-                    io:format("Retrieving nearby characters...\n"),
+                    %% io:format("Retrieving nearby characters...\n"),
                     Result =
                         character:retrieve_near_players(
                             Character_Map,
                             erlang:pid_to_list(UserPid),
                             Connection
                         ),
-                    io:format("Everything went ok!\n"),
+                    %% io:format("Everything went ok!\n"),
                     UserPid ! Result;
                 {error, Message} ->
-                    io:format("Unexpected Error: ~p\n", [Message]),
+                    %% io:format("Unexpected Error: ~p\n", [Message]),
                     UserPid ! {error, Message}
             end
     end,
