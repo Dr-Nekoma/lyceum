@@ -39,7 +39,7 @@ pub const character = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = messages.receive_characters_list(gameState.allocator, node) catch {
+        const server_response = node.receive(messages.Characters_Response, gameState.allocator) catch {
             gameState.errorElem.update(.update_character_receive);
             return;
         };
@@ -88,7 +88,7 @@ pub const character = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = messages.receive_joining_response(gameState.allocator, node) catch {
+        const server_response = node.receive(messages.Character_Join_Response, gameState.allocator) catch {
             gameState.errorElem.update(.joining_map_receive);
             return;
         };
@@ -125,7 +125,7 @@ pub const character = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = messages.receive_standard_response(gameState.allocator, node) catch {
+        const server_response = node.receive(messages.Erlang_Response, gameState.allocator) catch {
             gameState.errorElem.update(.exit_receive);
             return;
         };
@@ -152,7 +152,7 @@ pub const user = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = messages.receive_login_response(gameState.allocator, node) catch {
+        const server_response = node.receive(messages.Login_Response, gameState.allocator) catch {
             gameState.errorElem.update(.login_receive);
             return;
         };
@@ -176,7 +176,7 @@ pub const user = struct {
                 return;
             };
             const node = gameState.connection.node;
-            const server_response = messages.receive_standard_response(gameState.allocator, node) catch {
+            const server_response = node.receive(messages.Erlang_Response, gameState.allocator) catch {
                 gameState.errorElem.update(.logout_receive);
                 return;
             };
@@ -203,7 +203,7 @@ pub const user = struct {
         });
 
         const node = gameState.connection.node;
-        const maybe_characters = try messages.receive_characters_list(gameState.allocator, node);
+        const maybe_characters = try node.receive(messages.Characters_Response, gameState.allocator);
         switch (maybe_characters) {
             .ok => |erlang_characters| {
                 // todo: discover how to make this work

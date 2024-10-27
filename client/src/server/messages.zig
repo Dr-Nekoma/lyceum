@@ -59,7 +59,7 @@ pub const Login_Request = struct {
 };
 
 pub const Login_Info = std.meta.Tuple(&.{ zerl.ei.erlang_pid, [:0]const u8 });
-const Login_Response = Tuple_Response(Login_Info);
+pub const Login_Response = Tuple_Response(Login_Info);
 
 pub const Registry_Request = struct {
     username: [:0]const u8,
@@ -130,21 +130,3 @@ pub const Payload = union(enum) {
     // create_character:
     update_character: Character_Update,
 };
-
-// Central place to receive game's data
-
-pub fn receive_standard_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Erlang_Response {
-    return ec.receive(Erlang_Response, allocator);
-}
-
-pub fn receive_joining_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Character_Join_Response {
-    return ec.receive(Character_Join_Response, allocator);
-}
-
-pub fn receive_login_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Login_Response {
-    return ec.receive(Login_Response, allocator);
-}
-
-pub fn receive_characters_list(allocator: std.mem.Allocator, ec: *zerl.Node) !Characters_Response {
-    return ec.receive(Characters_Response, allocator);
-}
