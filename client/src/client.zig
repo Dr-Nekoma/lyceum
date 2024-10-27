@@ -46,7 +46,7 @@ pub fn main() anyerror!void {
                 try user.login(&gameState);
             },
             .join => {
-                try server.user.join(&gameState);
+                try server.user.getCharacters(&gameState);
             },
             .spawn => {
                 try game.spawn(&gameState);

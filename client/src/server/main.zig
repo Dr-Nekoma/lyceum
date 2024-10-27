@@ -170,6 +170,7 @@ pub const user = struct {
             .@"error" => |msg| {
                 defer gameState.allocator.free(msg);
                 std.debug.print("[ERROR]: {s}\n", .{msg});
+                gameState.errorElem.update(.login_invalid);
                 return;
             },
         }
@@ -194,22 +195,29 @@ pub const user = struct {
                 .@"error" => |msg| {
                     defer gameState.allocator.free(msg);
                     std.debug.print("[ERROR]: {s}\n", .{msg});
+                    gameState.errorElem.update(.logout_invalid);
                     return;
                 },
             }
         }
     }
 
-    pub fn join(gameState: *GameState) !void {
-        try gameState.send(messages.Payload{
+    pub fn getCharacters(gameState: *GameState) !void {
+        gameState.send(messages.Payload{
             .list_characters = .{
                 .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
                 .email = gameState.menu.credentials.email,
             },
-        });
+        }) catch {
+            gameState.errorElem.update(.get_characters_send);
+            return;
+        };
 
         const node = gameState.connection.node;
-        const maybe_characters = try node.receive(messages.Characters_Response, gameState.allocator);
+        const maybe_characters = node.receive(messages.Characters_Response, gameState.allocator) catch {
+            gameState.errorElem.update(.get_characters_receive);
+            return;
+        };
         switch (maybe_characters) {
             .ok => |erlang_characters| {
                 // todo: discover how to make this work
@@ -229,6 +237,7 @@ pub const user = struct {
             },
             .@"error" => |error_msg| {
                 std.debug.print("error in server: {s}", .{error_msg});
+                gameState.errorElem.update(.get_characters_invalid);
                 gameState.scene = .nothing;
             },
         }
