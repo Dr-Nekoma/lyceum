@@ -1,6 +1,6 @@
 const config = @import("../config.zig");
 const menu = @import("main.zig");
-const messages = @import("../server_messages.zig");
+const messages = @import("../server/messages.zig");
 const rl = @import("raylib");
 const std = @import("std");
 const text = @import("../components/text.zig");

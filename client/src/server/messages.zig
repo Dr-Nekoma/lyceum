@@ -1,7 +1,7 @@
 const rl = @import("raylib");
 const std = @import("std");
 const zerl = @import("zerl");
-const GameState = @import("game/state.zig");
+const GameState = @import("../game/state.zig");
 
 fn createAnonymousStruct(comptime T: type, comptime keys: []const [:0]const u8) type {
     const struct_info = @typeInfo(T).Struct;

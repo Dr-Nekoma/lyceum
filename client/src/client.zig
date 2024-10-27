@@ -7,6 +7,7 @@ const errorC = @import("components/error.zig");
 const game = @import("game/main.zig");
 const mainMenu = @import("menu/main.zig");
 const rl = @import("raylib");
+const server = @import("server/main.zig");
 const state = @import("game/state.zig");
 const std = @import("std");
 const user = @import("menu/user.zig");
@@ -46,7 +47,7 @@ pub fn main() anyerror!void {
                 try user.login(&gameState);
             },
             .join => {
-                try character.join(&gameState);
+                try server.user.join(&gameState);
             },
             .spawn => {
                 try game.spawn(&gameState);

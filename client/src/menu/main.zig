@@ -1,7 +1,7 @@
 const assets = @import("../assets.zig");
 const config = @import("../config.zig");
-const protocol = @import("../game/protocol.zig");
 const rl = @import("raylib");
+const server = @import("../server/main.zig");
 const std = @import("std");
 const Button = @import("../components/button.zig");
 const Clickable = Button.Clickable{};
@@ -107,7 +107,7 @@ pub fn userLogoutButton(gameState: *GameState) void {
         buttonSize,
         config.ColorPalette.primary,
     )) {
-        protocol.logout(gameState);
+        server.user.logout(gameState);
     }
 }
 
@@ -127,7 +127,7 @@ fn userConnectButton(gameState: *GameState) void {
         config.ColorPalette.primary,
     )) {
         if (next_scene == .nothing) {
-            protocol.logout(gameState);
+            server.user.logout(gameState);
             std.posix.close(gameState.connection.node.fd);
             gameState.connection.is_connected = false;
         }

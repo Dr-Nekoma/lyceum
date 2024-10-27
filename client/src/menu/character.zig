@@ -2,9 +2,9 @@ const assets = @import("../assets.zig");
 const attribute = @import("../components/attribute.zig");
 const config = @import("../config.zig");
 const mainMenu = @import("main.zig");
-const messages = @import("../server_messages.zig");
-const protocol = @import("../game/protocol.zig");
+const messages = @import("../server/messages.zig");
 const rl = @import("raylib");
+const server = @import("../server/main.zig");
 const std = @import("std");
 const text = @import("../components/text.zig");
 const Button = @import("../components/button.zig");
@@ -25,7 +25,7 @@ pub fn goToSpawn(gameState: *GameState) !void {
         return;
     };
 
-    try protocol.pingJoinMap(gameState);
+    try server.character.pingJoinMap(gameState);
     rl.disableCursor();
     gameState.scene = .spawn;
 }
@@ -163,42 +163,5 @@ pub fn selection(gameState: *GameState) !void {
     } else {
         // std.debug.print("There are no characters for this user bruh xD", .{});
         try emptyCharacter(gameState);
-    }
-}
-
-pub fn join(gameState: *GameState) !void {
-    try gameState.send(messages.Payload{
-        .list_characters = .{
-            .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
-            .email = gameState.menu.credentials.email,
-        },
-    });
-
-    const node = gameState.connection.node;
-    const maybe_characters = try messages.receive_characters_list(gameState.allocator, node);
-    switch (maybe_characters) {
-        .ok => |erlang_characters| {
-            // todo: discover how to make this work
-            // const teapotembed = @embedfile("../assets/teapot.png");
-            // const teapotloaded = rl.loadimagefrommemory(".png", teapotembed, teapotembed.len);
-
-            const teapot = try assets.texture("teapot.png");
-
-            var characters = std.ArrayList(GameState.World.Character).init(gameState.allocator);
-
-            for (erlang_characters) |stats| {
-                try characters.append(.{
-                    .stats = stats,
-                    .preview = teapot,
-                });
-            }
-
-            gameState.menu.character.select.list = characters.items;
-            gameState.scene = .character_selection;
-        },
-        .@"error" => |error_msg| {
-            std.debug.print("error in server: {s}", .{error_msg});
-            gameState.scene = .nothing;
-        },
     }
 }
