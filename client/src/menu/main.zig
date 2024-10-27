@@ -16,13 +16,13 @@ pub const Menu = struct {
     };
     pub const Credentials = struct {
         pub const bufferSize = 50;
+        pub const logout_button: Button.Clickable = Button.Clickable{};
         username: [bufferSize:0]u8 = .{0} ** bufferSize,
         usernamePosition: usize = 0,
         password: [bufferSize:0]u8 = .{0} ** bufferSize,
         passwordPosition: usize = 0,
         email: [:0]const u8 = "",
         login_button: Button.Clickable = Button.Clickable{ .disabled = true },
-        logout_button: Button.Clickable = Button.Clickable{},
     };
     pub const Configuration = struct {
         currentScreenMode: enum {
@@ -100,7 +100,7 @@ pub fn userLogoutButton(gameState: *GameState) void {
         .y = gameState.height - buttonSize.y - 3 * config.menuButtonsPadding,
     };
 
-    const logoutButton = &gameState.menu.credentials.logout_button;
+    const logoutButton = Menu.Credentials.logout_button;
     if (logoutButton.at(
         "Logout",
         buttonPosition,
