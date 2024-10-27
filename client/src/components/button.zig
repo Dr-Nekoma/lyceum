@@ -58,7 +58,7 @@ pub const Clickable = struct {
     pub const Back = struct {
         fn draw(height: f32) bool {
             const size: rl.Vector2 = .{
-                .x = height / 10,
+                .x = height / 15,
                 .y = height / 10,
             };
             const position: rl.Vector2 = .{
