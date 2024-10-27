@@ -68,6 +68,19 @@ pub const character = struct {
                         try other_players.put(player.name, new_character);
                     }
                 }
+                var present_player_iterator = other_players.valueIterator();
+                while (present_player_iterator.next()) |present_player| {
+                    var keep = false;
+                    for (players) |player| {
+                        if (std.mem.eql(u8, player.name, present_player.stats.name)) {
+                            keep = true;
+                            break;
+                        }
+                    }
+                    if (!keep) {
+                        _ = other_players.remove(present_player.stats.name);
+                    }
+                }
             },
             .@"error" => |msg| {
                 defer gameState.allocator.free(msg);
