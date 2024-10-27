@@ -2,6 +2,7 @@ const config = @import("../config.zig");
 const menu = @import("main.zig");
 const messages = @import("../server/messages.zig");
 const rl = @import("raylib");
+const server = @import("../server/main.zig");
 const std = @import("std");
 const text = @import("../components/text.zig");
 const Button = @import("../components/button.zig");
@@ -74,21 +75,6 @@ pub fn login(gameState: *GameState) !void {
     )) {
         // TODO: Add loading animation to wait for response
         // TODO: Add a timeout for login
-        gameState.send_with_self(.{
-            .login = .{
-                .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
-                .password = gameState.menu.credentials.password[0..gameState.menu.credentials.passwordPosition],
-            },
-        }) catch {
-            gameState.errorElem.update(.login_send);
-            return;
-        };
-        const node = gameState.connection.node;
-        gameState.connection.handler, gameState.menu.credentials.email =
-            messages.receive_login_response(gameState.allocator, node) catch {
-            gameState.errorElem.update(.login_receive);
-            return;
-        };
-        gameState.scene = .join;
+        server.user.login(gameState);
     }
 }

@@ -141,6 +141,34 @@ pub const character = struct {
 };
 
 pub const user = struct {
+    pub fn login(gameState: *GameState) void {
+        gameState.send_with_self(.{
+            .login = .{
+                .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
+                .password = gameState.menu.credentials.password[0..gameState.menu.credentials.passwordPosition],
+            },
+        }) catch {
+            gameState.errorElem.update(.login_send);
+            return;
+        };
+        const node = gameState.connection.node;
+        const server_response = messages.receive_login_response(gameState.allocator, node) catch {
+            gameState.errorElem.update(.login_receive);
+            return;
+        };
+        switch (server_response) {
+            .ok => |item| {
+                gameState.connection.handler, gameState.menu.credentials.email = item;
+                gameState.scene = .join;
+            },
+            .@"error" => |msg| {
+                defer gameState.allocator.free(msg);
+                std.debug.print("[ERROR]: {s}\n", .{msg});
+                return;
+            },
+        }
+    }
+
     pub fn logout(gameState: *GameState) void {
         if (gameState.connection.handler != null) {
             gameState.send(messages.Payload.logout) catch {
@@ -165,6 +193,7 @@ pub const user = struct {
             }
         }
     }
+
     pub fn join(gameState: *GameState) !void {
         try gameState.send(messages.Payload{
             .list_characters = .{

@@ -141,18 +141,8 @@ pub fn receive_joining_response(allocator: std.mem.Allocator, ec: *zerl.Node) !C
     return ec.receive(Character_Join_Response, allocator);
 }
 
-pub fn receive_login_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Login_Info {
-    const response = try ec.receive(Login_Response, allocator);
-    switch (response) {
-        .ok => |item| {
-            return item;
-        },
-        .@"error" => |msg| {
-            defer allocator.free(msg);
-            std.debug.print("[ERROR]: {s}\n", .{msg});
-            return error.unwrapping_tuple_response;
-        },
-    }
+pub fn receive_login_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Login_Response {
+    return ec.receive(Login_Response, allocator);
 }
 
 pub fn receive_characters_list(allocator: std.mem.Allocator, ec: *zerl.Node) !Characters_Response {
