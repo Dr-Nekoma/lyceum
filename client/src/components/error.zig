@@ -9,7 +9,14 @@ const fontSize = 22;
 const Error = @Type(.{ .Enum = .{
     .is_exhaustive = true,
     .decls = &.{},
-    .tag_type = u16,
+    .tag_type = blk: {
+        const possible_messages = @typeInfo(errorMessage).Struct.decls.len;
+        const bits = std.math.log2(possible_messages);
+        break :blk std.meta.Int(
+            .unsigned,
+            bits + @intFromBool(@popCount(possible_messages) != 1),
+        );
+    },
     .fields = blk: {
         const field_names = @typeInfo(errorMessage).Struct.decls;
         var decls: [field_names.len]std.builtin.Type.EnumField = undefined;
@@ -20,7 +27,7 @@ const Error = @Type(.{ .Enum = .{
     },
 } });
 
-pub const errorMessage = struct {
+const errorMessage = struct {
     pub const node_status = "Failed to Initialize Node!";
     pub const node_connection = "Node Connection Failure!";
     pub const login_send = "Failed to Send Credentials!";

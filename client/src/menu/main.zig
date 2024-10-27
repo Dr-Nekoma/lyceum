@@ -22,7 +22,7 @@ pub const Menu = struct {
         passwordPosition: usize = 0,
         email: [:0]const u8 = "",
         login_button: Button.Clickable = Button.Clickable{ .disabled = true },
-        logout_button: Button.Clickable = Button.Clickable{ .disabled = false },
+        logout_button: Button.Clickable = Button.Clickable{},
     };
     pub const Configuration = struct {
         currentScreenMode: enum {
@@ -92,22 +92,22 @@ fn userLoginButton(gameState: *GameState) void {
 }
 
 pub fn userLogoutButton(gameState: *GameState) void {
-    if (gameState.connection.handler) |_| {
-        const buttonSize = Button.Sizes.tiny(gameState);
-        const buttonPosition: rl.Vector2 = .{
-            .x = gameState.width - buttonSize.x - 3 * config.menuButtonsPadding,
-            .y = gameState.height - buttonSize.y - 3 * config.menuButtonsPadding,
-        };
+    _ = gameState.connection.handler orelse return;
 
-        const logoutButton = &gameState.menu.credentials.logout_button;
-        if (logoutButton.at(
-            "Logout",
-            buttonPosition,
-            buttonSize,
-            config.ColorPalette.primary,
-        )) {
-            protocol.logout(gameState);
-        }
+    const buttonSize = Button.Sizes.tiny(gameState);
+    const buttonPosition: rl.Vector2 = .{
+        .x = gameState.width - buttonSize.x - 3 * config.menuButtonsPadding,
+        .y = gameState.height - buttonSize.y - 3 * config.menuButtonsPadding,
+    };
+
+    const logoutButton = &gameState.menu.credentials.logout_button;
+    if (logoutButton.at(
+        "Logout",
+        buttonPosition,
+        buttonSize,
+        config.ColorPalette.primary,
+    )) {
+        protocol.logout(gameState);
     }
 }
 

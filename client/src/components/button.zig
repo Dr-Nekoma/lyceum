@@ -76,9 +76,6 @@ pub const Clickable = struct {
                 buttonArea,
             );
             if (isHovered) {
-                const offset: f32 = 5.0;
-                highlighting(position, size, offset);
-            } else if (isHovered) {
                 const time = rl.getTime();
                 const offset: f32 = @floatCast(2 * @sin(2 * time) + 3);
                 highlighting(position, size, offset);
@@ -112,11 +109,11 @@ pub const Clickable = struct {
             scene: *GameState.Scene,
             height: f32,
         ) void {
-            var isHovered = false;
             switch (scene.*) {
                 .nothing, .spawn => return,
-                else => isHovered = draw(height),
+                else => {},
             }
+            const isHovered = draw(height);
             if (isHovered and rl.isMouseButtonPressed(.mouse_button_left)) {
                 scene.* = switch (scene.*) {
                     .user_registry, .user_login, .nothing, .join, .spawn, .character_selection, .connect => .nothing,
