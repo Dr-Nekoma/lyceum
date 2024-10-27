@@ -18,7 +18,7 @@ pub const character = struct {
         };
     }
 
-    pub fn pingUpdate(gameState: *GameState) !void {
+    pub fn update(gameState: *GameState) !void {
         // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
         // if we are not overwhelming the database
         gameState.send(messages.Payload{
@@ -74,7 +74,7 @@ pub const character = struct {
         }
     }
 
-    pub fn pingJoinMap(gameState: *GameState) !void {
+    pub fn joinMap(gameState: *GameState) !void {
         // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
         // if we are not overwhelming the database
         gameState.send(messages.Payload{
@@ -117,7 +117,7 @@ pub const character = struct {
         }
     }
 
-    pub fn pingExitMap(gameState: *GameState) !void {
+    pub fn exitMap(gameState: *GameState) !void {
         // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
         // if we are not overwhelming the database
         gameState.send(messages.Payload.exit_map) catch {

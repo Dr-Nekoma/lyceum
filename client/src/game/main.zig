@@ -49,12 +49,12 @@ pub fn spawn(gameState: *GameState) !void {
     physics.character.draw(&gameState.world.character, tempAngle);
     animate.character.update(&gameState.world.character);
     camera.update(gameState);
-    try server.character.pingUpdate(gameState);
+    try server.character.update(gameState);
 
     drawPlayers(gameState);
 
     if (rl.isKeyDown(.key_q)) {
-        try server.character.pingExitMap(gameState);
+        try server.character.exitMap(gameState);
         rl.enableCursor();
         gameState.scene = .nothing;
     }

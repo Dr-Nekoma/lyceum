@@ -25,7 +25,7 @@ pub fn goToSpawn(gameState: *GameState) !void {
         return;
     };
 
-    try server.character.pingJoinMap(gameState);
+    try server.character.joinMap(gameState);
     rl.disableCursor();
     gameState.scene = .spawn;
 }
