@@ -6,13 +6,13 @@ const GameState = @import("../../game/state.zig");
 
 const barHeight = 40;
 
-fn stats(character: GameState.World.Character, size: rl.Vector2, position: rl.Vector2, allocator: std.mem.Allocator) !void {
-    const nameLength: f32 = @floatFromInt(rl.measureText(character.stats.name, config.textFontSize));
+fn stats(character: GameState.World.Character, size: rl.Vector2, position: rl.Vector2, fontSize: i32, allocator: std.mem.Allocator) !void {
+    const nameLength: f32 = @floatFromInt(rl.measureText(character.stats.name, fontSize));
 
     var index: [4]u8 = undefined;
     const levelNumberStr = std.fmt.bufPrintZ(index[0..], "{d}", .{character.stats.level}) catch unreachable;
     const levelStr = try std.fmt.allocPrintZ(allocator, "{s}{s}", .{ "Lvl. ", levelNumberStr });
-    const levelLength: f32 = @floatFromInt(rl.measureText(levelStr, config.textFontSize));
+    const levelLength: f32 = @floatFromInt(rl.measureText(levelStr, fontSize));
 
     const boundarySize: rl.Vector2 = .{
         .x = size.x + nameLength + levelLength,
@@ -26,8 +26,9 @@ fn stats(character: GameState.World.Character, size: rl.Vector2, position: rl.Ve
 
     rl.drawRectangleV(boundaryPosition, boundarySize, config.ColorPalette.primary);
     const iPositionX: i32 = @intFromFloat(boundaryPosition.x + 3 * common.internalPadding);
-    const iPositionY: i32 = @intFromFloat(boundaryPosition.y + (boundarySize.y / 2 - config.textFontSize / 2));
-    rl.drawText(character.stats.name, iPositionX, iPositionY, config.textFontSize, rl.Color.white);
+    const floatFontSize: f32 = @floatFromInt(fontSize);
+    const iPositionY: i32 = @intFromFloat(boundaryPosition.y + (boundarySize.y / 2 - floatFontSize / 2));
+    rl.drawText(character.stats.name, iPositionX, iPositionY, fontSize, rl.Color.white);
     const top: rl.Vector2 = .{
         .x = boundaryPosition.x + nameLength + 6 * common.internalPadding,
         .y = boundaryPosition.y,
@@ -39,7 +40,7 @@ fn stats(character: GameState.World.Character, size: rl.Vector2, position: rl.Ve
     const thickness = 4;
     rl.drawLineEx(top, down, thickness, rl.Color.white);
     const levelPositionX: i32 = @intFromFloat(top.x + 3 * common.internalPadding);
-    rl.drawText(levelStr, levelPositionX, iPositionY, config.textFontSize, rl.Color.white);
+    rl.drawText(levelStr, levelPositionX, iPositionY, fontSize, rl.Color.white);
 }
 
 fn bar(currentValue: u32, maxValue: u32, position: rl.Vector2, barWidth: u32, inner_color: rl.Color, outer_color: rl.Color) void {
@@ -98,7 +99,7 @@ pub const mainSize: rl.Vector2 = .{
     .y = barHeight,
 };
 
-pub fn at(character: GameState.World.Character, size: rl.Vector2, position: rl.Vector2, allocator: std.mem.Allocator) !void {
-    try stats(character, size, position, allocator);
+pub fn at(character: GameState.World.Character, size: rl.Vector2, position: rl.Vector2, fontSize: i32, allocator: std.mem.Allocator) !void {
+    try stats(character, size, position, fontSize, allocator);
     try faceStats(character);
 }

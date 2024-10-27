@@ -6,16 +6,16 @@ const consumables = @import("consumables.zig");
 const info = @import("info.zig");
 const GameState = @import("../../game/state.zig");
 const rl = @import("raylib");
+const rm = rl.math;
 const std = @import("std");
 
 fn drawPlayersInfo(gameState: *GameState) !void {
     var player_iterator = gameState.world.other_players.valueIterator();
     while (player_iterator.next()) |player| {
-        const position: rl.Vector2 = .{
-            .x = player.stats.x_position,
-            .y = player.stats.y_position - 10,
-        };
-        try info.at(player.*, info.mainSize, position, gameState.allocator);
+        const fontSize = 15;
+        var infoPosition = rl.getWorldToScreen(player.position, gameState.world.camera);
+        infoPosition.y += 25;
+        try info.at(player.*, info.mainSize, infoPosition, fontSize, gameState.allocator);
     }
 }
 
@@ -33,7 +33,7 @@ pub fn at(gameState: *GameState) !void {
         .y = 3 * config.menuButtonsPadding,
     };
 
-    try info.at(character.*, info.mainSize, mainPosition, gameState.allocator);
+    try info.at(character.*, info.mainSize, mainPosition, config.textFontSize, gameState.allocator);
 
     try map.at(character.*, width, height);
 
