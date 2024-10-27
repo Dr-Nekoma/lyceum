@@ -4,7 +4,6 @@ const physics = @import("physics.zig");
 const rl = @import("raylib");
 const server = @import("../server/main.zig");
 const GameState = @import("state.zig");
-const std = @import("std");
 
 fn drawPlayers(gameState: *GameState) void {
     var player_iterator = gameState.world.other_players.valueIterator();
