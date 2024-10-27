@@ -51,7 +51,7 @@ pub fn spawn(gameState: *GameState) !void {
 
     drawPlayers(gameState);
 
-    rl.drawGrid(20, 10.0);
+    rl.drawGrid(2000, 10.0);
 
     if (rl.isKeyDown(.key_backslash)) {
         try server.character.exitMap(gameState);
