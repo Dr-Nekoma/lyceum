@@ -1,6 +1,7 @@
 const common = @import("common.zig");
 const config = @import("../../config.zig");
 const rl = @import("raylib");
+const rm = rl.math;
 const std = @import("std");
 const GameState = @import("../../game/state.zig");
 
@@ -33,9 +34,9 @@ pub fn add_borders(image: *rl.Image) void {
 }
 
 pub fn at(character: GameState.World.Character, width: f32, height: f32) !void {
-    const face_direction = character.faceDirection;
-    const character_x: f32 = @floatFromInt(character.stats.x_position);
-    const character_y: f32 = @floatFromInt(character.stats.y_position);
+    const face_direction: f32 = @floatFromInt(@abs(270 - character.stats.face_direction));
+    const character_x: f32 = rm.clamp(character.stats.x_position, 0, config.map.max_width);
+    const character_y: f32 = rm.clamp(character.stats.y_position, 0, config.map.max_height);
     const outerRadius = config.map.border_thickness;
     const innerRadius = outerRadius - 10;
     const map_image = character.inventory.hud.map.?;

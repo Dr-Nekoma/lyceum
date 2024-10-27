@@ -1,4 +1,4 @@
-#+TITLE: Lyceum Server 🏛️
+#+TITLE: Lyceum 🏛️
 
 #+html: <a href="https://builtwithnix.org"><img alt="built with nix" src="https://builtwithnix.org/badge.svg" /></a><br>
 #+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/build_client.yml"> <img alt="[Build] Client" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/build_client.yml/badge.svg" /></a>
@@ -7,7 +7,7 @@
 
 * About
 
-This is an MMO Server written in Erlang, for a game called Lyceum.
+This is Lyceum --- an MMO game with the server written in Erlang and the client written in Zig superchanged with [[https://github.com/raysan5/raylib][raylib]].
 
 * How to run
 
@@ -30,6 +30,8 @@ Then simply interact with ~/localhost:8080/~. For more commands, make sure to ch
     # Will list all commands we have right now
     just
 #+END_SRC
+
+to migrate the local dababase, you can use ~just db-up~ or ~db-up~.
 
 *** Nix Builds
 

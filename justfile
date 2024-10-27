@@ -7,8 +7,8 @@ set export := true
 # --------------
 # Application
 
-database := justfile_directory() + "/database"
-server := justfile_directory() + "/src"
+database := justfile_directory() + "server/database"
+server := justfile_directory() + "/server"
 client := justfile_directory() + "/client"
 server_port := "8080"
 
@@ -27,11 +27,11 @@ format source='client':
     t=$(echo {{ source }} | cut -f2 -d=)
     echo "Selected Target: $t"
     if [[ $t == "client" ]]; then
-        zig fmt $(find ./ -type f \( -iname \*.zig \))
+        zig fmt .
     elif [[ $t == "justfile" ]]; then
         just --fmt --unstable
     elif [[ $t == "server" ]]; then
-        rebar3 fmt
+        erlfmt -w $(find ./server/src/ -type f \( -iname \*.erl -o -iname \*.hrl \))
     else
         echo "No formating selected, skipping step..."
     fi
@@ -53,33 +53,57 @@ postgres:
 # -------
 
 client:
-    cd client && zig build --search-prefix ${ERLANG_INTERFACE_PATH} --search-prefix ${RAYLIB_PATH} run -- \"$@\"
+    cd client && zig build run
 
 client-build:
-    cd client && zig build --search-prefix ${ERLANG_INTERFACE_PATH} --search-prefix ${RAYLIB_PATH} -- \"$@\"
+    cd client && zig build
 
 client-test:
-    cd client && zig build --search-prefix ${ERLANG_INTERFACE_PATH} --search-prefix ${RAYLIB_PATH} test -- \"$@\"
+    cd client && zig build test
+
+client-build-ci:
+    cd client && zig build -fsys=raylib
+
+client-test-ci:
+    cd client && zig build test -fsys=raylib
+
+client-deps:
+    cd client && nix run github:Cloudef/zig2nix#zon2nix -- build.zig.zon > zon-deps.nix
 
 # --------
 # Backend
 # --------
 
 build:
-    rebar3 compile
+    cd server && rebar3 compile
 
 # Fetches rebar3 dependencies, updates both the rebar and nix lockfiles
 deps:
-    rebar3 get-deps
-    rebar3 nix lock
+    cd server && rebar3 get-deps
+    cd server && rebar3 nix lock
 
 # Runs ther erlang server (inside the rebar shell)
 server: build
-    rebar3 shell
+    cd server && rebar3 shell
 
 # Runs unit tests in the server
 test:
-    rebar3 do eunit, ct
+    cd server && rebar3 do eunit, ct
+
+# Migrates the DB (up)
+db-up:
+    ./server/database/migrate_up.sh
+
+# Nukes the DB
+db-down:
+    ./server/database/migrate_down.sh
+
+# Populate DB
+db-input:
+    ./server/database/migrate_input.sh
+
+# Hard reset DB
+db-reset: db-down db-up db-input
 
 # --------
 # Releases
@@ -100,22 +124,3 @@ release-nix:
 # Builds the deployment docker image with Nix
 build-docker:
     nix build .#dockerImage
-
-# Updates Heroku's registry with the new image
-_update-registry:
-    docker load < ./result
-    docker tag lyceum:latest registry.heroku.com/lyceum/web
-    docker push registry.heroku.com/lyceum/web
-
-update-registry: build-docker
-    _update-registry
-
-update-registry-ci:
-    _update-registry
-
-# Release app with the new docker image on Heroku
-heroku-release: update-registry
-    heroku container:release -a=lyceum web
-
-heroku-release-ci:
-    heroku container:release -a=lyceum web

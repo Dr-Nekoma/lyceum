@@ -5,22 +5,14 @@ on:
     branches: [ "master" ]
     paths:
       - .github/workflows/**
-      - database/**
-      - src/**
-      - rebar.config
-      - rebar.lock
-      - rebar-deps.nix
+      - server/**
       - flake.nix
       - flake.lock
   pull_request:
     branches: [ "master" ]
     paths:
       - .github/workflows/**
-      - database/**
-      - src/**
-      - rebar.config
-      - rebar.lock
-      - rebar-deps.nix
+      - server/**
       - flake.nix
       - flake.lock
 
@@ -41,15 +33,15 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16
+        image: postgres:16-bookworm
         env:
           POSTGRES_PASSWORD: ${{ env.PGPASSWORD }}
           POSTGRES_USER: ${{ env.PGUSER }}
-          POSTGRES_DATABASE: ${{ env.PGDATABASE }}
+          POSTGRES_DB: ${{ env.PGDATABASE }}
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
-          --health-timeout 5s
+          --health-timeout 10s
           --health-retries 5
         ports:
           - 5432:5432
@@ -68,10 +60,18 @@ jobs:
       - name: Install Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - name: "[Server] build"
+      - name: "[Server] Build"
         run: |
           nix build .#server
 
-      - name: "[Server] tests"
+      - name: "[Server] Tests"
         run: |
           nix develop .#ci --impure -c just test
+
+      - name: "[Database] Check Migrations"
+        run: |
+          nix develop .#ci --impure -c just db-up
+
+      - name: "[Database] Check Input Generation"
+        run: |
+          nix develop .#ci --impure -c just db-input

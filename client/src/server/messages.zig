@@ -1,6 +1,7 @@
 const rl = @import("raylib");
 const std = @import("std");
 const zerl = @import("zerl");
+const GameState = @import("../game/state.zig");
 
 fn createAnonymousStruct(comptime T: type, comptime keys: []const [:0]const u8) type {
     const struct_info = @typeInfo(T).Struct;
@@ -57,8 +58,8 @@ pub const Login_Request = struct {
     password: []const u8,
 };
 
-pub const Login_Info = std.meta.Tuple(&.{ zerl.ei.erlang_pid, [:0]const u8 });
-const Login_Response = Tuple_Response(Login_Info);
+const Login_Info = std.meta.Tuple(&.{ zerl.ei.erlang_pid, [:0]const u8 });
+pub const Login_Response = Tuple_Response(Login_Info);
 
 pub const Registry_Request = struct {
     username: [:0]const u8,
@@ -72,6 +73,11 @@ pub const Registry_Response = Tuple_Response(void);
 // User's Characters
 
 pub const Character_Info = struct {
+    level: u8 = 0,
+    health: u16 = 0,
+    health_max: u16 = 0,
+    mana: u16 = 0,
+    mana_max: u16 = 0,
     name: [:0]const u8 = "",
     constitution: u8 = 0,
     wisdom: u8 = 0,
@@ -79,10 +85,13 @@ pub const Character_Info = struct {
     strength: u8 = 0,
     intelligence: u8 = 0,
     faith: u8 = 0,
-    x_position: i16 = 0,
-    y_position: i16 = 0,
+    x_position: f32 = 0,
+    y_position: f32 = 0,
+    x_velocity: f32 = 0,
+    y_velocity: f32 = 0,
     face_direction: u16 = 270,
     map_name: [:0]const u8 = "",
+    state_type: GameState.World.Character.Animation.State = .idle,
 };
 
 pub const Characters_Request = struct {
@@ -92,49 +101,40 @@ pub const Characters_Request = struct {
 
 pub const Characters_Response = Tuple_Response([]const Character_Info);
 
+pub const Character_Join = struct {
+    username: []const u8,
+    email: []const u8,
+    name: []const u8,
+};
+
+pub const Character_Join_Response = Tuple_Response(Character_Info);
+
 pub const Character_Update = struct {
+    level: u8,
+    health: u16,
+    mana: u16,
     name: [:0]const u8,
-    x_position: i16,
-    y_position: i16,
+    x_position: f32,
+    y_position: f32,
+    x_velocity: f32,
+    y_velocity: f32,
     map_name: [:0]const u8,
     username: []const u8,
-    face_direction: u16 = 270,
+    face_direction: u16,
     email: []const u8,
+    state_type: GameState.World.Character.Animation.State,
 };
 
 // Central place to send game's data
 
 pub const Payload = union(enum) {
-    register: Registry_Request,
-    login: Login_Request,
-    list_characters: Characters_Request,
-    // create_character:
-    joining_map: Character_Update,
-    update_character: Character_Update,
-    exit_map: void,
     debug: [:0]const u8,
+    exit_map: void,
+    joining_map: Character_Join,
+    list_characters: Characters_Request,
+    login: Login_Request,
+    logout: void,
+    register: Registry_Request,
+    // create_character:
+    update_character: Character_Update,
 };
-
-// Central place to receive game's data
-
-pub fn receive_standard_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Erlang_Response {
-    return ec.receive(Erlang_Response, allocator);
-}
-
-pub fn receive_login_response(allocator: std.mem.Allocator, ec: *zerl.Node) !Login_Info {
-    const response = try ec.receive(Login_Response, allocator);
-    switch (response) {
-        .ok => |item| {
-            return item;
-        },
-        .@"error" => |msg| {
-            defer allocator.free(msg);
-            std.debug.print("[ERROR]: {s}\n", .{msg});
-            return error.unwrapping_tuple_response;
-        },
-    }
-}
-
-pub fn receive_characters_list(allocator: std.mem.Allocator, ec: *zerl.Node) !Characters_Response {
-    return ec.receive(Characters_Response, allocator);
-}

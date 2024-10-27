@@ -7,10 +7,10 @@ const GameState = @import("../../game/state.zig");
 const barHeight = 40;
 
 fn topStats(character: GameState.World.Character, width: f32) !void {
-    const nameLength: f32 = @floatFromInt(rl.measureText(character.name, config.textFontSize));
+    const nameLength: f32 = @floatFromInt(rl.measureText(character.stats.name, config.textFontSize));
 
     var index: [4]u8 = undefined;
-    const levelNumberStr = std.fmt.bufPrintZ(index[0..], "{d}", .{character.level}) catch unreachable;
+    const levelNumberStr = std.fmt.bufPrintZ(index[0..], "{d}", .{character.stats.level}) catch unreachable;
     const allocator: std.mem.Allocator = std.heap.c_allocator;
     const levelStr = try std.fmt.allocPrintZ(allocator, "{s}{s}", .{ "Lvl. ", levelNumberStr });
     const levelLength: f32 = @floatFromInt(rl.measureText(levelStr, config.textFontSize));
@@ -27,7 +27,7 @@ fn topStats(character: GameState.World.Character, width: f32) !void {
     rl.drawRectangleV(boundaryPosition, boundarySize, config.ColorPalette.primary);
     const iPositionX: i32 = @intFromFloat(boundaryPosition.x + 3 * common.internalPadding);
     const iPositionY: i32 = @intFromFloat(boundaryPosition.y + (boundarySize.y / 2 - config.textFontSize / 2));
-    rl.drawText(character.name, iPositionX, iPositionY, config.textFontSize, rl.Color.white);
+    rl.drawText(character.stats.name, iPositionX, iPositionY, config.textFontSize, rl.Color.white);
     const top: rl.Vector2 = .{
         .x = boundaryPosition.x + nameLength + 6 * common.internalPadding,
         .y = boundaryPosition.y,
@@ -75,16 +75,16 @@ fn faceStats(character: GameState.World.Character) !void {
     };
 
     var index: [4]u8 = undefined;
-    const healthNumberStr = std.fmt.bufPrintZ(index[0..], "{d}", .{character.health}) catch unreachable;
+    const healthNumberStr = std.fmt.bufPrintZ(index[0..], "{d}", .{character.stats.health}) catch unreachable;
     const healthNumberPositionY: i32 = @intFromFloat(healthBarPosition.y + (0.75 * barHeight / 2 - config.textFontSize / 2));
 
-    bar(character.health, 100, healthBarPosition, 400, rl.Color.lime, rl.Color.green);
+    bar(character.stats.health, character.stats.health_max, healthBarPosition, 400, rl.Color.lime, rl.Color.green);
     rl.drawText(healthNumberStr, healthBarPosition.x + 15, healthNumberPositionY, config.textFontSize, rl.Color.black);
 
-    const manaNumberStr = std.fmt.bufPrintZ(index[0..], "{d}", .{character.mana}) catch unreachable;
+    const manaNumberStr = std.fmt.bufPrintZ(index[0..], "{d}", .{character.stats.mana}) catch unreachable;
     const manaNumberPositionY: i32 = @intFromFloat(manaBarPosition.y + (0.75 * barHeight / 2 - config.textFontSize / 2));
 
-    bar(character.mana, 100, manaBarPosition, 300, rl.Color.blue, rl.Color.dark_blue);
+    bar(character.stats.mana, character.stats.mana_max, manaBarPosition, 300, rl.Color.blue, rl.Color.dark_blue);
     rl.drawText(manaNumberStr, manaBarPosition.x + 15, manaNumberPositionY, config.textFontSize, rl.Color.black);
 
     rl.drawCircleV(center, outerRadius, config.ColorPalette.primary);

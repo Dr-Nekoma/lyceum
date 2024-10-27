@@ -1,6 +1,5 @@
 const rl = @import("raylib");
 const rm = rl.math;
-const std = @import("std");
 const GameState = @import("../game/state.zig");
 
 pub const heightAxis: rl.Vector3 = .{
@@ -11,9 +10,9 @@ pub const heightAxis: rl.Vector3 = .{
 
 pub const character = struct {
     pub const modelScale: rl.Vector3 = .{
-        .x = 1.75,
-        .y = 1.75,
-        .z = 1.75,
+        .x = 18,
+        .y = 18,
+        .z = 18,
     };
 
     const velocityCeiling: rl.Vector3 = .{
@@ -22,38 +21,15 @@ pub const character = struct {
         .z = 120,
     };
 
-    const acceleration = 120;
+    pub const acceleration = 120;
     pub const floorLevel = 12;
     const ceilingLevel = 48;
 
-    pub fn draw(gameState: *GameState) void {
-        var tempAngle = gameState.world.character.stats.face_direction;
-        const velocity = &gameState.world.character.velocity;
+    pub fn draw(entity: *GameState.World.Character, tempAngle: u16) void {
+        const velocity = &entity.velocity;
+        const state = &entity.stats.state_type;
         const deltaTime = rl.getFrameTime();
         const deltaVelocity = deltaTime * acceleration;
-
-        if (rl.isKeyDown(.key_d)) {
-            velocity.z -= deltaVelocity;
-            tempAngle = 180;
-        }
-        if (rl.isKeyDown(.key_a)) {
-            velocity.z += deltaVelocity;
-            tempAngle = 0;
-        }
-        if (rl.isKeyDown(.key_w)) {
-            velocity.x -= deltaVelocity;
-            tempAngle = 270;
-        }
-        if (rl.isKeyDown(.key_s)) {
-            velocity.x += deltaVelocity;
-            tempAngle = 90;
-        }
-        if (rl.isKeyDown(.key_space)) {
-            velocity.y += deltaVelocity;
-        }
-        if (rl.isKeyDown(.key_left_control)) {
-            velocity.y -= deltaVelocity;
-        }
 
         const frictionFactor = deltaVelocity * 0.65;
 
@@ -71,22 +47,26 @@ pub const character = struct {
 
         velocity.* = rm.vector3Clamp(velocity.*, rm.vector3Scale(velocityCeiling, -1), velocityCeiling);
 
-        var tempPosition: rl.Vector3 = rm.vector3Add(gameState.world.character.position, rm.vector3Scale(velocity.*, deltaTime));
+        state.* = if (rm.vector3Equals(velocity.*, rm.vector3Zero()) == 0) .walking else .idle;
+
+        var tempPosition: rl.Vector3 = rm.vector3Add(entity.position, rm.vector3Scale(velocity.*, deltaTime));
         tempPosition.y = rm.clamp(tempPosition.y, floorLevel, ceilingLevel);
 
-        const previous = &gameState.world.character.stats.face_direction;
+        const previous = &entity.stats.face_direction;
         if (previous.* != tempAngle) {
-            if (gameState.world.character.model) |model| {
-                rl.drawModelEx(model, gameState.world.character.position, heightAxis, @floatFromInt(previous.*), modelScale, rl.Color.white);
+            if (entity.model) |model| {
+                rl.drawModelEx(model, entity.position, heightAxis, @floatFromInt(previous.*), modelScale, rl.Color.blue);
             }
             previous.* = tempAngle;
         } else {
-            if (gameState.world.character.model) |model| {
-                rl.drawModelEx(model, tempPosition, heightAxis, @floatFromInt(tempAngle), modelScale, rl.Color.white);
+            if (entity.model) |model| {
+                rl.drawModelEx(model, tempPosition, heightAxis, @floatFromInt(tempAngle), modelScale, rl.Color.blue);
             }
-            gameState.world.character.position = tempPosition;
-            gameState.world.character.stats.x_position = @intFromFloat(tempPosition.x);
-            gameState.world.character.stats.y_position = @intFromFloat(tempPosition.z);
+            entity.position = tempPosition;
+            entity.stats.x_position = tempPosition.x;
+            entity.stats.y_position = tempPosition.z;
+            entity.stats.x_velocity = velocity.x;
+            entity.stats.y_velocity = velocity.z;
         }
     }
 };

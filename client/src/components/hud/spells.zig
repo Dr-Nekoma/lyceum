@@ -31,11 +31,11 @@ pub fn at(slots: []const [:0]const u8, width: f32, height: f32) !void {
         .key_three,
         .key_four,
         .key_five,
-        .key_six,
-        .key_seven,
-        .key_eight,
-        .key_nine,
-        .key_zero,
+        // .key_six,
+        // .key_seven,
+        // .key_eight,
+        // .key_nine,
+        // .key_zero,
     };
     if (length < keys.len) {
         return error.too_many_keys;

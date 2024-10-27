@@ -1,5 +1,4 @@
 const common = @import("common.zig");
-const GameState = @import("../../game/state.zig");
 const rl = @import("raylib");
 const std = @import("std");
 const text = @import("../text.zig");
@@ -18,16 +17,17 @@ pub const Mode = enum {
 
 const textBoxColor = rl.Color.init(0, 0, 0, 127);
 
-messages: std.ArrayList(Message),
+messages: *std.ArrayList(Message),
 content: [:0]u8,
 position: *usize,
+mode: *Mode,
 
 pub fn at(
-    character: *GameState.World.Character,
+    self: @This(),
+    name: [:0]const u8,
     width: f32,
     height: f32,
 ) !void {
-    var chat = &character.inventory.hud.chat;
     const boundarySize: rl.Vector2 = .{
         .x = width / 5,
         .y = height / 5,
@@ -38,10 +38,10 @@ pub fn at(
     };
 
     rl.drawRectangleV(boundaryPosition, boundarySize, textBoxColor);
-    if (chat.mode == .writing) {
+    if (self.mode.* == .writing) {
         const textElem = text{
-            .content = chat.in.content,
-            .position = chat.in.position,
+            .content = self.content,
+            .position = self.position,
         };
         textElem.chat(
             .{
@@ -53,23 +53,23 @@ pub fn at(
                 .y = text.menuTextBoxSize.y,
             },
         );
-    } else if (chat.mode == .idle and chat.in.position.* > 0) {
+    } else if (self.mode.* == .idle and self.position.* > 0) {
         const message: Message = .{
-            .author = character.name,
-            .content = try std.heap.page_allocator.allocSentinel(u8, chat.in.position.*, 0),
+            .author = name,
+            .content = try std.heap.page_allocator.allocSentinel(u8, self.position.*, 0),
         };
-        std.mem.copyForwards(u8, message.content, chat.in.content[0..chat.in.position.*]);
-        try chat.in.messages.append(message);
-        @memset(chat.in.content, 0);
-        chat.in.position.* = 0;
+        std.mem.copyForwards(u8, message.content, self.content[0..self.position.*]);
+        try self.messages.append(message);
+        @memset(self.content, 0);
+        self.position.* = 0;
     }
 
     if (rl.isKeyDown(.key_enter)) {
-        if (chat.mode == .idle) {
-            chat.mode = .writing;
-        } else if (chat.mode == .writing) {
-            chat.mode = .idle;
-            if (chat.in.messages.items.len > 0) {
+        if (self.mode.* == .idle) {
+            self.mode.* = .writing;
+        } else if (self.mode.* == .writing) {
+            self.mode.* = .idle;
+            if (self.messages.items.len > 0) {
                 std.debug.print("Adding message to chat is yet not implemented xd\n", .{});
             }
         }

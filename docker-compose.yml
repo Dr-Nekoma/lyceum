@@ -1,9 +1,0 @@
-services:
-  postgres:
-    image: postgres
-    environment:
-      POSTGRES_PASSWORD: "admin"
-      POSTGRES_USER: "admin"
-      POSTGRES_DATABASE: "mmo"
-    ports:
-      - "5432:5432"
