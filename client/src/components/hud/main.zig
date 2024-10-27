@@ -14,7 +14,7 @@ fn drawPlayersInfo(gameState: *GameState) !void {
     while (player_iterator.next()) |player| {
         const fontSize = 15;
         var infoPosition = rl.getWorldToScreen(player.position, gameState.world.camera);
-        infoPosition.y += 25;
+        infoPosition.y += 30;
         try info.at(player.*, info.mainSize, infoPosition, fontSize, gameState.allocator);
     }
 }
