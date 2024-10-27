@@ -4,6 +4,7 @@ const config = @import("config.zig");
 const connection = @import("menu/connection.zig");
 const errorC = @import("components/error.zig");
 const game = @import("game/main.zig");
+const hud = @import("components/hud/main.zig");
 const mainMenu = @import("menu/main.zig");
 const rl = @import("raylib");
 const server = @import("server/main.zig");
@@ -49,6 +50,7 @@ pub fn main() anyerror!void {
             },
             .spawn => {
                 try game.spawn(&gameState);
+                try hud.at(&gameState.world.character, gameState.width, gameState.height);
             },
             .character_selection => {
                 try character.selection(&gameState);

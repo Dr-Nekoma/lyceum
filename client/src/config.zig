@@ -12,6 +12,7 @@ pub const map = struct {
     pub const max_height = 1000;
 };
 
+pub const defaultCameraDistance = 70;
 pub const buttonFontSize = 20;
 pub const textFontSize = 20;
 pub const hubFontSize = 6;

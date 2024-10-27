@@ -74,7 +74,7 @@ pub const World = struct {
     character: Character = .{},
     other_players: Character_Table,
     camera: rl.Camera = undefined,
-    cameraDistance: f32 = 60,
+    cameraDistance: f32 = config.defaultCameraDistance,
 };
 
 pub const Connection = struct {
