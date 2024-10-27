@@ -1,20 +1,42 @@
 const chat = @import("Chat.zig");
+const config = @import("../../config.zig");
 const spells = @import("spells.zig");
 const map = @import("map.zig");
 const consumables = @import("consumables.zig");
 const info = @import("info.zig");
 const GameState = @import("../../game/state.zig");
+const rl = @import("raylib");
 const std = @import("std");
 
-pub fn at(
-    character: *GameState.World.Character,
-    width: f32,
-    height: f32,
-) !void {
+fn drawPlayersInfo(gameState: *GameState) !void {
+    var player_iterator = gameState.world.other_players.valueIterator();
+    while (player_iterator.next()) |player| {
+        const position: rl.Vector2 = .{
+            .x = player.stats.x_position,
+            .y = player.stats.y_position - 10,
+        };
+        try info.at(player.*, info.mainSize, position, gameState.allocator);
+    }
+}
+
+pub fn at(gameState: *GameState) !void {
+    const width = gameState.width;
+    const height = gameState.height;
+    const character = &gameState.world.character;
+
     try spells.at(character.*.inventory.hud.spells, width, height);
+
     try consumables.at(character.*.inventory.hud.consumables, height);
-    try info.at(character.*, width);
+
+    const mainPosition: rl.Vector2 = .{
+        .x = width / 2,
+        .y = 3 * config.menuButtonsPadding,
+    };
+
+    try info.at(character.*, info.mainSize, mainPosition, gameState.allocator);
+
     try map.at(character.*, width, height);
+
     const chatC = chat{
         .content = &character.inventory.hud.chat.content,
         .position = &character.inventory.hud.chat.position,
@@ -22,8 +44,6 @@ pub fn at(
         .mode = &character.inventory.hud.chat.mode,
     };
     try chatC.at(character.stats.name, width, height);
-    // for (character.*.inventory.hud.chat.in.messages.items) |message| {
-    //     std.debug.print("Author: {s} | Message: {s}\n", .{ message.author, message.content });
-    // }
-    // std.debug.print("\n\n", .{});
+
+    try drawPlayersInfo(gameState);
 }

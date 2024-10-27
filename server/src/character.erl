@@ -79,6 +79,11 @@ retrieve_near_players(#{map_name := MapName}, UserPid, Connection) ->
                     character.view.y_velocity, \
                     character.view.map_name, \
                     character.view.face_direction, \
+                    character.view.level, \
+                    character.view.health_max, \
+                    character.view.health, \
+                    character.view.mana_max, \
+                    character.view.mana, \
                     character.view.state_type \
              FROM character.view \
              NATURAL JOIN character.active \

@@ -47,7 +47,7 @@ pub fn main() anyerror!void {
             },
             .spawn => {
                 try inGame.spawn(&gameState);
-                try hud.at(&gameState.world.character, gameState.width, gameState.height);
+                try hud.at(&gameState);
             },
             .character_selection => {
                 try characterMenu.selection(&gameState);

@@ -6,22 +6,22 @@ const GameState = @import("../../game/state.zig");
 
 const barHeight = 40;
 
-fn topStats(character: GameState.World.Character, width: f32) !void {
+fn stats(character: GameState.World.Character, size: rl.Vector2, position: rl.Vector2, allocator: std.mem.Allocator) !void {
     const nameLength: f32 = @floatFromInt(rl.measureText(character.stats.name, config.textFontSize));
 
     var index: [4]u8 = undefined;
     const levelNumberStr = std.fmt.bufPrintZ(index[0..], "{d}", .{character.stats.level}) catch unreachable;
-    const allocator: std.mem.Allocator = std.heap.c_allocator;
     const levelStr = try std.fmt.allocPrintZ(allocator, "{s}{s}", .{ "Lvl. ", levelNumberStr });
     const levelLength: f32 = @floatFromInt(rl.measureText(levelStr, config.textFontSize));
 
     const boundarySize: rl.Vector2 = .{
-        .x = 12 * common.internalPadding + nameLength + levelLength,
-        .y = barHeight,
+        .x = size.x + nameLength + levelLength,
+        .y = size.y,
     };
+
     const boundaryPosition: rl.Vector2 = .{
-        .x = width / 2 - boundarySize.x / 2,
-        .y = 3 * config.menuButtonsPadding,
+        .x = position.x - boundarySize.x / 2,
+        .y = position.y,
     };
 
     rl.drawRectangleV(boundaryPosition, boundarySize, config.ColorPalette.primary);
@@ -93,7 +93,12 @@ fn faceStats(character: GameState.World.Character) !void {
     rl.drawCircleV(center, innerRadius - 2, rl.Color.sky_blue);
 }
 
-pub fn at(character: GameState.World.Character, width: f32) !void {
-    try topStats(character, width);
+pub const mainSize: rl.Vector2 = .{
+    .x = 12 * common.internalPadding,
+    .y = barHeight,
+};
+
+pub fn at(character: GameState.World.Character, size: rl.Vector2, position: rl.Vector2, allocator: std.mem.Allocator) !void {
+    try stats(character, size, position, allocator);
     try faceStats(character);
 }
