@@ -22,7 +22,7 @@ fn drawPlayersInfo(gameState: *GameState) !void {
 pub fn at(gameState: *GameState) !void {
     const width = gameState.width;
     const height = gameState.height;
-    const character = gameState.world.character;
+    const character = &gameState.world.character;
 
     try spells.at(character.inventory.hud.spells, width, height);
 
@@ -33,15 +33,15 @@ pub fn at(gameState: *GameState) !void {
         .y = 3 * config.menuButtonsPadding,
     };
 
-    try info.at(&character, info.mainSize, mainPosition, config.textFontSize, gameState.allocator);
+    try info.at(character, info.mainSize, mainPosition, config.textFontSize, gameState.allocator);
 
-    try map.at(&character, width, height);
+    try map.at(character, width, height);
 
     const chatC = chat{
-        .content = &gameState.world.character.inventory.hud.chat.content,
-        .position = &gameState.world.character.inventory.hud.chat.position,
-        .messages = &gameState.world.character.inventory.hud.chat.messages,
-        .mode = &gameState.world.character.inventory.hud.chat.mode,
+        .content = &character.inventory.hud.chat.content,
+        .position = &character.inventory.hud.chat.position,
+        .messages = &character.inventory.hud.chat.messages,
+        .mode = &character.inventory.hud.chat.mode,
     };
     try chatC.at(character.stats.name, gameState.*);
 
