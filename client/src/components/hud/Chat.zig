@@ -26,7 +26,7 @@ mode: *Mode,
 pub fn at(
     self: @This(),
     name: [:0]const u8,
-    gameState: GameState,
+    gameState: *GameState,
 ) !void {
     const width: f32 = gameState.width;
     const height: f32 = gameState.height;

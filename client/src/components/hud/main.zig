@@ -43,7 +43,7 @@ pub fn at(gameState: *GameState) !void {
         .messages = &character.inventory.hud.chat.messages,
         .mode = &character.inventory.hud.chat.mode,
     };
-    try chatC.at(character.stats.name, gameState.*);
+    try chatC.at(character.stats.name, gameState);
 
     try drawPlayersInfo(gameState);
 }
