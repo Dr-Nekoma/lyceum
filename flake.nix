@@ -213,9 +213,9 @@
               env = mkEnvVars pkgs erlangLatest erlangLibs raylib;
               buildInputs = with pkgs; [
                 erlangLatest
-                heroku
                 just
                 rebar3
+                rsync
                 zigLatest
                 raylib
               ];
