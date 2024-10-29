@@ -1,11 +1,6 @@
 const config = @import("../config.zig");
 const rl = @import("raylib");
 
-const standardSize: rl.Vector2 = .{
-    .x = 200,
-    .y = 30,
-};
-
 const iconSize: rl.Vector2 = .{
     .x = 50,
     .y = 50,
@@ -23,20 +18,27 @@ pub fn at(
     status: bool,
     height: f32,
 ) void {
+    const icon, const statusLabel = if (status) .{ self.icons.not_connected.*, "Connected" } else .{ self.icons.connected.*, "Not Connected" };
+    const statusLabelLength: f32 = @floatFromInt(rl.measureText(statusLabel, config.textFontSize));
+
+    const size: rl.Vector2 = .{
+        .x = 50 + statusLabelLength,
+        .y = 30,
+    };
+
     const position = .{
         .x = 0,
-        .y = height - standardSize.y,
+        .y = height - size.y,
     };
+
     const iconPosition = .{
         .x = 1,
-        .y = height - standardSize.y,
+        .y = height - size.y,
     };
-    const icon = if (status) self.icons.not_connected.* else self.icons.connected.*;
-    const statusLabel = if (status) "Connected" else "Not Connected";
 
-    const statusLabelPositionY = height - standardSize.y + config.menuButtonsPadding;
+    const statusLabelPositionY = height - size.y + config.menuButtonsPadding;
 
-    rl.drawRectangleV(position, standardSize, config.ColorPalette.connection_status);
+    rl.drawRectangleV(position, size, config.ColorPalette.connection_status);
     rl.drawText(
         statusLabel,
         @intFromFloat(statusLabelPositionX),

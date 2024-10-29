@@ -28,6 +28,9 @@ pub const character = struct {
                 .y_position = gameState.world.character.stats.y_position,
                 .x_velocity = gameState.world.character.stats.x_velocity,
                 .y_velocity = gameState.world.character.stats.y_velocity,
+                .health = gameState.world.character.stats.health,
+                .mana = gameState.world.character.stats.mana,
+                .level = gameState.world.character.stats.level,
                 .map_name = gameState.world.character.stats.map_name,
                 .face_direction = gameState.world.character.stats.face_direction,
                 .state_type = gameState.world.character.stats.state_type,
@@ -63,6 +66,19 @@ pub const character = struct {
                         };
                         updatePhysicsStats(&new_character, player);
                         try other_players.put(player.name, new_character);
+                    }
+                }
+                var present_player_iterator = other_players.valueIterator();
+                while (present_player_iterator.next()) |present_player| {
+                    var keep = false;
+                    for (players) |player| {
+                        if (std.mem.eql(u8, player.name, present_player.stats.name)) {
+                            keep = true;
+                            break;
+                        }
+                    }
+                    if (!keep) {
+                        _ = other_players.remove(present_player.stats.name);
                     }
                 }
             },
@@ -144,7 +160,7 @@ pub const character = struct {
 };
 
 pub const user = struct {
-    pub fn login(gameState: *GameState) void {
+    pub fn login(gameState: *GameState) !void {
         gameState.send_with_self(.{
             .login = .{
                 .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
@@ -162,11 +178,12 @@ pub const user = struct {
         switch (server_response) {
             .ok => |item| {
                 gameState.connection.handler, gameState.menu.credentials.email = item;
-                gameState.scene = .join;
+                try getCharacters(gameState);
             },
             .@"error" => |msg| {
                 defer gameState.allocator.free(msg);
                 std.debug.print("[ERROR]: {s}\n", .{msg});
+                gameState.errorElem.update(.login_invalid);
                 return;
             },
         }
@@ -191,44 +208,49 @@ pub const user = struct {
                 .@"error" => |msg| {
                     defer gameState.allocator.free(msg);
                     std.debug.print("[ERROR]: {s}\n", .{msg});
+                    gameState.errorElem.update(.logout_invalid);
                     return;
                 },
             }
         }
     }
 
-    pub fn join(gameState: *GameState) !void {
-        try gameState.send(messages.Payload{
+    pub fn getCharacters(gameState: *GameState) !void {
+        gameState.send(messages.Payload{
             .list_characters = .{
                 .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
                 .email = gameState.menu.credentials.email,
             },
-        });
+        }) catch {
+            gameState.errorElem.update(.get_characters_send);
+            return;
+        };
 
         const node = gameState.connection.node;
-        const maybe_characters = try node.receive(messages.Characters_Response, gameState.allocator);
+        const maybe_characters = node.receive(messages.Characters_Response, gameState.allocator) catch {
+            gameState.errorElem.update(.get_characters_receive);
+            return;
+        };
         switch (maybe_characters) {
             .ok => |erlang_characters| {
                 // todo: discover how to make this work
                 // const teapotembed = @embedfile("../assets/teapot.png");
                 // const teapotloaded = rl.loadimagefrommemory(".png", teapotembed, teapotembed.len);
-
                 const teapot = try assets.texture("teapot.png");
 
                 var characters = std.ArrayList(GameState.World.Character).init(gameState.allocator);
-
                 for (erlang_characters) |stats| {
                     try characters.append(.{
                         .stats = stats,
                         .preview = teapot,
                     });
                 }
-
                 gameState.menu.character.select.list = characters.items;
                 gameState.scene = .character_selection;
             },
             .@"error" => |error_msg| {
                 std.debug.print("error in server: {s}", .{error_msg});
+                gameState.errorElem.update(.get_characters_invalid);
                 gameState.scene = .nothing;
             },
         }

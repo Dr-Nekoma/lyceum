@@ -42,11 +42,11 @@ pub fn connect(gameState: *GameState) !void {
         .content = &gameState.menu.server.address,
         .position = &gameState.menu.server.addressPosition,
     };
-    serverInfoText.at(serverInfoBoxPosition);
+    serverInfoText.at(serverInfoBoxPosition, text.menuTextBoxSize);
 
     const buttonPosition: rl.Vector2 = .{
         .x = (gameState.width / 2) - (buttonSize.x / 2),
-        .y = serverInfoBoxPosition.y + text.textBoxSize.y + 5 * config.menuButtonsPadding,
+        .y = serverInfoBoxPosition.y + text.menuTextBoxSize.y + 5 * config.menuButtonsPadding,
     };
     const connectButton = Button.Clickable{
         .disabled = !(serverInfoText.position.* > 0),
@@ -63,7 +63,11 @@ pub fn connect(gameState: *GameState) !void {
             return;
         }
         const node = gameState.connection.node;
-        zerl.establish_connection(node, GameState.Connection.process_name, gameState.menu.server.address[0..gameState.menu.server.addressPosition]) catch |error_value| {
+        zerl.establish_connection(
+            node,
+            GameState.Connection.process_name,
+            gameState.menu.server.address[0..gameState.menu.server.addressPosition],
+        ) catch |error_value| {
             try print_connect_server_error(error_value);
             gameState.errorElem.update(.node_connection);
             return;

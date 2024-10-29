@@ -31,7 +31,11 @@ const errorMessage = struct {
     pub const node_status = "Failed to Initialize Node!";
     pub const node_connection = "Node Connection Failure!";
     pub const login_send = "Failed to Send Credentials!";
-    pub const login_receive = "Could not Login";
+    pub const login_receive = "Server did not Respond for Login";
+    pub const login_invalid = "Invalid Credentials!";
+    pub const get_characters_send = "Failed to Request Characters!";
+    pub const get_characters_receive = "Server did not Respond with Characters";
+    pub const get_characters_invalid = "Invalid Characters to Display!";
     pub const joining_map_send = "Failed asking to join Map of Selected Character";
     pub const joining_map_receive = "Could not to join Map of Selected Character";
     pub const loading_assets = "Failed loading assets of Character";
@@ -40,7 +44,8 @@ const errorMessage = struct {
     pub const update_character_send = "Failed updating Character";
     pub const update_character_receive = "Could not ping the Server";
     pub const logout_send = "Failed asking to Logout";
-    pub const logout_receive = "Could not Logout";
+    pub const logout_receive = "Server did not Respond for Logout";
+    pub const logout_invalid = "Could not Logout";
 };
 
 expiration: f64 = 0,

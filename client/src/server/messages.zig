@@ -73,6 +73,11 @@ pub const Registry_Response = Tuple_Response(void);
 // User's Characters
 
 pub const Character_Info = struct {
+    level: u8 = 0,
+    health: u16 = 0,
+    health_max: u16 = 100,
+    mana: u16 = 0,
+    mana_max: u16 = 100,
     name: [:0]const u8 = "",
     constitution: u8 = 0,
     wisdom: u8 = 0,
@@ -105,14 +110,17 @@ pub const Character_Join = struct {
 pub const Character_Join_Response = Tuple_Response(Character_Info);
 
 pub const Character_Update = struct {
+    level: u8,
+    health: u16,
+    mana: u16,
     name: [:0]const u8,
-    x_position: f32 = 0,
-    y_position: f32 = 0,
-    x_velocity: f32 = 0,
-    y_velocity: f32 = 0,
+    x_position: f32,
+    y_position: f32,
+    x_velocity: f32,
+    y_velocity: f32,
     map_name: [:0]const u8,
     username: []const u8,
-    face_direction: u16 = 270,
+    face_direction: u16,
     email: []const u8,
     state_type: GameState.World.Character.Animation.State,
 };

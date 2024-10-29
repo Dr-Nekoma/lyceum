@@ -19,6 +19,8 @@ fn controlInput(entity: *GameState.World.Character) u16 {
     const deltaTime = rl.getFrameTime();
     const deltaVelocity = deltaTime * physics.character.acceleration;
 
+    if (entity.inventory.hud.chat.mode == .writing) return tempAngle;
+
     if (rl.isKeyDown(.key_d)) {
         velocity.z -= deltaVelocity;
         tempAngle = 180;
@@ -32,12 +34,7 @@ fn controlInput(entity: *GameState.World.Character) u16 {
         velocity.x += deltaVelocity;
         tempAngle = 90;
     }
-    if (rl.isKeyDown(.key_space)) {
-        velocity.y += deltaVelocity;
-    }
-    if (rl.isKeyDown(.key_left_control)) {
-        velocity.y -= deltaVelocity;
-    }
+
     return tempAngle;
 }
 
@@ -53,10 +50,10 @@ pub fn spawn(gameState: *GameState) !void {
 
     drawPlayers(gameState);
 
-    if (rl.isKeyDown(.key_q)) {
+    rl.drawGrid(2000, 10.0);
+
+    if (rl.isKeyDown(.key_backslash)) {
         try server.character.exitMap(gameState);
         rl.enableCursor();
     }
-
-    rl.drawGrid(20, 10.0);
 }

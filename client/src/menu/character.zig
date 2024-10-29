@@ -43,7 +43,14 @@ fn emptyCharacter(gameState: *GameState) !void {
     };
     const fieldPadding = 25;
     inline for (std.meta.fields(messages.Character_Info)) |field| {
+        // TODO: Implement presets instead of allowing the user to change
+        // the attributes
         if (comptime isDifferent(field.name, &.{
+            "level",
+            "health",
+            "health_max",
+            "mana",
+            "mana_max",
             "name",
             "map_name",
             "x_position",
@@ -87,7 +94,7 @@ fn emptyCharacter(gameState: *GameState) !void {
                 .content = gameState.menu.character.create.name,
                 .position = &gameState.menu.character.create.name_position,
             };
-            nameText.at(nameBoxPosition);
+            nameText.at(nameBoxPosition, text.menuTextBoxSize);
             gameState.world.character.stats.name = gameState.menu.character.create.name;
         } else {
             // std.debug.print("Not editable: .{s}\n", .{field.name});
@@ -106,6 +113,7 @@ fn isDifferent(string: [:0]const u8, forbiddens: []const [:0]const u8) bool {
 
 pub fn selection(gameState: *GameState) !void {
     mainMenu.userLogoutButton(gameState);
+
     const buttonSize = Button.Sizes.large(gameState);
     const characterButtonY = (gameState.height / 10) - (buttonSize.y / 2);
     var buttonPosition: rl.Vector2 = .{
