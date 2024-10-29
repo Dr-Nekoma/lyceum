@@ -90,15 +90,16 @@ fn at_impl(
         textBoxSize.x,
         textBoxSize.y,
     );
-    var mouseOnText = false;
-    if (rl.checkCollisionPointRec(rl.getMousePosition(), textBox)) {
-        mouseOnText = true;
-        rl.setMouseCursor(.mouse_cursor_ibeam);
-        pushCharacters(self);
-    } else {
-        mouseOnText = false;
-        rl.setMouseCursor(.mouse_cursor_default);
-    }
+    const mouseOnText = blk: {
+        if (rl.checkCollisionPointRec(rl.getMousePosition(), textBox)) {
+            rl.setMouseCursor(.mouse_cursor_ibeam);
+            pushCharacters(self);
+            break :blk true;
+        } else {
+            rl.setMouseCursor(.mouse_cursor_default);
+            break :blk false;
+        }
+    };
 
     drawTextBox(textBoxPosition, textBoxSize, if (mouseOnText) config.ColorPalette.secondary else rl.Color.white);
 
