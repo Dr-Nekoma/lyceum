@@ -1,0 +1,35 @@
+
+
+|-------+-------+---+------+------+------+------+------+---+---+---|
+| water | grass |   | dirt | dirt | dirt | dirt | dirt |   |   |   |
+| water | grass |   | dirt | dirt | dirt | dirt | dirt |   |   |   |
+| water | grass |   | dirt | dirt | dirt | dirt | dirt |   |   |   |
+| water | grass |   | dirt | dirt | dirt | dirt | dirt |   |   |   |
+| water | grass |   | dirt | dirt | dirt | dirt | dirt |   |   |   |
+| water | grass |   | dirt | dirt | dirt | dirt | dirt |   |   |   |
+| water | grass |   | dirt | dirt | dirt | dirt | dirt |   |   |   |
+| water | grass |   | dirt | dirt | dirt | dirt | dirt |   |   |   |
+| water | grass |   | dirt | dirt | dirt | dirt | dirt |   |   |   |
+| water | grass |   | dirt | dirt | dirt | dirt | dirt |   |   |   |
+| water | grass |   | dirt | dirt | dirt | dirt | dirt |   |   |   |
+| water | grass |   | dirt | dirt | dirt | dirt | dirt |   |   |   |
+| water | grass |   | dirt | dirt | dirt | dirt | dirt |   |   |   |
+|-------+-------+---+------+------+------+------+------+---+---+---|
+
+
+|---+---+------+---+---+---+---+---+------+------+------|
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|---+---+------+---+---+---+---+---+------+------+------|
+
