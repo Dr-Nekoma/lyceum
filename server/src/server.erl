@@ -34,6 +34,12 @@ handle_user(#{user_pid := UserPid, connection := Connection} = State) ->
             Characters = character:player_characters(Username, Email, Connection),
             io:format("Characters: ~p\n", [Characters]),
             UserPid ! {ok, Characters};
+	{get_map, #{map_name := MapName} = Something} ->
+            io:format("Querying map...\n"),
+            io:format("Map: ~p\n", [Something]),
+            Map = generate_map:get_map(Connection, MapName),
+            io:format("Map: ~p\n", [Map]),
+            UserPid ! {ok, Map};
         {create_character, Character_Map} ->
             io:format("This character logged"),
             character:create(Character_Map, Connection),
