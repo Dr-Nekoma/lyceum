@@ -236,6 +236,7 @@
                         just
                         rebar3
                         raylib
+                        sqls
                       ]
                       ++ lib.optionals stdenv.isLinux (linuxPkgs)
                       ++ lib.optionals stdenv.isDarwin darwinPkgs;

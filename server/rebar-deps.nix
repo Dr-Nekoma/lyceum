@@ -24,5 +24,15 @@ let
       };
       beamDeps = [ ];
     };
+    csv = builder {
+      name = "csv";
+      version = "3.0.3";
+      src = fetchHex {
+        pkg = "csve";
+        version = "3.0.3";
+        sha256 = "sha256-dB0aVaq62qPg/hMFEFAQGnPpDEVwuflAOpOdlUaBNSE=";
+      };
+      beamDeps = [ ];
+    };
   };
 in self
