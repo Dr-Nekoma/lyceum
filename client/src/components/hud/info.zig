@@ -6,12 +6,13 @@ const GameState = @import("../../game/state.zig");
 
 const barHeight = 40;
 
-fn stats(character: GameState.World.Character, size: rl.Vector2, position: rl.Vector2, fontSize: i32, allocator: std.mem.Allocator) !void {
+fn stats(character: *const GameState.World.Character, size: rl.Vector2, position: rl.Vector2, fontSize: i32, allocator: std.mem.Allocator) !void {
     const nameLength: f32 = @floatFromInt(rl.measureText(character.stats.name, fontSize));
 
     var index: [4]u8 = undefined;
-    const levelNumberStr = std.fmt.bufPrintZ(index[0..], "{d}", .{character.stats.level}) catch unreachable;
+    const levelNumberStr = try std.fmt.bufPrintZ(index[0..], "{d}", .{character.stats.level});
     const levelStr = try std.fmt.allocPrintZ(allocator, "{s}{s}", .{ "Lvl. ", levelNumberStr });
+    defer allocator.free(levelStr);
     const levelLength: f32 = @floatFromInt(rl.measureText(levelStr, fontSize));
 
     const boundarySize: rl.Vector2 = .{
@@ -56,7 +57,7 @@ fn bar(currentValue: u32, maxValue: u32, position: rl.Vector2, barWidth: u32, in
     rl.drawRectangleLinesEx(rec, 2, outer_color);
 }
 
-fn faceStats(character: GameState.World.Character) !void {
+fn faceStats(character: *const GameState.World.Character) !void {
     const innerRadius = 65;
     const outerRadius = innerRadius + 10;
 
@@ -99,7 +100,7 @@ pub const mainSize: rl.Vector2 = .{
     .y = barHeight,
 };
 
-pub fn at(character: GameState.World.Character, size: rl.Vector2, position: rl.Vector2, fontSize: i32, allocator: std.mem.Allocator) !void {
+pub fn at(character: *const GameState.World.Character, size: rl.Vector2, position: rl.Vector2, fontSize: i32, allocator: std.mem.Allocator) !void {
     try stats(character, size, position, fontSize, allocator);
     try faceStats(character);
 }

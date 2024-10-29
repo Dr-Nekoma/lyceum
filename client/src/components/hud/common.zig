@@ -1,6 +1,11 @@
 const config = @import("../../config.zig");
 const rl = @import("raylib");
 
+pub const Slot = struct {
+    key: rl.KeyboardKey,
+    label: [:0]const u8,
+};
+
 pub const slotBoxSize: rl.Vector2 = .{
     .x = 90,
     .y = 90,
@@ -19,42 +24,24 @@ const textBoxSize: rl.Vector2 = .{
 pub const internalPadding = 5;
 
 fn drawBoundary(position: rl.Vector2) void {
-    var topLeftCorner: rl.Vector2 = .{
-        .x = position.x,
-        .y = position.y + 2.5,
-    };
-    var rightTopCorner: rl.Vector2 = .{
-        .x = position.x + slotInternalSize.x + 1.5 * internalPadding,
-        .y = position.y + 2.5,
-    };
     const thickness = 4;
-    rl.drawLineEx(topLeftCorner, rightTopCorner, thickness, rl.Color.white);
-    var rightDownCorner: rl.Vector2 = .{
-        .x = rightTopCorner.x,
-        .y = rightTopCorner.y + slotInternalSize.y + 1.5 * internalPadding,
+    const slot = rl.Rectangle{
+        .x = position.x,
+        .y = position.y,
+        .width = slotInternalSize.x + 2 * internalPadding,
+        .height = slotInternalSize.y + 2 * internalPadding,
     };
-    rightTopCorner.y -= 2.25;
-    rl.drawLineEx(rightTopCorner, rightDownCorner, thickness, rl.Color.white);
-    var leftDownCorner: rl.Vector2 = .{
-        .x = rightDownCorner.x - slotInternalSize.x - 1.15 * internalPadding,
-        .y = rightDownCorner.y - 2,
-    };
-    topLeftCorner.x = rightDownCorner.x - slotInternalSize.x - 1.15 * internalPadding;
-    rightDownCorner.x += 2;
-    rightDownCorner.y -= 2;
-    rl.drawLineEx(rightDownCorner, leftDownCorner, thickness, rl.Color.white);
-    leftDownCorner.y += 1.75;
-    rl.drawLineEx(leftDownCorner, topLeftCorner, thickness, rl.Color.white);
+    rl.drawRectangleLinesEx(slot, thickness, rl.Color.white);
 }
 
-pub fn highlightSlots(position: rl.Vector2, keys: []const rl.KeyboardKey) void {
+pub fn highlightSlots(position: rl.Vector2, keysAndLabels: []const Slot) void {
     var boundaryPosition: rl.Vector2 = .{
         .x = undefined,
         .y = position.y,
     };
-    for (keys, 0..) |key, pos| {
+    for (keysAndLabels, 0..) |keyAndLabel, pos| {
         const pos_float: f32 = @floatFromInt(pos);
-        if (rl.isKeyDown(key)) {
+        if (rl.isKeyDown(keyAndLabel.key)) {
             boundaryPosition.x = position.x + pos_float * slotInternalSize.x + pos_float * internalPadding;
             drawBoundary(boundaryPosition);
         }

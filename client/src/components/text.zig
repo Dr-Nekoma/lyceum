@@ -30,17 +30,13 @@ pub fn redacted_at(
 }
 
 fn pushCharacters(self: @This()) void {
-    var key = rl.getCharPressed();
+    const key = rl.getCharPressed();
 
-    while (key > 0 and key != 27 and key != 10) {
-        if ((key >= 32) and (key <= 125) and (self.position.* < self.content.len)) {
-            const castKey: u32 = @bitCast(key);
-            self.content[self.position.*] = @truncate(castKey);
-            self.content[self.position.* + 1] = 0;
-            self.position.* += 1;
-        }
-
-        key = rl.getCharPressed();
+    if ((key >= 32) and (key <= 125) and (self.position.* < self.content.len)) {
+        const castKey: u32 = @bitCast(key);
+        self.content[self.position.*] = @truncate(castKey);
+        self.content[self.position.* + 1] = 0;
+        self.position.* += 1;
     }
 
     if (rl.isKeyPressed(.key_backspace) and self.position.* > 0) {

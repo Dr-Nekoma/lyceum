@@ -33,7 +33,7 @@ pub fn add_borders(image: *rl.Image) void {
     return image.resizeCanvas(width, height, thickness, thickness, rl.Color.black);
 }
 
-pub fn at(character: GameState.World.Character, width: f32, height: f32) !void {
+pub fn at(character: *const GameState.World.Character, width: f32, height: f32) !void {
     const face_direction: f32 = @floatFromInt(@abs(270 - character.stats.face_direction));
     const character_x: f32 = rm.clamp(-character.stats.y_position, 0, config.map.max_width);
     const character_y: f32 = rm.clamp(character.stats.x_position, 0, config.map.max_height);

@@ -15,35 +15,35 @@ fn drawPlayersInfo(gameState: *GameState) !void {
         const fontSize = 15;
         var infoPosition = rl.getWorldToScreen(player.position, gameState.world.camera);
         infoPosition.y += 30;
-        try info.at(player.*, info.mainSize, infoPosition, fontSize, gameState.allocator);
+        try info.at(player, info.mainSize, infoPosition, fontSize, gameState.allocator);
     }
 }
 
 pub fn at(gameState: *GameState) !void {
     const width = gameState.width;
     const height = gameState.height;
-    const character = &gameState.world.character;
+    const character = gameState.world.character;
 
-    try spells.at(character.*.inventory.hud.spells, width, height);
+    try spells.at(character.inventory.hud.spells, width, height);
 
-    try consumables.at(character.*.inventory.hud.consumables, height);
+    try consumables.at(character.inventory.hud.consumables, height);
 
     const mainPosition: rl.Vector2 = .{
         .x = width / 2,
         .y = 3 * config.menuButtonsPadding,
     };
 
-    try info.at(character.*, info.mainSize, mainPosition, config.textFontSize, gameState.allocator);
+    try info.at(&character, info.mainSize, mainPosition, config.textFontSize, gameState.allocator);
 
-    try map.at(character.*, width, height);
+    try map.at(&character, width, height);
 
     const chatC = chat{
-        .content = &character.inventory.hud.chat.content,
-        .position = &character.inventory.hud.chat.position,
-        .messages = &character.inventory.hud.chat.messages,
-        .mode = &character.inventory.hud.chat.mode,
+        .content = &gameState.world.character.inventory.hud.chat.content,
+        .position = &gameState.world.character.inventory.hud.chat.position,
+        .messages = &gameState.world.character.inventory.hud.chat.messages,
+        .mode = &gameState.world.character.inventory.hud.chat.mode,
     };
-    try chatC.at(character.stats.name, width, height);
+    try chatC.at(character.stats.name, gameState.*);
 
     try drawPlayersInfo(gameState);
 }

@@ -43,6 +43,8 @@ fn emptyCharacter(gameState: *GameState) !void {
     };
     const fieldPadding = 25;
     inline for (std.meta.fields(messages.Character_Info)) |field| {
+        // TODO: Implement presets instead of allowing the user to change
+        // the attributes
         if (comptime isDifferent(field.name, &.{
             "level",
             "health",

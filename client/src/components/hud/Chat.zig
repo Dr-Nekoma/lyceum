@@ -2,6 +2,7 @@ const common = @import("common.zig");
 const rl = @import("raylib");
 const std = @import("std");
 const text = @import("../text.zig");
+const GameState = @import("../../game/state.zig");
 
 pub const Message = struct {
     author: []const u8 = "",
@@ -25,9 +26,10 @@ mode: *Mode,
 pub fn at(
     self: @This(),
     name: [:0]const u8,
-    width: f32,
-    height: f32,
+    gameState: GameState,
 ) !void {
+    const width: f32 = gameState.width;
+    const height: f32 = gameState.height;
     const boundarySize: rl.Vector2 = .{
         .x = width / 5,
         .y = height / 5,
@@ -56,7 +58,7 @@ pub fn at(
     } else if (self.mode.* == .idle and self.position.* > 0) {
         const message: Message = .{
             .author = name,
-            .content = try std.heap.c_allocator.allocSentinel(u8, self.position.*, 0),
+            .content = try gameState.allocator.allocSentinel(u8, self.position.*, 0),
         };
         std.mem.copyForwards(u8, message.content, self.content[0..self.position.*]);
         try self.messages.append(message);
