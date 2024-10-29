@@ -47,6 +47,7 @@ jobs:
         run: |
           nix develop --impure -c just deploy
         env:
+            DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
             SSH_AUTH_SOCK: /tmp/ssh_agent.sock
 
       - name: "[Cleanup] (...)"
