@@ -161,7 +161,7 @@ logout(State) ->
         ok ->
             epgsql:close(Connection),
             Pid ! ok,
-            exit(0);
+            exit(normal);
         {error, Message} ->
             Pid ! {error, Message},
             exit(2)
