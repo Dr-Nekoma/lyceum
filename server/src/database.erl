@@ -26,84 +26,75 @@ to_absolute_path(RelativePath) ->
     end.
 
 all_sql_scripts_are_valid(List) ->
-    lists:all(
-        fun(E) ->
-            case E of
-                {ok, _} -> true;
-                {ok, _, _} -> true;
-                _ -> false
-            end
-        end,
-        List
-    ).
+    lists:all(fun(E) ->
+                 case E of
+                     {ok, _} -> true;
+                     {ok, _, _} -> true;
+                     _ -> false
+                 end
+              end,
+              List).
 
 %% https://github.com/bearmug/erlang-pure-migrations?tab=readme-ov-file#postgresql-and-epgsqlepgsql
 %% + This PR
 %% https://github.com/bearmug/erlang-pure-migrations/pull/46
 epgsql_query_fun(Conn) ->
     fun(Q) ->
-        case epgsql:squery(Conn, Q) of
-            {ok,
-                [
-                    {column, <<"version">>, _, _, _, _, _, _, _},
-                    {column, <<"filename">>, _, _, _, _, _, _, _}
-                ],
-                []} ->
-                [];
-            {ok,
-                [
-                    {column, <<"version">>, _, _, _, _, _, _, _},
-                    {column, <<"filename">>, _, _, _, _, _, _, _}
-                ],
-                Data} ->
-                [
-                    {list_to_integer(binary_to_list(BinV)), binary_to_list(BinF)}
-                 || {BinV, BinF} <- Data
-                ];
-            {ok, [{column, <<"max">>, _, _, _, _, _, _, _}], [{null}]} ->
-                % TODO: The comment below is not mine
-                % It has to be -1 or it will get an error during initialization
-                % TODO (Mine): I've set this crap to zero and it somewhat works on a clean pg db...
-                0;
-            {ok, [{column, <<"max">>, _, _, _, _, _, _, _}], [{N}]} ->
-                % The version number is stored in the int4 type and ranges from -2,147,483,648 to 2,147,483,647
-                list_to_integer(binary_to_list(N));
-            {ok, [{column, <<"version">>, _, _, _, _, _}, {column, <<"filename">>, _, _, _, _, _}],
-                Data} ->
-                [
-                    {list_to_integer(binary_to_list(BinV)), binary_to_list(BinF)}
-                 || {BinV, BinF} <- Data
-                ];
-            {ok, [{column, <<"max">>, _, _, _, _, _}], [{null}]} ->
-                -1;
-            {ok, [{column, <<"max">>, _, _, _, _, _}], [{N}]} ->
-                list_to_integer(binary_to_list(N));
-            {ok, _, _} ->
-                ok;
-            {ok, _} ->
-                ok;
-            Default ->
-                % Match multiple SQL statements in a script
-                Res = all_sql_scripts_are_valid(Default),
-                case Res of
-                    true -> ok;
-                    _ -> Default
-                end
-        end
+       case epgsql:squery(Conn, Q) of
+           {ok,
+            [{column, <<"version">>, _, _, _, _, _, _, _},
+             {column, <<"filename">>, _, _, _, _, _, _, _}],
+            []} ->
+               [];
+           {ok,
+            [{column, <<"version">>, _, _, _, _, _, _, _},
+             {column, <<"filename">>, _, _, _, _, _, _, _}],
+            Data} ->
+               [{list_to_integer(binary_to_list(BinV)), binary_to_list(BinF)}
+                || {BinV, BinF} <- Data];
+           {ok, [{column, <<"max">>, _, _, _, _, _, _, _}], [{null}]} ->
+               % TODO: The comment below is not mine
+               % It has to be -1 or it will get an error during initialization
+               % TODO (Mine): I've set this crap to zero and it somewhat works on a clean pg db...
+               0;
+           {ok, [{column, <<"max">>, _, _, _, _, _, _, _}], [{N}]} ->
+               % The version number is stored in the int4 type and ranges from -2,147,483,648 to 2,147,483,647
+               list_to_integer(binary_to_list(N));
+           {ok,
+            [{column, <<"version">>, _, _, _, _, _}, {column, <<"filename">>, _, _, _, _, _}],
+            Data} ->
+               [{list_to_integer(binary_to_list(BinV)), binary_to_list(BinF)}
+                || {BinV, BinF} <- Data];
+           {ok, [{column, <<"max">>, _, _, _, _, _}], [{null}]} -> -1;
+           {ok, [{column, <<"max">>, _, _, _, _, _}], [{N}]} -> list_to_integer(binary_to_list(N));
+           {ok, _, _} -> ok;
+           {ok, _} -> ok;
+           Default ->
+               % Match multiple SQL statements in a script
+               Res = all_sql_scripts_are_valid(Default),
+               case Res of
+                   true -> ok;
+                   _ -> Default
+               end
+       end
     end.
 
 database_connect() ->
     io:format("Connecting to ~p at ~p~n", [?PGHOST, ?PGPORT]),
-    {ok, Connection} =
-        epgsql:connect(#{
-            host => ?PGHOST,
-            username => ?PGUSER,
-            password => ?PGPASSWORD,
-            database => ?PGDATABASE,
-            timeout => 4000
-        }),
-    io:format("Connected to ~p with USER = ~p~n", [?PGHOST, ?PGUSER]),
-    Connection.
+    Connection =
+        #{host => ?PGHOST,
+          username => ?PGUSER,
+          password => ?PGPASSWORD,
+          database => ?PGDATABASE,
+          timeout => 4000},
+    case epgsql:connect(Connection) of
+        {ok, Conn} ->
+            io:format("Successfully connected to ~p~n", [?PGHOST]),
+            {ok, Conn};
+        {error, Reason} ->
+            io:format("Failed to connect to ~p: ~p~n", [?PGHOST, Reason]),
+            {error, Reason}
+    end.
 
 migrate(Conn) ->
     io:format("Finding migration scripts... ~n"),

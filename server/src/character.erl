@@ -150,4 +150,3 @@ player_character(#{name := Name,
 	   end),
     util:process_postgres_result(Result, select, Fun).
     %% io:format("Username: ~p, Email: ~p, Data: ~p\n", [Username, Email, Something]),    
-
