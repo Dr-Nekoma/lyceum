@@ -29,13 +29,6 @@
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = true;
-          #overlays = [
-          #  (final: prev: {
-          #    rebar3 = final.rebar3.overrideAttrs {
-          #      erlang = pkgs.erlang_27;
-          #    };
-          #  })
-          #];
         };
         getErlangLibs =
           erlangPkg:
@@ -97,44 +90,19 @@
           # nix build .#server
           server =
             let
-              deps = import ./server/rebar-deps.nix { inherit (pkgs) fetchHex fetchFromGitHub fetchgit; };
+              deps = import ./server/rebar-deps.nix { 
+                inherit (pkgs) fetchHex fetchFromGitHub fetchgit;
+                builder = pkgs.beamPackages.buildRebar3;
+              };
             in
-            pkgs.stdenv.mkDerivation {
-              name = "server";
-              version = "0.0.1";
+            pkgs.beamPackages.rebar3Relx {
+              pname = "server_app";
+              version = "0.1.0";
+              root = ./server;
               src = pkgs.lib.cleanSource ./server;
-              buildInputs = with pkgs; [
-                erlangLatest
-                pkgs.stdenv.cc.cc.lib
-                rebar3
-                gnutar
-              ];
-              nativeBuildInputs = with pkgs; [
-                autoPatchelfHook
-                libz
-                ncurses
-                openssl
-                systemdLibs
-              ];
-              buildPhase = ''
-                mkdir -p _checkouts
-                # https://github.com/NixOS/nix/issues/670#issuecomment-1211700127
-                export HOME=$(pwd)
-                ${toString (
-                  pkgs.lib.mapAttrsToList (k: v: ''
-                    cp -R --no-preserve=mode ${v} _checkouts/${k}
-                  '') deps
-                )}
-                rebar3 as prod tar
-              '';
-              installPhase = ''
-                mkdir -p $out
-                mkdir -p $out/database
-                # Add migrations to the output as well, otherwise the server
-                # breaks at runtime.
-                cp -r database/migrations $out/database
-                tar -xzf _build/prod/rel/*/*.tar.gz -C $out/
-              '';
+              releaseType = "release";
+              profile = "prod";
+              beamDeps = builtins.attrValues deps;
             };
 
           # nix build .#dockerImage
