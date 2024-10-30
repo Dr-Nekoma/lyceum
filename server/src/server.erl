@@ -67,7 +67,7 @@ main(Parent, Debug, State) ->
 
 % Initial Flow
 login(State, From, #{username := Username, password := _Password} = Request) ->
-    io:format("[~p] User ~p is attemptig to login from ~p~n", [?SERVER, Username, From]),
+    io:format("[~p] User ~p is attempting to login from ~p~n", [?SERVER, Username, From]),
     case registry:check_user(Request, State#state.connection) of
         {ok, Email} ->
             io:format("[~p] USER: ~p successfully logged in!~n", [?SERVER, Email]),
