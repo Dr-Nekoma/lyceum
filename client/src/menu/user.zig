@@ -1,7 +1,8 @@
 const config = @import("../config.zig");
 const menu = @import("main.zig");
-const messages = @import("../server_messages.zig");
+const messages = @import("../server/messages.zig");
 const rl = @import("raylib");
+const server = @import("../server/main.zig");
 const std = @import("std");
 const text = @import("../components/text.zig");
 const Button = @import("../components/button.zig");
@@ -32,7 +33,7 @@ pub fn login(gameState: *GameState) !void {
         .content = &gameState.menu.credentials.username,
         .position = &gameState.menu.credentials.usernamePosition,
     };
-    usernameText.at(usernameBoxPosition);
+    usernameText.at(usernameBoxPosition, text.menuTextBoxSize);
 
     const passwordLabel = "Password";
     const passwordLabelSize: f32 = @floatFromInt(rl.measureText(passwordLabel, config.textFontSize));
@@ -40,7 +41,7 @@ pub fn login(gameState: *GameState) !void {
     const passwordLabelPositionX =
         (gameState.width / 2) - (passwordLabelSize / 2);
     const passwordLabelPositionY =
-        usernameBoxPosition.y + text.textBoxSize.y + 2 * config.menuButtonsPadding;
+        usernameBoxPosition.y + text.menuTextBoxSize.y + 2 * config.menuButtonsPadding;
 
     const passwordBoxPosition: rl.Vector2 = .{
         .x = gameState.width / 2,
@@ -57,11 +58,11 @@ pub fn login(gameState: *GameState) !void {
         .content = &gameState.menu.credentials.password,
         .position = &gameState.menu.credentials.passwordPosition,
     };
-    passwordText.at(passwordBoxPosition);
+    passwordText.at(passwordBoxPosition, text.menuTextBoxSize);
 
     const buttonPosition: rl.Vector2 = .{
         .x = (gameState.width / 2) - (buttonSize.x / 2),
-        .y = passwordBoxPosition.y + text.textBoxSize.y + 5 * config.menuButtonsPadding,
+        .y = passwordBoxPosition.y + text.menuTextBoxSize.y + 5 * config.menuButtonsPadding,
     };
     const loginButton = Button.Clickable{
         .disabled = !(passwordText.position.* > 0 and usernameText.position.* > 0),
@@ -74,15 +75,6 @@ pub fn login(gameState: *GameState) !void {
     )) {
         // TODO: Add loading animation to wait for response
         // TODO: Add a timeout for login
-        try gameState.send_with_self(.{
-            .login = .{
-                .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
-                .password = gameState.menu.credentials.password[0..gameState.menu.credentials.passwordPosition],
-            },
-        });
-        const node = gameState.connection.node;
-        gameState.connection.handler, gameState.menu.credentials.email =
-            try messages.receive_login_response(gameState.allocator, node);
-        gameState.scene = .join;
+        try server.user.login(gameState);
     }
 }

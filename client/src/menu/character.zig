@@ -1,9 +1,10 @@
 const assets = @import("../assets.zig");
 const attribute = @import("../components/attribute.zig");
 const config = @import("../config.zig");
-const messages = @import("../server_messages.zig");
-const protocol = @import("../game/protocol.zig");
+const mainMenu = @import("main.zig");
+const messages = @import("../server/messages.zig");
 const rl = @import("raylib");
+const server = @import("../server/main.zig");
 const std = @import("std");
 const text = @import("../components/text.zig");
 const Button = @import("../components/button.zig");
@@ -15,17 +16,23 @@ pub fn goToSpawn(gameState: *GameState) !void {
     // Source: https://youtu.be/gFf5eGCjUUg?si=cmJcKlSzoV4ES0p8
 
     const character = &gameState.world.character;
-    character.animation.frames = try assets.animations("walker.m3d");
-    character.model = try assets.model("walker.m3d");
+    character.animation.frames = assets.animations("walker.m3d") catch {
+        gameState.errorElem.update(.loading_assets);
+        return;
+    };
+    character.model = assets.model("walker.m3d") catch {
+        gameState.errorElem.update(.loading_assets);
+        return;
+    };
 
+    try server.character.joinMap(gameState);
     rl.disableCursor();
-    try protocol.pingJoinMap(gameState);
-    gameState.scene = .spawn;
 }
 
 // TODO: add limit for total number of points when creating a character
 // TODO: add create button available to click when character is valid
 fn emptyCharacter(gameState: *GameState) !void {
+    mainMenu.userLogoutButton(gameState);
     var currentTextPosition: rl.Vector2 = .{
         .x = 50,
         .y = 150,
@@ -36,7 +43,14 @@ fn emptyCharacter(gameState: *GameState) !void {
     };
     const fieldPadding = 25;
     inline for (std.meta.fields(messages.Character_Info)) |field| {
+        // TODO: Implement presets instead of allowing the user to change
+        // the attributes
         if (comptime isDifferent(field.name, &.{
+            "level",
+            "health",
+            "health_max",
+            "mana",
+            "mana_max",
             "name",
             "map_name",
             "x_position",
@@ -80,7 +94,7 @@ fn emptyCharacter(gameState: *GameState) !void {
                 .content = gameState.menu.character.create.name,
                 .position = &gameState.menu.character.create.name_position,
             };
-            nameText.at(nameBoxPosition);
+            nameText.at(nameBoxPosition, text.menuTextBoxSize);
             gameState.world.character.stats.name = gameState.menu.character.create.name;
         } else {
             // std.debug.print("Not editable: .{s}\n", .{field.name});
@@ -98,6 +112,8 @@ fn isDifferent(string: [:0]const u8, forbiddens: []const [:0]const u8) bool {
 }
 
 pub fn selection(gameState: *GameState) !void {
+    mainMenu.userLogoutButton(gameState);
+
     const buttonSize = Button.Sizes.large(gameState);
     const characterButtonY = (gameState.height / 10) - (buttonSize.y / 2);
     var buttonPosition: rl.Vector2 = .{
@@ -154,42 +170,5 @@ pub fn selection(gameState: *GameState) !void {
     } else {
         // std.debug.print("There are no characters for this user bruh xD", .{});
         try emptyCharacter(gameState);
-    }
-}
-
-pub fn join(gameState: *GameState) !void {
-    try gameState.send(messages.Payload{
-        .list_characters = .{
-            .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
-            .email = gameState.menu.credentials.email,
-        },
-    });
-
-    const node = gameState.connection.node;
-    const maybe_characters = try messages.receive_characters_list(gameState.allocator, node);
-    switch (maybe_characters) {
-        .ok => |erlang_characters| {
-            // todo: discover how to make this work
-            // const teapotembed = @embedfile("../assets/teapot.png");
-            // const teapotloaded = rl.loadimagefrommemory(".png", teapotembed, teapotembed.len);
-
-            const teapot = try assets.texture("teapot.png");
-
-            var characters = std.ArrayList(GameState.World.Character).init(gameState.allocator);
-
-            for (erlang_characters) |stats| {
-                try characters.append(.{
-                    .stats = stats,
-                    .preview = teapot,
-                });
-            }
-
-            gameState.menu.character.select.list = characters.items;
-            gameState.scene = .character_selection;
-        },
-        .@"error" => |error_msg| {
-            std.debug.print("error in server: {s}", .{error_msg});
-            gameState.scene = .nothing;
-        },
     }
 }

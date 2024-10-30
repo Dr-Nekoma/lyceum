@@ -1,6 +1,7 @@
 const assets = @import("../assets.zig");
 const config = @import("../config.zig");
 const rl = @import("raylib");
+const server = @import("../server/main.zig");
 const std = @import("std");
 const Button = @import("../components/button.zig");
 const Clickable = Button.Clickable{};
@@ -15,6 +16,7 @@ pub const Menu = struct {
     };
     pub const Credentials = struct {
         pub const bufferSize = 50;
+        pub const logout_button: Button.Clickable = Button.Clickable{};
         username: [bufferSize:0]u8 = .{0} ** bufferSize,
         usernamePosition: usize = 0,
         password: [bufferSize:0]u8 = .{0} ** bufferSize,
@@ -69,7 +71,7 @@ fn userRegistryButton(gameState: *GameState) void {
     )) gameState.scene = .user_registry;
 }
 
-fn userLoginButton(gameState: *GameState) void {
+fn userLoginButton(gameState: *GameState) !void {
     const buttonSize = Button.Sizes.extraLarge(gameState);
     const createUserButtonX = (gameState.width / 2) - (buttonSize.x / 2);
     const createUserButtonY = (gameState.height / 2) - (buttonSize.y / 2);
@@ -77,14 +79,39 @@ fn userLoginButton(gameState: *GameState) void {
         .x = createUserButtonX,
         .y = createUserButtonY + buttonSize.y + config.menuButtonsPadding,
     };
+
+    const label, const next_scene: GameState.Scene = if (gameState.connection.handler == null) .{ "Login", .user_login } else .{ "Select Character", .character_selection };
     const loginButton = &gameState.menu.credentials.login_button;
     loginButton.disabled = !gameState.connection.is_connected;
     if (loginButton.at(
-        "Login",
+        label,
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
-    )) gameState.scene = .user_login;
+    )) {
+        if (next_scene == .character_selection) try server.user.getCharacters(gameState);
+        gameState.scene = next_scene;
+    }
+}
+
+pub fn userLogoutButton(gameState: *GameState) void {
+    _ = gameState.connection.handler orelse return;
+
+    const buttonSize = Button.Sizes.tiny(gameState);
+    const buttonPosition: rl.Vector2 = .{
+        .x = gameState.width - buttonSize.x - 3 * config.menuButtonsPadding,
+        .y = gameState.height - buttonSize.y - 3 * config.menuButtonsPadding,
+    };
+
+    const logoutButton = Menu.Credentials.logout_button;
+    if (logoutButton.at(
+        "Logout",
+        buttonPosition,
+        buttonSize,
+        config.ColorPalette.primary,
+    )) {
+        server.user.logout(gameState);
+    }
 }
 
 fn userConnectButton(gameState: *GameState) void {
@@ -95,18 +122,27 @@ fn userConnectButton(gameState: *GameState) void {
         .x = createUserButtonX,
         .y = createUserButtonY + 2 * buttonSize.y + 2 * config.menuButtonsPadding,
     };
+    const label, const next_scene: GameState.Scene = if (gameState.connection.is_connected) .{ "Disconnect", .nothing } else .{ "Connect", .connect };
     if (Clickable.at(
-        "Connect",
+        label,
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
-    )) gameState.scene = .connect;
+    )) {
+        if (next_scene == .nothing) {
+            server.user.logout(gameState);
+            std.posix.close(gameState.connection.node.fd);
+            gameState.connection.is_connected = false;
+        }
+        gameState.scene = next_scene;
+    }
 }
 
-pub fn spawn(gameState: *GameState) void {
+pub fn spawn(gameState: *GameState) !void {
     userRegistryButton(gameState);
-    userLoginButton(gameState);
+    try userLoginButton(gameState);
     userConnectButton(gameState);
+    userLogoutButton(gameState);
 }
 
 pub fn loadAssets() !Menu.Assets {

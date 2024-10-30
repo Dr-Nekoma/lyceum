@@ -14,9 +14,9 @@
     "url": "https://github.com/raysan5/raygui/archive/4b3d94f5df6a5a2aa86286350f7e20c0ca35f516.tar.gz",
     "hash": "sha256-AjU+fyonXnGTG8ZBMb10ScB3G6iI97eiL9N3anm+r1Q="
   },
-  "1220621432ddbc3b52ed431d858fe4be2fa6c2b7a37087573856c0389705a275fb5a": {
+  "122035b762af21bf41633f49f46b4514f7ff13a6e5a45e4196d9d57c7632dbb54cc7": {
     "name": "zerl",
-    "url": "https://github.com/dont-rely-on-nulls/zerl/archive/327d1a8a473546c7340d34a3ff262fce75b93bbd.tar.gz",
-    "hash": "sha256-kjXrPku6DZ7+WR9RwQwA+xGd4/t6b6VWwCyr/JYdVxs="
+    "url": "https://github.com/dont-rely-on-nulls/zerl/archive/dc17600227aa9e50208ab9515e08de34fe7f0900.tar.gz",
+    "hash": "sha256-YTlfNnF0e7t6ZADH5s702YCQNmt3dA/wb9ZxIHpLaqU="
   }
 }

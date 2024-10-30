@@ -37,3 +37,6 @@ result
 
 # Mac
 src/.DS_Store
+
+# Extra
+*env*

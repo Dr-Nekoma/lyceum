@@ -22,6 +22,11 @@ CREATE TABLE character.stats(
        endurance SMALLINT NOT NULL CHECK (endurance > 0 AND endurance <= 150),
        intelligence SMALLINT NOT NULL CHECK (intelligence > 0 AND intelligence <= 150),
        faith SMALLINT NOT NULL CHECK (faith > 0 AND faith <= 150),
+       level SMALLINT NOT NULL CHECK (level > 0 AND level <= 1000),
+       health_max SMALLINT NOT NULL CHECK (health_max > 0 and health_max <= 1000) DEFAULT 100,
+       health SMALLINT NOT NULL CHECK (health > 0 AND health <= health_max),
+       mana_max SMALLINT NOT NULL CHECK (mana_max > 0 and mana_max <= 1000) DEFAULT 100,
+       mana SMALLINT NOT NULL CHECK (mana > 0 AND mana <= mana_max),       
        FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
        PRIMARY KEY(name, username, e_mail)
 );
@@ -64,8 +69,8 @@ BEGIN
     VALUES (NEW.name, NEW.e_mail, NEW.username)
     ON CONFLICT DO NOTHING;
 
-    INSERT INTO character.stats(name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith)
-    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.constitution, NEW.wisdom, NEW.strength, NEW.endurance, NEW.intelligence, NEW.faith)
+    INSERT INTO character.stats(name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith, level, health_max, health, mana, mana_max)
+    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.constitution, NEW.wisdom, NEW.strength, NEW.endurance, NEW.intelligence, NEW.faith, NEW.level, NEW.health_max, NEW.health, NEW.mana, NEW.mana_max)
     ON CONFLICT (name, e_mail, username) DO UPDATE SET
        name = NEW.name,
        e_mail = NEW.e_mail,
@@ -76,19 +81,24 @@ BEGIN
        endurance = NEW.endurance,
        intelligence = NEW.intelligence,
        faith = NEW.faith,
-       face_direction = NEW.face_direction;
+       level = NEW.level,
+       health_max = NEW.health_max,
+       health = NEW.health,
+       mana_max = NEW.mana_max,
+       mana = NEW.mana;
 
-    INSERT INTO character.position(name, e_mail, username, x_position, y_position, x_velocity, y_velocity, map_name, state_type)
-    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.x_position, NEW.y_position, NEW.map_name, NEW.state_type)
+    INSERT INTO character.position(name, e_mail, username, x_position, y_position, x_velocity, y_velocity, map_name, face_direction, state_type)
+    VALUES (NEW.name, NEW.e_mail, NEW.username, NEW.x_position, NEW.y_position, NEW.x_velocity, NEW.y_velocity, NEW.map_name, NEW.face_direction, NEW.state_type)
     ON CONFLICT (name, username, e_mail) DO UPDATE SET
            name = NEW.name,
            e_mail = NEW.e_mail,
            username = NEW.username,
            x_position = NEW.x_position,
            y_position = NEW.y_position,
-           x_position = NEW.x_position,
-           y_position = NEW.y_position,	   
+           x_velocity = NEW.x_velocity,
+           y_velocity = NEW.y_velocity,	   
            state_type = NEW.state_type,
+	   face_direction = NEW.face_direction,
            map_name = NEW.map_name;
 
     RETURN NEW;
@@ -114,4 +124,8 @@ CREATE TABLE character.inventory(
 
 CREATE OR REPLACE TRIGGER trigger_character_upsert
 INSTEAD OF INSERT ON character.view
+FOR EACH ROW EXECUTE FUNCTION character.view_upsert();
+
+CREATE OR REPLACE TRIGGER trigger_character_upsert
+INSTEAD OF UPDATE ON character.view
 FOR EACH ROW EXECUTE FUNCTION character.view_upsert();

@@ -1,4 +1,5 @@
 set export := true
+set dotenv-load := true
 
 # --------------
 # Internal Use
@@ -11,6 +12,9 @@ database := justfile_directory() + "server/database"
 server := justfile_directory() + "/server"
 client := justfile_directory() + "/client"
 server_port := "8080"
+
+# Deploy
+deploy_host := env_var_or_default("DEPLOY_HOST", "NONE")
 
 # Utils
 
@@ -124,3 +128,7 @@ release-nix:
 # Builds the deployment docker image with Nix
 build-docker:
     nix build .#dockerImage
+
+deploy:
+    @echo "Attemping to deploy to: {{deploy_host}}"
+    ./deploy.sh --deploy-host {{deploy_host}}
