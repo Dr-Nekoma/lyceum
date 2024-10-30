@@ -26,7 +26,17 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = nixpkgs.legacyPackages."${system}";
+        pkgs = import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+          #overlays = [
+          #  (final: prev: {
+          #    rebar3 = final.rebar3.overrideAttrs {
+          #      erlang = pkgs.erlang_27;
+          #    };
+          #  })
+          #];
+        };
         getErlangLibs =
           erlangPkg:
           let
@@ -231,10 +241,7 @@
                     packages =
                       with pkgs;
                       [
-                        erlang-ls
-                        erlfmt
                         just
-                        rebar3
                         raylib
                         sqls
                       ]
@@ -256,8 +263,10 @@
                     scripts = {
                       build.exec = "just build";
                       server.exec = "just server";
+                      client.exec = "just client";
                       db-up.exec = "just db-up";
                       db-down.exec = "just db-down";
+                      db-reset.exec = "just db-reset";
                     };
 
                     enterShell = ''
