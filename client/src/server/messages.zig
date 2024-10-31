@@ -103,11 +103,48 @@ pub const Characters_Response = Tuple_Response([]const Character_Info);
 
 pub const Character_Join = struct {
     username: []const u8,
-    email: []const u8,
     name: []const u8,
+    email: []const u8,
+    map_name: []const u8,
 };
 
-pub const Character_Join_Response = Tuple_Response(Character_Info);
+fn Mapable(comptime T: type, default: T) type {
+    return struct {
+        name: T = default,
+        x_position: f32 = 0,
+        y_position: f32 = 0,
+    };
+}
+
+pub const Tile_Kind = enum {
+    empty,
+    water,
+    grass,
+    sand,
+    dirt,
+};
+
+pub const Tile = Mapable(Tile_Kind, .empty);
+
+pub const Object_Kind = enum {
+    empty,
+    bush,
+    tree,
+    chest,
+};
+
+pub const Object = Mapable(Object_Kind, .empty);
+
+pub const Map = struct {
+    tiles: []const Tile = &.{},
+    objects: []const Object = &.{},
+};
+
+pub const Character_Join_Info = struct {
+    character: Character_Info,
+    map: Map,
+};
+pub const Character_Join_Response = Tuple_Response(Character_Join_Info);
 
 pub const Character_Update = struct {
     level: u8,

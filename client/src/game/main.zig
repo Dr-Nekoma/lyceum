@@ -1,5 +1,7 @@
 const animate = @import("animation.zig");
 const camera = @import("camera.zig");
+const config = @import("../config.zig");
+const messages = @import("../server/messages.zig");
 const physics = @import("physics.zig");
 const rl = @import("raylib");
 const server = @import("../server/main.zig");
@@ -38,6 +40,17 @@ fn controlInput(entity: *GameState.World.Character) u16 {
     return tempAngle;
 }
 
+fn drawWorld(world: *const GameState.World.Map) void {
+    if (world.tiles.get(.grass)) |tile| {
+        const position: rl.Vector3 = .{
+            .x = 590,
+            .y = 9,
+            .z = -525,
+        };
+        rl.drawModelEx(tile.?, position, config.assets.grass.axis, config.assets.grass.angle, config.assets.grass.scale, rl.Color.white);
+    }
+}
+
 pub fn spawn(gameState: *GameState) !void {
     rl.beginMode3D(gameState.world.camera);
     defer rl.endMode3D();
@@ -50,10 +63,12 @@ pub fn spawn(gameState: *GameState) !void {
 
     drawPlayers(gameState);
 
-    rl.drawGrid(2000, 10.0);
+    // rl.drawGrid(2000, 10.0);
 
     if (rl.isKeyDown(.key_backslash)) {
         try server.character.exitMap(gameState);
         rl.enableCursor();
     }
+
+    drawWorld(&gameState.world.map);
 }

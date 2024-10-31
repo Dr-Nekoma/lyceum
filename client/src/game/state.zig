@@ -24,6 +24,8 @@ pub const Scene = enum {
 };
 
 pub const Character_Table = std.StringHashMap(World.Character);
+pub const Tile_Table = std.EnumMap(messages.Tile_Kind, ?rl.Model);
+pub const Object_Table = std.EnumMap(messages.Object_Kind, ?rl.Model);
 
 pub const World = struct {
     pub const Chat = struct {
@@ -32,6 +34,11 @@ pub const World = struct {
         messages: std.ArrayList(chat.Message) = std.ArrayList(chat.Message).init(std.heap.c_allocator),
         position: usize = 0,
         mode: chat.Mode = .idle,
+    };
+    pub const Map = struct {
+        instance: messages.Map = .{},
+        tiles: Tile_Table,
+        objects: Object_Table,
     };
     pub const Character = struct {
         pub const Animation = struct {
@@ -74,6 +81,7 @@ pub const World = struct {
     other_players: Character_Table,
     camera: rl.Camera = undefined,
     cameraDistance: f32 = config.defaultCameraDistance,
+    map: Map,
 };
 
 pub const Connection = struct {
@@ -141,6 +149,10 @@ pub fn init(
                         .texture = map.init_map_texture(),
                     },
                 },
+            },
+            .map = .{
+                .tiles = try assets.tiles(),
+                .objects = try assets.objects(),
             },
         },
         .menu = .{

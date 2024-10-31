@@ -18,6 +18,23 @@ pub const character = struct {
         };
     }
 
+    fn updateCharacterInfo(player: *GameState.World.Character, stats: messages.Character_Info) void {
+        player.stats.x_position = stats.x_position;
+        player.stats.y_position = stats.y_position;
+        player.stats.x_velocity = 0;
+        player.stats.y_velocity = 0;
+        player.stats.state_type = .idle;
+        player.stats.face_direction = stats.face_direction;
+        player.stats.constitution = stats.constitution;
+        player.stats.wisdom = stats.wisdom;
+        player.stats.strength = stats.strength;
+        player.stats.endurance = stats.endurance;
+        player.stats.intelligence = stats.intelligence;
+        player.stats.faith = stats.faith;
+        player.stats.map_name = stats.map_name;
+        updatePhysicsStats(player, stats);
+    }
+
     pub fn update(gameState: *GameState) !void {
         // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
         // if we are not overwhelming the database
@@ -98,6 +115,7 @@ pub const character = struct {
                 .name = gameState.world.character.stats.name,
                 .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
                 .email = gameState.menu.credentials.email,
+                .map_name = gameState.world.character.stats.map_name,
             },
         }) catch {
             gameState.errorElem.update(.joining_map_send);
@@ -110,20 +128,8 @@ pub const character = struct {
         };
         switch (server_response) {
             .ok => |info| {
-                gameState.world.character.stats.x_position = info.x_position;
-                gameState.world.character.stats.y_position = info.y_position;
-                gameState.world.character.stats.x_velocity = 0;
-                gameState.world.character.stats.y_velocity = 0;
-                gameState.world.character.stats.state_type = .idle;
-                gameState.world.character.stats.face_direction = info.face_direction;
-                gameState.world.character.stats.constitution = info.constitution;
-                gameState.world.character.stats.wisdom = info.wisdom;
-                gameState.world.character.stats.strength = info.strength;
-                gameState.world.character.stats.endurance = info.endurance;
-                gameState.world.character.stats.intelligence = info.intelligence;
-                gameState.world.character.stats.faith = info.faith;
-                gameState.world.character.stats.map_name = info.map_name;
-                updatePhysicsStats(&gameState.world.character, info);
+                updateCharacterInfo(&gameState.world.character, info.character);
+                gameState.world.map.instance = info.map;
                 gameState.scene = .spawn;
             },
             .@"error" => |msg| {

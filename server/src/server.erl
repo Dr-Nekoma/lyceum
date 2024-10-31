@@ -110,9 +110,8 @@ list_characters(State, #{email := _Email, username := Username} = Request) ->
     io:format("[~p] Characters: ~p~n", [?SERVER, Reply]),
     State#state.pid ! Reply.
 
-joining_map(#{name := Name,
-	      map_name := MapName} = State,
-	    Request) ->
+joining_map(State, #{name := Name,
+		     map_name := MapName} = Request) ->
     Pid = State#state.pid,
     Connection = State#state.connection,
     case character:activate(Request, erlang:pid_to_list(Pid), Connection) of

@@ -12,6 +12,29 @@ pub const map = struct {
     pub const max_height = 1000;
 };
 
+pub const tileSize = 100;
+pub const objectSize: rl.Vector3 = .{
+    .x = 100,
+    .y = tileSize,
+    .z = 100,
+};
+
+pub const assets = struct {
+    pub const grass = struct {
+        pub const scale: rl.Vector3 = .{
+            .x = 0.25,
+            .y = 0.25,
+            .z = 0.25,
+        };
+        pub const angle = -90;
+        pub const axis: rl.Vector3 = .{
+            .x = 1,
+            .y = 0,
+            .z = 0,
+        };
+    };
+};
+
 pub const defaultCameraDistance = 72;
 pub const buttonFontSize = 20;
 pub const textFontSize = 20;

@@ -1,5 +1,7 @@
+const messages = @import("server/messages.zig");
 const rl = @import("raylib");
 const std = @import("std");
+const GameState = @import("game/state.zig");
 
 const base_filepath = "./assets/";
 
@@ -59,4 +61,42 @@ pub fn animations(animationFilePath: [:0]const u8) ![]rl.ModelAnimation {
         return error.could_not_load_animation;
     }
     return try rl.loadModelAnimations(fullFilePath);
+}
+
+fn loadTile(kind: messages.Tile_Kind) !rl.Model {
+    return switch (kind) {
+        .water, .grass, .sand, .dirt => try model("tiles/grass/grass.obj"),
+        .empty => unreachable,
+    };
+}
+
+pub fn tiles() !GameState.Tile_Table {
+    var initTable = GameState.Tile_Table.initFull(null);
+    inline for (@typeInfo(messages.Tile_Kind).Enum.fields) |field| {
+        if (!std.mem.eql(u8, field.name, "empty")) {
+            const key: messages.Tile_Kind = @enumFromInt(field.value);
+            const asset = try loadTile(key);
+            initTable.put(key, asset);
+        }
+    }
+    return initTable;
+}
+
+fn loadObject(kind: messages.Object_Kind) !rl.Model {
+    return switch (kind) {
+        .bush, .tree, .chest => try model("knight.glb"),
+        .empty => unreachable,
+    };
+}
+
+pub fn objects() !GameState.Object_Table {
+    var initTable = GameState.Object_Table.initFull(null);
+    inline for (@typeInfo(messages.Object_Kind).Enum.fields) |field| {
+        if (!std.mem.eql(u8, field.name, "empty")) {
+            const key: messages.Object_Kind = @enumFromInt(field.value);
+            const asset = try loadObject(key);
+            initTable.put(key, asset);
+        }
+    }
+    return initTable;
 }
