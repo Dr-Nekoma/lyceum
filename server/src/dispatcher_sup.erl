@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
-%% @doc Server top level supervisor.
+%% @doc Dispatcher supervisor.
 %% @end
 %%%-------------------------------------------------------------------
 
--module(server_sup).
+-module(dispatcher_sup).
 
 -behaviour(supervisor).
 
@@ -34,24 +34,16 @@ init([]) ->
           intensity => 1,
           period => 5},
 
-    DispatcherSup =
-        #{id => dispatcher_sup,
-          start => {dispatcher_sup, start_link, []},
+    DispatcherWorker =
+        #{id => dispatcher,
+          start => {dispatcher, start_link, []},
           restart => permanent,
-          shutdown => 5000,
-          type => supervisor,
-          modules => [dispatcher_sup]},
+          shutdown => brutal_kill,
+          type => worker,
+          modules => [dispatcher]},
 
-    PlayerSup =
-        #{id => player_sup,
-          start => {player_sup, start_link, []},
-          restart => permanent,
-          shutdown => 5000,
-          type => supervisor,
-          modules => [player_sup]},
-
-    io:format("[~p] Starting Top Level Supervisor...~n", [?SERVER]),
-    {ok, {SupFlags, [DispatcherSup, PlayerSup]}}.
+    io:format("[~p] Starting Supervisor...~n", [?SERVER]),
+    {ok, {SupFlags, [DispatcherWorker]}}.
 
 %%%===================================================================
 %%% Internal functions
