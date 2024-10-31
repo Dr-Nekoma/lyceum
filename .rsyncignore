@@ -5,9 +5,10 @@
 .github
 .vs
 .vscode
+.*.~undo-tree~
 client
-result
 _build
+result
 LICENSE
 README.org
 deploy.sh
