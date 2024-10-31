@@ -37,7 +37,7 @@ init(Parent) ->
     Debug = sys:debug_options([]),
     proc_lib:init_ack(Parent, {ok, Pid}),
     % Setup a DB connection and bootstrap process state
-    {ok, Connection} = database:database_connect(),
+    {ok, Connection} = database:connect(),
     % This is a temporary solution using the built-in k/v store
     Table = ets:new(?MODULE, [named_table, private, set]),
     State =
@@ -73,7 +73,7 @@ login(State, From, #{username := Username, password := _Password} = Request) ->
             io:format("[~p] USER: ~p successfully logged in!~n", [?SERVER, Email]),
             ets:insert(?MODULE, {Email, From}),
             io:format("[~p] <Email=~p, PID=~p> inserted...~n", [?SERVER, Email, From]),
-            {ok, Connection} = database:database_connect(),
+            {ok, Connection} = database:connect(),
             Pid = proc_lib:spawn(?MODULE,
                                  handle_user,
                                  [#state{pid = From, connection = Connection}]),
@@ -110,16 +110,23 @@ list_characters(State, #{email := _Email, username := Username} = Request) ->
     io:format("[~p] Characters: ~p~n", [?SERVER, Reply]),
     State#state.pid ! Reply.
 
-joining_map(State,
-            #{username := _Username,
-              email := _Email,
-              name := Name} =
-                Request) ->
+joining_map(#{name := Name,
+	      map_name := MapName} = State,
+	    Request) ->
     Pid = State#state.pid,
-    case character:activate(Request, erlang:pid_to_list(Pid), State#state.connection) of
+    Connection = State#state.connection,
+    case character:activate(Request, erlang:pid_to_list(Pid), Connection) of
         ok ->
             io:format("[~p] Retriving ~p's updated info...", [?SERVER, Name]),
-            Result = character:player_character(Request, State#state.connection),
+	    Result = util:psql_bind(character:player_character(Request, State#state.connection),
+				    [fun (Character) ->
+					     io:format("[~p] Retriving ~p's map...", [?SERVER, Name]),
+					     util:psql_bind(map:get_map(MapName, Connection),
+							    [fun (Map) -> 
+								     {ok, #{character => Character,
+									    map => Map}}
+							     end])						 
+				    end]),
             io:format("Got: ~p~n", [Result]),
             Pid ! Result;
         {error, Message} ->

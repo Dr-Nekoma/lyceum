@@ -1,6 +1,6 @@
 -module(util).
 
--export([columns_and_rows/2, transform_character_map/1, process_postgres_result/3]).
+-export([columns_and_rows/2, transform_character_map/1, process_postgres_result/3, psql_bind/2]).
 
 column_names(Columns) ->
     lists:map(
@@ -51,3 +51,9 @@ process_postgres_result({ok, _, _, _}, insert, _) ->
 process_postgres_result({error, Error}, Tag, _) ->
     io:format("Tag: ~p\nError: ~p\n", [Error, Tag]),
     {error, "Unexpected error (operation or PSQL) on Server side"}.
+
+psql_bind(MonadicValue, []) -> MonadicValue;
+psql_bind(ok, _) -> ok;
+psql_bind({ok, Result}, [Fun | Tail]) -> psql_bind(Fun(Result), Tail);
+psql_bind({error, _} = Error, _) -> Error;
+psql_bind(_, _) -> {error, "Wrong monadic value in the chain"}.

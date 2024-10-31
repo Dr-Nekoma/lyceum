@@ -1,0 +1,16 @@
+|---+---+------+---+---+---+---+---+------+------+------|
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|   |   | bush |   |   |   |   |   | bush | bush | bush |
+|---+---+------+---+---+---+---+---+------+------+------|
+
