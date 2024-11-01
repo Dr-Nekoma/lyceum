@@ -39,6 +39,8 @@ pub const World = struct {
         instance: messages.Map = .{},
         tiles: Tile_Table,
         objects: Object_Table,
+        height: u32 = 10,
+        width: u32 = 10,
     };
     pub const Character = struct {
         pub const Animation = struct {

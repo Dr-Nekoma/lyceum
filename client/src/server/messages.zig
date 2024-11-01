@@ -136,6 +136,8 @@ pub const Object_Kind = enum {
 pub const Object = Mapable(Object_Kind, .empty);
 
 pub const Map = struct {
+    width: u32 = 10,
+    height: u32 = 10,
     tiles: []const Tile = &.{},
     objects: []const Object = &.{},
 };

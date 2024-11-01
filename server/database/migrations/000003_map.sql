@@ -15,6 +15,8 @@ CREATE TYPE map.OBJECT_TYPE AS ENUM(
 
 CREATE TABLE map.instance(
        name VARCHAR(16) NOT NULL,
+       width INTEGER NOT NULL,
+       height INTEGER NOT NULL,
        PRIMARY KEY(name)
 );
 
