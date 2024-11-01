@@ -20,7 +20,7 @@ pub const objectSize: rl.Vector3 = .{
 };
 
 pub const assets = struct {
-    pub const grass = struct {
+    pub const tile = struct {
         pub const scale: rl.Vector3 = .{
             .x = 0.25,
             .y = 0.25,

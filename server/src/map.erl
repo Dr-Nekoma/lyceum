@@ -29,7 +29,6 @@ get_map(MapName, Connection) ->
 						    util:psql_bind(util:process_postgres_result(Objects, select, FunTilesObjects),
 								   [fun (ObjectsV) -> 
 									    Quantity = Width * Height,
-									    io:format("[DEBUG] Tiles: ~p, Objects: ~p, Quantity: ~p!\n", [length(TilesV), length(ObjectsV), Quantity]),
 									    if 
 										(length(TilesV) == Quantity) and (length(ObjectsV) == Quantity) ->
 										    {ok, #{tiles => TilesV,

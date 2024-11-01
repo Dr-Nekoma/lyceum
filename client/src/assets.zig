@@ -65,7 +65,11 @@ pub fn animations(animationFilePath: [:0]const u8) ![]rl.ModelAnimation {
 
 fn loadTile(kind: messages.Tile_Kind) !rl.Model {
     return switch (kind) {
-        .water, .grass, .sand, .dirt => try model("tiles/grass/grass.obj"),
+        .dirt => try model("tiles/dirt/dirt.obj"),
+        .grass,
+        => try model("tiles/grass/grass.obj"),
+        .sand => try model("tiles/sand/sand.obj"),
+        .water => try model("tiles/water/water.obj"),
         .empty => unreachable,
     };
 }

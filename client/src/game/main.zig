@@ -47,7 +47,7 @@ fn drawWorld(world: *const GameState.World.Map) void {
             .y = 9,
             .z = -525,
         };
-        rl.drawModelEx(tile.?, position, config.assets.grass.axis, config.assets.grass.angle, config.assets.grass.scale, rl.Color.white);
+        rl.drawModelEx(tile.?, position, config.assets.tile.axis, config.assets.tile.angle, config.assets.tile.scale, rl.Color.white);
     }
 }
 

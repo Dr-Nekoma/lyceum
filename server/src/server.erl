@@ -126,7 +126,6 @@ joining_map(State, #{name := Name,
 									    map => Map}}
 							     end])						 
 				    end]),
-            io:format("Got: ~p~n", [Result]),
             Pid ! Result;
         {error, Message} ->
             io:format("Unexpected Error: ~p\n", [Message]),
