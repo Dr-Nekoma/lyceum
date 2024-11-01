@@ -6,9 +6,11 @@
 .vs
 .vscode
 .*.~undo-tree~
+.env_*
 client
 _build
 result
+erl_crash.*
 LICENSE
 README.org
 deploy.sh

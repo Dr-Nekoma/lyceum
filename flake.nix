@@ -52,6 +52,7 @@
         # Erlang
         erlangLatest = pkgs.erlang_27;
         erlangLibs = getErlangLibs erlangLatest;
+        erl_app = "lyceum_server";
 
         # Zig shit (Incomplete)
         zigLatest = pkgs.zig;
@@ -96,7 +97,7 @@
               };
             in
             pkgs.beamPackages.rebar3Relx {
-              pname = "server_app";
+              pname = erl_app;
               version = "0.1.0";
               root = ./server;
               src = pkgs.lib.cleanSource ./server;
@@ -107,7 +108,7 @@
 
           # nix build .#dockerImage
           dockerImage = pkgs.dockerTools.buildLayeredImage {
-            name = "lyceum";
+            name = erl_app;
             tag = "latest";
             created = "now";
             # This will copy the compiled erlang release to the image
@@ -119,15 +120,26 @@
               pkgs.openssl
             ];
             config = {
+              Volumes = {
+                "/opt/${erl_app}/etc" = {};
+                "/opt/${erl_app}/data" = {};
+                "/opt/${erl_app}/log" = {};
+              };
+              WorkingDir = "/opt/${erl_app}";
               Cmd = [
-                "${server}/bin/server"
+                "${server}/bin/${erl_app}"
                 "foreground"
               ];
               Env = [
                 "ERL_DIST_PORT=8080"
+                "ERL_AFLAGS=\"-kernel shell_history enabled\""
+                "NODE_NAME=${erl_app}"
               ];
               ExposedPorts = {
-                "8080/tcp" = { };
+                "4369/tcp" = {};
+                "4369/ucp" = {};
+                "8080/tcp" = {};
+                "8080/udp" = {};
               };
             };
           };
