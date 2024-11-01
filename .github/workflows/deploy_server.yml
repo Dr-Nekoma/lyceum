@@ -45,6 +45,10 @@ jobs:
 
       - name: "[Server] Push release to the server"
         run: |
+          echo "${{ secrets.APP_SETTINGS }}" > $(pwd)/.env
+
+      - name: "[Server] Push release to the server"
+        run: |
           nix develop --impure -c just deploy
         env:
             DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -52,5 +56,6 @@ jobs:
 
       - name: "[Cleanup] (...)"
         run: |
+          rm -f $(pwd)/.env
           rm -f ~/.ssh/id_ed25519
           rm -f ~/.ssh/know_hosts

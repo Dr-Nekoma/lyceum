@@ -123,6 +123,9 @@
                 "${server}/bin/server"
                 "foreground"
               ];
+              Env = [
+                "ERL_DIST_PORT=8080"
+              ];
               ExposedPorts = {
                 "8080/tcp" = { };
               };

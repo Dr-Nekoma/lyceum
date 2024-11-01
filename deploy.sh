@@ -38,6 +38,14 @@ rsync \
     . \
     $DEPLOY_USER@$DEPLOY_HOST:~/$PROJECT_NAME
 
+# Build a docker image with the release
+nix build .#dockerImage
+
+# Also copy the built docker image
+nix copy \
+  --no-check-sigs \
+  --to ssh-ng://$DEPLOY_HOST ".#dockerImage"
+
 echo "[DEPLOY] Running entrypoint script..."
 PROJECT_NAME=$PROJECT_NAME \
-ssh $DEPLOY_USER@$DEPLOY_HOST "cd ~/$PROJECT_NAME && ./deploy_entrypoint.sh"
+    ssh $DEPLOY_USER@$DEPLOY_HOST "cd ~/$PROJECT_NAME && ./deploy_entrypoint.sh"
