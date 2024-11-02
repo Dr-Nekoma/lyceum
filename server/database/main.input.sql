@@ -20,8 +20,8 @@ VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 100, 110, 95, 120, 105, 1
 
 INSERT INTO character.position (name, e_mail, username, x_position, y_position, map_name, face_direction)
 VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 100, 100, 'TEST', 270),
-       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 100, 100, 'LOW_LAND', 270),
-       ('Legion', 'lambdu@example.com', 'lambdu', 100, 100, 'TEST_2', 270);
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 100, 100, 'TEST', 270),
+       ('Legion', 'lambdu@example.com', 'lambdu', 100, 100, 'TEST', 270);
 
 -- Insert into lyceum.equipment
 INSERT INTO equipment.instance (name, description, kind)

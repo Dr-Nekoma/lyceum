@@ -42,7 +42,6 @@ pub const character = struct {
             position.z < 0 or
             position.x > (fHeight + 1) * config.assets.tile.size or
             position.x < 0);
-        std.debug.print("canWalk: {}, outsideLimits: {}\n", .{ canWalk, outsideLimits });
 
         return canWalk and !outsideLimits;
     }

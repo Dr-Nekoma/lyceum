@@ -9,13 +9,19 @@ const rl = @import("raylib");
 const rm = rl.math;
 const std = @import("std");
 
-fn drawPlayersInfo(gameState: *GameState) !void {
+fn drawPlayers(gameState: *GameState) !void {
     var player_iterator = gameState.world.other_players.valueIterator();
     while (player_iterator.next()) |player| {
-        const fontSize = 15;
         var infoPosition = rl.getWorldToScreen(player.position, gameState.world.camera);
         infoPosition.y += 30;
+        const fontSize = 15;
         try info.at(player, info.mainSize, infoPosition, fontSize, gameState.allocator);
+
+        const map_image = gameState.world.character.inventory.hud.minimap.map.?;
+        const x, const y = map.coordinates.normalize(player, &map_image, &gameState.world.map);
+        const center: rl.Vector2 = map.getCenter(gameState.width, gameState.height).add(.{ .x = x, .y = y });
+        std.debug.print("Other Player", .{});
+        map.player(player, center);
     }
 }
 
@@ -45,5 +51,5 @@ pub fn at(gameState: *GameState) !void {
     };
     try chatC.at(character.stats.name, gameState);
 
-    try drawPlayersInfo(gameState);
+    try drawPlayers(gameState);
 }

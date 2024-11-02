@@ -85,13 +85,13 @@ pub fn spawn(gameState: *GameState) !void {
     rl.beginMode3D(gameState.world.camera);
     defer rl.endMode3D();
 
+    drawPlayers(gameState);
+
     const tempAngle = controlInput(&gameState.world.character);
     physics.character.draw(&gameState.world.character, &gameState.world.map, tempAngle);
     animate.character.update(&gameState.world.character);
     camera.update(gameState);
     try server.character.update(gameState);
-
-    drawPlayers(gameState);
 
     rl.drawGrid(2000, 10.0);
 
