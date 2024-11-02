@@ -4,13 +4,15 @@ const config = @import("../config.zig");
 const messages = @import("../server/messages.zig");
 const physics = @import("physics.zig");
 const rl = @import("raylib");
+const rm = rl.math;
 const server = @import("../server/main.zig");
+const std = @import("std");
 const GameState = @import("state.zig");
 
 fn drawPlayers(gameState: *GameState) void {
     var player_iterator = gameState.world.other_players.valueIterator();
     while (player_iterator.next()) |player| {
-        physics.character.draw(player, player.stats.face_direction);
+        physics.character.draw(player, &gameState.world.map, player.stats.face_direction);
         animate.character.update(player);
     }
 }
@@ -40,15 +42,44 @@ fn controlInput(entity: *GameState.World.Character) u16 {
     return tempAngle;
 }
 
-fn drawWorld(world: *const GameState.World.Map) void {
-    if (world.tiles.get(.grass)) |tile| {
-        const position: rl.Vector3 = .{
-            .x = 590,
-            .y = 9,
-            .z = -525,
-        };
-        rl.drawModelEx(tile.?, position, config.assets.tile.axis, config.assets.tile.angle, config.assets.tile.scale, rl.Color.white);
+fn drawWorld(player: *const GameState.World.Character, world: *const GameState.World.Map) !void {
+    const height: i32 = @intCast(world.instance.height);
+    const width: i32 = @intCast(world.instance.width);
+    const tiles = world.instance.tiles;
+
+    const x_tile: i32 = @intFromFloat(player.position.x / config.assets.tile.size);
+    const y_tile: i32 = @intFromFloat(player.position.z / config.assets.tile.size);
+    std.debug.print("[ERROR] Player X: {}, Player Y: {}\n", .{ player.position.x, player.position.z });
+    const widthBoundaries: struct { usize, usize } = .{
+        @intCast(std.math.clamp(x_tile - config.fov, 0, width)),
+        @intCast(std.math.clamp(x_tile + config.fov, 0, width)),
+    };
+    const heightBoundaries: struct { usize, usize } = .{
+        @intCast(std.math.clamp(y_tile - config.fov, 0, height)),
+        @intCast(std.math.clamp(y_tile + config.fov, 0, height)),
+    };
+    for (widthBoundaries.@"0"..(widthBoundaries.@"1") + 1) |i| {
+        for (heightBoundaries.@"0"..(heightBoundaries.@"1") + 1) |j| {
+            const clamped_i = std.math.clamp(i, widthBoundaries.@"0", widthBoundaries.@"1" - 1);
+            const clamped_j = std.math.clamp(j, heightBoundaries.@"0", heightBoundaries.@"1" - 1);
+            const tile = tiles[world.instance.width * clamped_i + clamped_j];
+            if (world.tiles.get(tile)) |tileData| {
+                const tileModel, _ = tileData;
+                const fi: f32 = @floatFromInt(i);
+                const fj: f32 = @floatFromInt(j);
+                const position: rl.Vector3 = .{
+                    .x = (fi * config.assets.tile.size) + config.assets.tile.size / 2,
+                    .y = config.assets.tile.level,
+                    .z = (fj * config.assets.tile.size) + config.assets.tile.size / 2,
+                };
+                rl.drawModelEx(tileModel.?, position, config.assets.tile.axis, config.assets.tile.angle, config.assets.tile.scale, rl.Color.white);
+            } else {
+                std.debug.print("[ERROR] Tile kind not present in asset pool: .{}\n", .{tile});
+                return error.tile_kind_not_found;
+            }
+        }
     }
+    // TODO: Implement same loop but for objects
 }
 
 pub fn spawn(gameState: *GameState) !void {
@@ -56,19 +87,19 @@ pub fn spawn(gameState: *GameState) !void {
     defer rl.endMode3D();
 
     const tempAngle = controlInput(&gameState.world.character);
-    physics.character.draw(&gameState.world.character, tempAngle);
+    physics.character.draw(&gameState.world.character, &gameState.world.map, tempAngle);
     animate.character.update(&gameState.world.character);
     camera.update(gameState);
     try server.character.update(gameState);
 
     drawPlayers(gameState);
 
-    // rl.drawGrid(2000, 10.0);
+    rl.drawGrid(2000, 10.0);
 
     if (rl.isKeyDown(.key_backslash)) {
         try server.character.exitMap(gameState);
         rl.enableCursor();
     }
 
-    drawWorld(&gameState.world.map);
+    try drawWorld(&gameState.world.character, &gameState.world.map);
 }

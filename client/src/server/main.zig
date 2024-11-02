@@ -130,6 +130,7 @@ pub const character = struct {
             .ok => |info| {
                 updateCharacterInfo(&gameState.world.character, info.character);
                 gameState.world.map.instance = info.map;
+                gameState.world.character.inventory.hud.minimap.map = try assets.createMapImage(&gameState.world.map);
                 gameState.scene = .spawn;
             },
             .@"error" => |msg| {

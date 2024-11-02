@@ -39,7 +39,7 @@ pub fn at(character: *const GameState.World.Character, width: f32, height: f32) 
     const character_y: f32 = rm.clamp(character.stats.x_position, 0, config.map.max_height);
     const outerRadius = config.map.border_thickness;
     const innerRadius = outerRadius - 10;
-    const map_image = character.inventory.hud.map.?;
+    const map_image = character.inventory.hud.minimap.map.?;
 
     const origin = .{ .x = 0, .y = 0 };
     const triangle_top = rotate_point(.{ .y = -8, .x = 0 }, origin, face_direction);
@@ -69,7 +69,7 @@ pub fn at(character: *const GameState.World.Character, width: f32, height: f32) 
         .width = @floatFromInt(@min(outerRadius * 2, map_image.width)),
         .height = @floatFromInt(@min(outerRadius * 2, map_image.height)),
     };
-    var map = rl.imageFromImage(character.inventory.hud.map.?, map_mask);
+    var map = rl.imageFromImage(map_image, map_mask);
     defer map.unload();
 
     var alpha_mask = rl.genImageColor(
@@ -88,7 +88,7 @@ pub fn at(character: *const GameState.World.Character, width: f32, height: f32) 
     map.alphaMask(alpha_mask);
 
     const pixels = try rl.loadImageColors(map);
-    const texture = character.inventory.hud.texture.?;
+    const texture = character.inventory.hud.minimap.texture.?;
     rl.updateTexture(texture, pixels.ptr);
 
     texture.draw(@intFromFloat(map_x), @intFromFloat(map_y), rl.Color.white);

@@ -12,15 +12,10 @@ pub const map = struct {
     pub const max_height = 1000;
 };
 
-pub const tileSize = 100;
-pub const objectSize: rl.Vector3 = .{
-    .x = 100,
-    .y = tileSize,
-    .z = 100,
-};
-
 pub const assets = struct {
     pub const tile = struct {
+        pub const level = 9;
+        pub const size = 75;
         pub const scale: rl.Vector3 = .{
             .x = 0.25,
             .y = 0.25,
@@ -35,6 +30,7 @@ pub const assets = struct {
     };
 };
 
+pub const fov = 2;
 pub const defaultCameraDistance = 72;
 pub const buttonFontSize = 20;
 pub const textFontSize = 20;

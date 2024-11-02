@@ -1,5 +1,7 @@
+const config = @import("../config.zig");
 const rl = @import("raylib");
 const rm = rl.math;
+const std = @import("std");
 const GameState = @import("../game/state.zig");
 
 pub const heightAxis: rl.Vector3 = .{
@@ -25,7 +27,7 @@ pub const character = struct {
     pub const floorLevel = 12;
     const ceilingLevel = 48;
 
-    pub fn draw(entity: *GameState.World.Character, tempAngle: u16) void {
+    pub fn draw(entity: *GameState.World.Character, map: *const GameState.World.Map, tempAngle: u16) void {
         const velocity = &entity.velocity;
         const state = &entity.stats.state_type;
         const deltaTime = rl.getFrameTime();
@@ -61,6 +63,17 @@ pub const character = struct {
         } else {
             if (entity.model) |model| {
                 rl.drawModelEx(model, tempPosition, heightAxis, @floatFromInt(tempAngle), modelScale, rl.Color.blue);
+            }
+            const fWidth: f32 = @floatFromInt(map.instance.width);
+            const fHeight: f32 = @floatFromInt(map.instance.height);
+            std.debug.print("[ERROR] Temp X: {}, Temp Y: {}, fWidth: {}, Size: {}\n", .{ tempPosition.x, tempPosition.z, fWidth, config.assets.tile.size });
+            if (tempPosition.z > (fWidth + 1) * config.assets.tile.size or
+                tempPosition.z < 0 or
+                tempPosition.x > (fHeight + 1) * config.assets.tile.size or
+                tempPosition.x < 0)
+            {
+                velocity.* = rm.vector3Zero();
+                return;
             }
             entity.position = tempPosition;
             entity.stats.x_position = tempPosition.x;

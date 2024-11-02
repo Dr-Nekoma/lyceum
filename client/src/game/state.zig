@@ -24,8 +24,8 @@ pub const Scene = enum {
 };
 
 pub const Character_Table = std.StringHashMap(World.Character);
-pub const Tile_Table = std.EnumMap(messages.Tile_Kind, ?rl.Model);
-pub const Object_Table = std.EnumMap(messages.Object_Kind, ?rl.Model);
+pub const Tile_Table = std.EnumMap(messages.Tile, struct { ?rl.Model, ?rl.Image });
+pub const Object_Table = std.EnumMap(messages.Object, ?rl.Model);
 
 pub const World = struct {
     pub const Chat = struct {
@@ -39,8 +39,6 @@ pub const World = struct {
         instance: messages.Map = .{},
         tiles: Tile_Table,
         objects: Object_Table,
-        height: u32 = 10,
-        width: u32 = 10,
     };
     pub const Character = struct {
         pub const Animation = struct {
@@ -73,8 +71,10 @@ pub const World = struct {
             hud: struct {
                 spells: []const [:0]const u8 = &.{},
                 consumables: []const [:0]const u8 = &.{},
-                map: ?rl.Image = null,
-                texture: ?rl.Texture = null,
+                minimap: struct {
+                    map: ?rl.Image = null,
+                    texture: ?rl.Texture = null,
+                } = .{},
                 chat: Chat = .{},
             } = .{},
         } = .{},
@@ -131,7 +131,7 @@ pub fn init(
     if (height < 0) return error.negative_height;
     const name = try allocator.allocSentinel(u8, config.nameSize, 0);
     @memset(name, 0);
-    var state: @This() = .{
+    return .{
         .width = width,
         .height = height,
         .allocator = allocator,
@@ -146,15 +146,15 @@ pub fn init(
                         .spells = &.{ "item1", "item2", "item3", "item4", "item5" },
                         // TODO: use actual consumables
                         .consumables = &.{ "item6", "item7" },
-                        // TODO: use an actual map
-                        .map = try assets.image("teapot.png"),
-                        .texture = map.init_map_texture(),
+                        .minimap = .{
+                            .texture = map.init_map_texture(),
+                        },
                     },
                 },
             },
             .map = .{
-                .tiles = try assets.tiles(),
-                .objects = try assets.objects(),
+                .tiles = try assets.tilesTable(),
+                .objects = try assets.objectsTable(),
             },
         },
         .menu = .{
@@ -167,6 +167,4 @@ pub fn init(
         },
         .errorElem = errorElem,
     };
-    map.add_borders(&state.world.character.inventory.hud.map.?);
-    return state;
 }

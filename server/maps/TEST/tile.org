@@ -1,0 +1,6 @@
+|grass|grass|grass|grass|grass|dirt|
+|grass|water|water|grass|grass|dirt|
+|grass|water|water|grass|grass|dirt|
+|grass|grass|grass|grass|grass|dirt|
+|sand|sand|grass|grass|grass|dirt|
+|sand|sand|grass|grass|grass|dirt|

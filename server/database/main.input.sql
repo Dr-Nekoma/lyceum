@@ -5,7 +5,7 @@ VALUES ('mmagueta', 'password123', 'mmagueta@example.com'),
 
 -- Insert into lyceum.map
 INSERT INTO map.instance (name, width, height)
-VALUES ('LOW_LAND', 150, 150), ('CASTLE_HALL', 150, 150);
+VALUES ('LOW_LAND', 150, 150), ('CASTLE_HALL', 150, 150), ('TEST', 6, 6);
 
 -- Insert into lyceum.character and related tables
 INSERT INTO character.instance (name, e_mail, username)
@@ -19,9 +19,9 @@ VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 100, 110, 95, 120, 105, 1
        ('Legion', 'lambdu@example.com', 'lambdu', 60, 110, 55, 150, 150, 50, 15, 85, 77);
 
 INSERT INTO character.position (name, e_mail, username, x_position, y_position, map_name, face_direction)
-VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 590, -525, 'LOW_LAND', 270),
-       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 590, -525, 'LOW_LAND', 270),
-       ('Legion', 'lambdu@example.com', 'lambdu', 590, -525, 'LOW_LAND', 270);
+VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 100, 100, 'TEST', 270),
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 100, 100, 'LOW_LAND', 270),
+       ('Legion', 'lambdu@example.com', 'lambdu', 100, 100, 'LOW_LAND', 270);
 
 -- Insert into lyceum.equipment
 INSERT INTO equipment.instance (name, description, kind)

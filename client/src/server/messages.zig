@@ -108,15 +108,7 @@ pub const Character_Join = struct {
     map_name: []const u8,
 };
 
-fn Mapable(comptime T: type, default: T) type {
-    return struct {
-        name: T = default,
-        x_position: f32 = 0,
-        y_position: f32 = 0,
-    };
-}
-
-pub const Tile_Kind = enum {
+pub const Tile = enum {
     empty,
     water,
     grass,
@@ -124,16 +116,12 @@ pub const Tile_Kind = enum {
     dirt,
 };
 
-pub const Tile = Mapable(Tile_Kind, .empty);
-
-pub const Object_Kind = enum {
+pub const Object = enum {
     empty,
     bush,
     tree,
     chest,
 };
-
-pub const Object = Mapable(Object_Kind, .empty);
 
 pub const Map = struct {
     width: u32 = 10,
