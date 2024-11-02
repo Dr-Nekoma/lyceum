@@ -27,6 +27,26 @@ pub const character = struct {
     pub const floorLevel = 12;
     const ceilingLevel = 48;
 
+    fn canMove(position: rl.Vector3, map: *const GameState.World.Map) bool {
+        const width = map.instance.width;
+        const height = map.instance.height;
+
+        const x_tile: i32 = @intFromFloat(position.x / config.assets.tile.size);
+        const y_tile: i32 = @intFromFloat(position.z / config.assets.tile.size);
+        const iWidth: i32 = @intCast(width);
+        const canWalk = map.instance.tiles[@intCast(iWidth * x_tile + y_tile)] != .water;
+
+        const fWidth: f32 = @floatFromInt(width);
+        const fHeight: f32 = @floatFromInt(height);
+        const outsideLimits = (position.z > (fWidth + 1) * config.assets.tile.size or
+            position.z < 0 or
+            position.x > (fHeight + 1) * config.assets.tile.size or
+            position.x < 0);
+        std.debug.print("canWalk: {}, outsideLimits: {}\n", .{ canWalk, outsideLimits });
+
+        return canWalk and !outsideLimits;
+    }
+
     pub fn draw(entity: *GameState.World.Character, map: *const GameState.World.Map, tempAngle: u16) void {
         const velocity = &entity.velocity;
         const state = &entity.stats.state_type;
@@ -64,13 +84,8 @@ pub const character = struct {
             if (entity.model) |model| {
                 rl.drawModelEx(model, tempPosition, heightAxis, @floatFromInt(tempAngle), modelScale, rl.Color.blue);
             }
-            const fWidth: f32 = @floatFromInt(map.instance.width);
-            const fHeight: f32 = @floatFromInt(map.instance.height);
-            if (tempPosition.z > (fWidth + 1) * config.assets.tile.size or
-                tempPosition.z < 0 or
-                tempPosition.x > (fHeight + 1) * config.assets.tile.size or
-                tempPosition.x < 0)
-            {
+
+            if (!canMove(tempPosition, map)) {
                 velocity.* = rm.vector3Zero();
                 return;
             }
