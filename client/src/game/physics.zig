@@ -66,7 +66,6 @@ pub const character = struct {
             }
             const fWidth: f32 = @floatFromInt(map.instance.width);
             const fHeight: f32 = @floatFromInt(map.instance.height);
-            std.debug.print("[ERROR] Temp X: {}, Temp Y: {}, fWidth: {}, Size: {}\n", .{ tempPosition.x, tempPosition.z, fWidth, config.assets.tile.size });
             if (tempPosition.z > (fWidth + 1) * config.assets.tile.size or
                 tempPosition.z < 0 or
                 tempPosition.x > (fHeight + 1) * config.assets.tile.size or

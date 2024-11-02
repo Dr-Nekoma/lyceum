@@ -49,7 +49,6 @@ fn drawWorld(player: *const GameState.World.Character, world: *const GameState.W
 
     const x_tile: i32 = @intFromFloat(player.position.x / config.assets.tile.size);
     const y_tile: i32 = @intFromFloat(player.position.z / config.assets.tile.size);
-    std.debug.print("[ERROR] Player X: {}, Player Y: {}\n", .{ player.position.x, player.position.z });
     const widthBoundaries: struct { usize, usize } = .{
         @intCast(std.math.clamp(x_tile - config.fov, 0, width)),
         @intCast(std.math.clamp(x_tile + config.fov, 0, width)),

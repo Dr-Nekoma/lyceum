@@ -67,7 +67,7 @@ pub fn animations(animationFilePath: [:0]const u8) ![]rl.ModelAnimation {
 
 fn resizeImage(imageFilePath: [:0]const u8) !rl.Image {
     var img = try image(imageFilePath);
-    rl.imageResize(&img, config.assets.tile.size, config.assets.tile.size);
+    rl.imageResize(&img, config.map.mini_map_size, config.map.mini_map_size);
     return img;
 }
 
@@ -115,31 +115,32 @@ pub fn objectsTable() !GameState.Object_Table {
 const tileRec: rl.Rectangle = .{
     .x = 0,
     .y = 0,
-    .width = config.assets.tile.size,
-    .height = config.assets.tile.size,
+    .width = config.map.mini_map_size,
+    .height = config.map.mini_map_size,
 };
 
 pub fn createMapImage(world: *const GameState.World.Map) !rl.Image {
     const width = world.instance.width;
     const height = world.instance.height;
     const tiles = world.instance.tiles;
-    const iWidth: i32 = @intCast(width);
-    const iHeight: i32 = @intCast(height);
-    var img = rl.genImageColor(iWidth, iHeight, rl.Color.white);
+    const miniMapSize: i32 = @intFromFloat(config.map.mini_map_size);
+    const iWidth: i32 = @intCast(width * miniMapSize);
+    const iHeight: i32 = @intCast(height * miniMapSize);
+    var img = rl.genImageColor(iWidth, iHeight, rl.Color.init(0, 0, 0, 255));
 
-    for (0..height) |i| {
-        for (0..width) |j| {
-            const tile = tiles[width * j + i];
+    for (0..width) |j| {
+        for (0..height) |i| {
+            const tile = tiles[height * j + i];
             if (tile != .empty) {
                 if (world.tiles.get(tile)) |tileData| {
                     _, const reducedTileImg = tileData;
                     const imgRec: rl.Rectangle = .{
-                        .x = @floatFromInt(j * config.assets.tile.size),
-                        .y = @floatFromInt(i * config.assets.tile.size),
-                        .width = @floatFromInt(width),
-                        .height = @floatFromInt(height),
+                        .x = @floatFromInt(i * config.map.mini_map_size),
+                        .y = @floatFromInt(j * config.map.mini_map_size),
+                        .width = config.map.mini_map_size,
+                        .height = config.map.mini_map_size,
                     };
-                    rl.imageDraw(&img, reducedTileImg.?, tileRec, imgRec, rl.Color.white);
+                    rl.imageDraw(&img, reducedTileImg.?, tileRec, imgRec, rl.Color.init(0, 0, 0, 255));
                 } else {
                     std.debug.print("[ERROR] Tile kind not present in asset pool: .{}\n", .{tile});
                     return error.tile_kind_not_found;

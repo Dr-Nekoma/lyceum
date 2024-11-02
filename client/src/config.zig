@@ -7,9 +7,8 @@ pub const angleCameraVector: rl.Vector3 = .{
 };
 
 pub const map = struct {
-    pub const max_width = 1000;
     pub const border_thickness = 140;
-    pub const max_height = 1000;
+    pub const mini_map_size = 125;
 };
 
 pub const assets = struct {

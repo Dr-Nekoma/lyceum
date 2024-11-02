@@ -35,7 +35,7 @@ pub fn at(gameState: *GameState) !void {
 
     try info.at(character, info.mainSize, mainPosition, config.textFontSize, gameState.allocator);
 
-    try map.at(character, width, height);
+    try map.at(character, &gameState.world.map, width, height);
 
     const chatC = chat{
         .content = &character.inventory.hud.chat.content,
