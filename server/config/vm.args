@@ -1,0 +1,5 @@
+## Name of the node
+-sname lyceum_server
+
+## Cookie for distributed Erlang
+-setcookie lyceum
