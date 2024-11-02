@@ -35,10 +35,9 @@ pub fn add_borders(image: *rl.Image) void {
 
 pub fn at(character: *const GameState.World.Character, world: *const GameState.World.Map, width: f32, height: f32) !void {
     const face_direction: f32 = @floatFromInt(@abs(270 - character.stats.face_direction));
-    std.debug.print("[ERROR] Temp X: {}, Temp Y: {}\n", .{ character.stats.x_position, character.stats.y_position });
-    const character_x: f32 = rm.clamp(character.stats.y_position, 0, @floatFromInt(world.instance.width * config.map.mini_map_size));
+    const limit_x: f32 = @floatFromInt(world.instance.width * config.map.mini_map_size);
+    const character_x: f32 = limit_x - rm.clamp(character.stats.y_position, 0, limit_x);
     const character_y: f32 = rm.clamp(character.stats.x_position, 0, @floatFromInt(world.instance.height * config.map.mini_map_size));
-    std.debug.print("[ERROR] Player X: {}, Player Y: {}\n", .{ character_x, character_y });
     const outerRadius = config.map.border_thickness;
     const innerRadius = outerRadius - 10;
     const map_image = character.inventory.hud.minimap.map.?;
