@@ -35,7 +35,7 @@ start(Args) ->
 init([]) ->
     SupFlags =
         #{strategy => simple_one_for_one,
-          intensity => 12,
+          intensity => 24,
           period => 3600},
 
     PlayerWorker =
