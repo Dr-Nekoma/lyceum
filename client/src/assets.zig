@@ -74,10 +74,22 @@ fn resizeImage(imageFilePath: [:0]const u8) !rl.Image {
 
 fn loadTile(kind: messages.Tile) !struct { ?rl.Model, ?rl.Image } {
     return switch (kind) {
-        .dirt => .{ try model(config.assets.paths.game.world.tiles.dirt.model), try resizeImage(config.assets.paths.game.world.tiles.dirt.img) },
-        .grass => .{ try model(config.assets.paths.game.world.tiles.grass.model), try resizeImage(config.assets.paths.game.world.tiles.grass.img) },
-        .sand => .{ try model(config.assets.paths.game.world.tiles.sand.model), try resizeImage(config.assets.paths.game.world.tiles.sand.img) },
-        .water => .{ try model(config.assets.paths.game.world.tiles.water.model), try resizeImage(config.assets.paths.game.world.tiles.water.img) },
+        .dirt => .{
+            try model(config.assets.paths.game.world.tiles.dirt.model),
+            try resizeImage(config.assets.paths.game.world.tiles.dirt.img),
+        },
+        .grass => .{
+            try model(config.assets.paths.game.world.tiles.grass.model),
+            try resizeImage(config.assets.paths.game.world.tiles.grass.img),
+        },
+        .sand => .{
+            try model(config.assets.paths.game.world.tiles.sand.model),
+            try resizeImage(config.assets.paths.game.world.tiles.sand.img),
+        },
+        .water => .{
+            try model(config.assets.paths.game.world.tiles.water.model),
+            try resizeImage(config.assets.paths.game.world.tiles.water.img),
+        },
         .empty => unreachable,
     };
 }
