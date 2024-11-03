@@ -131,9 +131,8 @@ handle_info(Info, State) ->
 %% @spec terminate(Reason, State) -> void()
 %% @end
 %%--------------------------------------------------------------------
-terminate(Reason, State) ->
+terminate(Reason, _State) ->
     io:format("[~p] Termination: ~p~n", [?MODULE, Reason]),
-    logout(State),
     ok.
 
 %%--------------------------------------------------------------------
@@ -194,7 +193,7 @@ exit_map(State) ->
         ok ->
             Pid ! ok;
         {error, Message} ->
-            io:format("Failed to ExitMap: ~p\n", [Message]),
+            io:format("Failed to ExitMap: ~p~n", [Message]),
             exit(2)
     end.
 

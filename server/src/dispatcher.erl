@@ -85,7 +85,7 @@ handle_call(_Request, _From, State) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_cast({logout, Email}, State) ->
-    ets:delete(State#server_state.table, Email),
+    ets:delete(?MODULE, Email),
     {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
