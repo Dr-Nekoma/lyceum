@@ -10,10 +10,13 @@ const std = @import("std");
 const GameState = @import("state.zig");
 
 fn drawPlayers(gameState: *GameState) void {
+    const mainPlayer = &gameState.world.character;
     var player_iterator = gameState.world.other_players.valueIterator();
     while (player_iterator.next()) |player| {
-        physics.character.draw(player, &gameState.world.map, player.stats.face_direction);
-        animate.character.update(player);
+        if (GameState.canDisplayPlayer(mainPlayer, player)) {
+            physics.character.draw(player, &gameState.world.map, player.stats.face_direction);
+            animate.character.update(player);
+        }
     }
 }
 
@@ -60,12 +63,12 @@ fn drawWorld(player: *const GameState.World.Character, world: *const GameState.W
     const y_tile: i32 = @intFromFloat(player.position.z / config.assets.tile.size);
 
     const widthBoundaries: struct { usize, usize } = .{
-        @intCast(std.math.clamp(x_tile - config.fov, 0, width)),
-        @intCast(std.math.clamp(x_tile + config.fov, 0, width)),
+        @intCast(std.math.clamp(x_tile - config.fov - 1, 0, width)),
+        @intCast(std.math.clamp(x_tile + config.fov + 1, 0, width)),
     };
     const heightBoundaries: struct { usize, usize } = .{
-        @intCast(std.math.clamp(y_tile - config.fov, 0, height)),
-        @intCast(std.math.clamp(y_tile + config.fov, 0, height)),
+        @intCast(std.math.clamp(y_tile - config.fov - 1, 0, height)),
+        @intCast(std.math.clamp(y_tile + config.fov + 1, 0, height)),
     };
     for (heightBoundaries.@"0"..(heightBoundaries.@"1")) |y| {
         for (widthBoundaries.@"0"..(widthBoundaries.@"1")) |x| {

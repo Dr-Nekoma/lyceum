@@ -10,13 +10,15 @@ const rm = rl.math;
 const std = @import("std");
 
 fn drawPlayers(gameState: *GameState) !void {
+    const mainPlayer = &gameState.world.character;
     var player_iterator = gameState.world.other_players.valueIterator();
     while (player_iterator.next()) |player| {
-        var infoPosition = rl.getWorldToScreen(player.position, gameState.world.camera);
-        infoPosition.y += 30;
-        const fontSize = 15;
-        try info.at(player, info.mainSize, infoPosition, fontSize, gameState.allocator);
-
+        if (GameState.canDisplayPlayer(mainPlayer, player)) {
+            var infoPosition = rl.getWorldToScreen(player.position, gameState.world.camera);
+            infoPosition.y += 30;
+            const fontSize = 15;
+            try info.at(player, info.mainSize, infoPosition, fontSize, gameState.allocator);
+        }
         const character = gameState.world.character;
         const map_image = gameState.world.character.inventory.hud.minimap.map.?;
         const c_x, const c_y = map.coordinates.normalize(.{
@@ -64,7 +66,7 @@ pub fn at(gameState: *GameState) !void {
     };
     try chatC.at(character.stats.name, gameState);
 
-    // TODO: This should at the beginning, but mini-map screw us over.
+    // TODO: This should be at the beginning, but mini-map screw us over.
     // Putting this on the top makes the other players pointers disappear.
     try drawPlayers(gameState);
 }

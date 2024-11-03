@@ -113,6 +113,17 @@ pub fn send_with_self(state: *@This(), message: messages.Payload) !void {
     try state.send(.{ try state.connection.node.self(), message });
 }
 
+pub fn canDisplayPlayer(mainPlayer: *const World.Character, player: *const World.Character) bool {
+    const main_x_tile: i32 = @intFromFloat(mainPlayer.position.x / config.assets.tile.size);
+    const main_y_tile: i32 = @intFromFloat(mainPlayer.position.z / config.assets.tile.size);
+    const intXTile: i32 = @intFromFloat(player.position.x / config.assets.tile.size);
+    const intYTile: i32 = @intFromFloat(player.position.z / config.assets.tile.size);
+    const delta_x_tile = @abs(intXTile - main_x_tile);
+    const delta_y_tile = @abs(intYTile - main_y_tile);
+
+    return (delta_x_tile <= config.fov and delta_y_tile <= config.fov);
+}
+
 pub fn init(
     allocator: std.mem.Allocator,
     width: f32,

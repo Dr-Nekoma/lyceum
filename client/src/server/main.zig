@@ -76,7 +76,7 @@ pub const character = struct {
                     } else {
                         var new_character = GameState.World.Character{
                             .stats = player,
-                            .model = try assets.model("walker.m3d"),
+                            .model = try assets.model(config.assets.paths.game.character.walker),
                             .animation = .{
                                 // We can do this because all players use the same model + animations for now
                                 .frames = gameState.world.character.animation.frames,
