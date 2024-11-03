@@ -5,9 +5,12 @@
 .github
 .vs
 .vscode
+.*.~undo-tree~
+.env_*
 client
-result
 _build
+result
+erl_crash.*
 LICENSE
 README.org
 deploy.sh

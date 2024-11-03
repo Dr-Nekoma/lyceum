@@ -24,22 +24,6 @@ replace := if os() == "linux" { "sed -i" } else { "sed -i '' -e" }
 default:
     just --list
 
-[doc('Formats source code. Options = { "client" [Default], "server", "justfile" }')]
-format source='client':
-    #!/usr/bin/env bash
-    set -euo pipefail
-    t=$(echo {{ source }} | cut -f2 -d=)
-    echo "Selected Target: $t"
-    if [[ $t == "client" ]]; then
-        zig fmt .
-    elif [[ $t == "justfile" ]]; then
-        just --fmt --unstable
-    elif [[ $t == "server" ]]; then
-        erlfmt -w $(find ./server/src/ -type f \( -iname \*.erl -o -iname \*.hrl \))
-    else
-        echo "No formating selected, skipping step..."
-    fi
-
 # ---------
 # Database
 # ---------
@@ -55,6 +39,8 @@ postgres:
 # -------
 # Client
 # -------
+format:
+    zig fmt .
 
 client:
     cd client && zig build run
@@ -129,6 +115,19 @@ release-nix:
 build-docker:
     nix build .#dockerImage
 
+# Builds and deploys a release in the host VM
 deploy:
     @echo "Attemping to deploy to: {{deploy_host}}"
     ./deploy.sh --deploy-host {{deploy_host}}
+
+# Starts the deployed code
+start:
+    #!/usr/bin/env bash
+    export SERVER_APP=lyceum_server
+    export ERL_DIST_PORT=8080
+    if [[ $(./result/bin/$SERVER_APP ping) == "pong" ]]; then
+        ./result/bin/$SERVER_APP restart
+    else
+        ./result/bin/$SERVER_APP foreground
+    fi
+

@@ -1,0 +1,10 @@
+services:
+  app:
+    container_name: lyceum
+    image: lyceum_server:latest
+    network_mode: "host"
+    restart: always
+    env_file:
+     - .env
+    ports:
+      - 8080:8080

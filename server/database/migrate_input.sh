@@ -6,7 +6,11 @@ SCRIPTPATH=$(dirname "$SCRIPT")
 
 set -euxo pipefail
 
-PG_URL=${PG_URL:-"postgresql://admin:admin@127.0.0.1:5432/mmo"}
+PG_HOST=${PGHOST:-localhost}
+PG_USER=${PGUSER:-admin}
+PG_PASSWORD=${PGPASSWORD:-admin}
+PG_DATABASE=${PGDATABASE:-mmo}
+PG_URL=${PG_URL:-"postgresql://$PG_USER:$PG_PASSWORD@$PG_HOST:5432/$PG_DATABASE"}
 
 echo "Setting PG_URL=${PG_URL}"
 

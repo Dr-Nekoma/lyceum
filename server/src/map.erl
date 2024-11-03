@@ -34,7 +34,7 @@ get_map(MapName, Connection) ->
 											   width => Width,
 											   height => Height}};
 										(length(TilesV) == 0) or (length(ObjectsV) == 0) ->
-										    % TODO: Put the map name in this error message for the client!
+						                                    % TODO: Put the map name in this error message for the client!
 										    {error, "Map can't be instantiated!"};
 										true -> {error, "Mismatch between dimensions, tiles and objects!"}
 									    end
