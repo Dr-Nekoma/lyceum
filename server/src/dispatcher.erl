@@ -48,7 +48,12 @@ init([]) ->
     {ok, Connection} = database:database_connect(),
     Pid = self(),
     io:format("[~p] Starting at ~p...~n", [?SERVER, Pid]),
-    State = #state{connection = Connection, pid = self()},
+    % This is a temporary solution using the built-in k/v store
+    Table = ets:new(?MODULE, [named_table, private, set]),
+    State =
+        #state{connection = Connection,
+               pid = self(),
+               table = Table},
     {ok, State}.
 
 %%--------------------------------------------------------------------
@@ -136,10 +141,25 @@ login(State, From, #{username := Username, password := _Password} = Request) ->
             {ok, Connection} = database:database_connect(),
             PlayerState = #state{pid = From, connection = Connection},
             io:format("[~p] Setting USER_STATE=~p...~n", [?SERVER, PlayerState]),
-            {ok, Pid} = player_sup:start([{Email, PlayerState}]),
+            {ok, Pid} = get_active_pid(Email, State),
             io:format("[~p] Successfully Spawned ~p~n", [?SERVER, Pid]),
             From ! {ok, {Pid, Email}};
         {error, Message} ->
             io:format("Failed to login: ~p~n", [Message]),
             From ! {error, Message}
     end.
+
+get_active_pid(Email, State) ->
+    case ets:lookup(?MODULE, Email) of
+        [{_, Pid}] ->
+            Pid ! logout,
+            start(Email, State);
+        _ ->
+            start(Email, State)
+    end.
+
+start(Email, State) ->
+    {ok, NewPid} = player_sup:start([{Email, State}]),
+    ets:insert(?MODULE, {Email, NewPid}),
+    io:format("[~p] <Email=~p, PID=~p> inserted...~n", [?SERVER, Email, NewPid]),
+    {ok, NewPid}.
