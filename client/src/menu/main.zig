@@ -146,8 +146,8 @@ pub fn spawn(gameState: *GameState) !void {
 }
 
 pub fn loadAssets() !Menu.Assets {
-    const notConnected = try assets.texture("menu/connected.png");
-    const connected = try assets.texture("menu/not-connected.png");
+    const notConnected = try assets.texture(config.assets.paths.menu.connection.connected);
+    const connected = try assets.texture(config.assets.paths.menu.connection.notConnected);
     return .{
         .connection = .{
             .not_connected_icon = notConnected,

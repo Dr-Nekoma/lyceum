@@ -1,4 +1,5 @@
 const assets = @import("../assets.zig");
+const config = @import("../config.zig");
 const messages = @import("messages.zig");
 const rl = @import("raylib");
 const std = @import("std");
@@ -240,16 +241,13 @@ pub const user = struct {
         };
         switch (maybe_characters) {
             .ok => |erlang_characters| {
-                // todo: discover how to make this work
-                // const teapotembed = @embedfile("../assets/teapot.png");
-                // const teapotloaded = rl.loadimagefrommemory(".png", teapotembed, teapotembed.len);
-                const teapot = try assets.texture("character/selection/placeholder.png");
+                const placeholder = try assets.texture(config.assets.paths.menu.character.placeholder);
 
                 var characters = std.ArrayList(GameState.World.Character).init(gameState.allocator);
                 for (erlang_characters) |stats| {
                     try characters.append(.{
                         .stats = stats,
-                        .preview = teapot,
+                        .preview = placeholder,
                     });
                 }
                 gameState.menu.character.select.list = characters.items;

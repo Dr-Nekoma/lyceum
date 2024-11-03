@@ -27,6 +27,48 @@ pub const assets = struct {
             .z = 0,
         };
     };
+    pub const paths = struct {
+        pub const menu = struct {
+            pub const connection = struct {
+                pub const connected = "menu/connection/connected.png";
+                pub const notConnected = "menu/connection/not-connected.png";
+            };
+            pub const character = struct {
+                pub const placeholder = "menu/character/placeholder.png";
+            };
+        };
+        pub const game = struct {
+            pub const character = struct {
+                pub const walker = "game/character/walker.m3d";
+                pub const knight = "game/character/knight.glb";
+            };
+            pub const world = struct {
+                pub const tiles = struct {
+                    pub const dirt = struct {
+                        pub const model = "game/world/tiles/dirt/dirt.obj";
+                        pub const img = "game/world/tiles/dirt/dirt.png";
+                    };
+                    pub const grass = struct {
+                        pub const model = "game/world/tiles/grass/grass.obj";
+                        pub const img = "game/world/tiles/grass/grass.png";
+                    };
+                    pub const sand = struct {
+                        pub const model = "game/world/tiles/sand/sand.obj";
+                        pub const img = "game/world/tiles/sand/sand.png";
+                    };
+                    pub const water = struct {
+                        pub const model = "game/world/tiles/water/water.obj";
+                        pub const img = "game/world/tiles/water/water.png";
+                    };
+                };
+                pub const objects = struct {
+                    pub const chest = struct {
+                        pub const model = "game/world/objects/chest/chest.obj";
+                    };
+                };
+            };
+        };
+    };
 };
 
 pub const fov = 2;

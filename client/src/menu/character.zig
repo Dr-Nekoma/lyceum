@@ -16,11 +16,11 @@ pub fn goToSpawn(gameState: *GameState) !void {
     // Source: https://youtu.be/gFf5eGCjUUg?si=cmJcKlSzoV4ES0p8
 
     const character = &gameState.world.character;
-    character.animation.frames = assets.animations("character/game/walker.m3d") catch {
+    character.animation.frames = assets.animations(config.assets.paths.game.character.walker) catch {
         gameState.errorElem.update(.loading_assets);
         return;
     };
-    character.model = assets.model("character/game/walker.m3d") catch {
+    character.model = assets.model(config.assets.paths.game.character.walker) catch {
         gameState.errorElem.update(.loading_assets);
         return;
     };

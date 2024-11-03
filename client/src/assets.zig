@@ -73,10 +73,10 @@ fn resizeImage(imageFilePath: [:0]const u8) !rl.Image {
 
 fn loadTile(kind: messages.Tile) !struct { ?rl.Model, ?rl.Image } {
     return switch (kind) {
-        .dirt => .{ try model("tiles/dirt/dirt.obj"), try resizeImage("tiles/dirt/dirt.png") },
-        .grass => .{ try model("tiles/grass/grass.obj"), try resizeImage("tiles/grass/grass.png") },
-        .sand => .{ try model("tiles/sand/sand.obj"), try resizeImage("tiles/sand/sand.png") },
-        .water => .{ try model("tiles/water/water.obj"), try resizeImage("tiles/water/water.png") },
+        .dirt => .{ try model(config.assets.paths.game.world.tiles.dirt.model), try resizeImage(config.assets.paths.game.world.tiles.dirt.img) },
+        .grass => .{ try model(config.assets.paths.game.world.tiles.grass.model), try resizeImage(config.assets.paths.game.world.tiles.grass.img) },
+        .sand => .{ try model(config.assets.paths.game.world.tiles.sand.model), try resizeImage(config.assets.paths.game.world.tiles.sand.img) },
+        .water => .{ try model(config.assets.paths.game.world.tiles.water.model), try resizeImage(config.assets.paths.game.world.tiles.water.img) },
         .empty => unreachable,
     };
 }
@@ -95,7 +95,7 @@ pub fn tilesTable() !GameState.Tile_Table {
 
 fn loadObject(kind: messages.Object) !rl.Model {
     return switch (kind) {
-        .bush, .tree, .chest => try model("knight.glb"),
+        .bush, .tree, .chest => try model(config.assets.paths.game.character.knight),
         .empty => unreachable,
     };
 }
