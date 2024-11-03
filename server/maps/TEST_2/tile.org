@@ -1,6 +1,0 @@
-| grass | grass | grass | grass | grass | grass |
-| grass | grass | grass | grass | grass | grass |
-| grass | grass | grass | grass | grass | grass |
-| dirt  | dirt  | dirt  | dirt  | dirt  | dirt  |
-| dirt  | dirt  | dirt  | dirt  | dirt  | dirt  |
-| dirt  | dirt  | dirt  | dirt  | dirt  | dirt  |
