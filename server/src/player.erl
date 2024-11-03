@@ -91,9 +91,20 @@ handle_cast(_Msg, State) ->
 handle_info({list_characters, Request}, State) ->
     list_characters(State, Request),
     {noreply, State};
-handle_info({joining_map, Request}, State) ->
-    joining_map(State, Request),
-    {noreply, State};
+handle_info({joining_map,
+             #{username := Username,
+               email := Email,
+               name := Name} =
+                 Request},
+            OldState) ->
+    joining_map(OldState, Request),
+    NewState =
+        #user_state{pid = OldState#user_state.pid,
+                    connection = OldState#user_state.connection,
+                    email = Email,
+                    username = Username,
+                    name = Name},
+    {noreply, NewState};
 handle_info({update_character, Request}, State) ->
     update(State, Request),
     {noreply, State};
@@ -103,6 +114,8 @@ handle_info(exit_map, State) ->
 handle_info(logout, State) ->
     logout(State),
     {noreply, State};
+handle_info({_, {login, _}}, State) ->
+    State#user_state.pid ! {error, "User already logged in"};
 handle_info(Info, State) ->
     io:format("[~p] INFO: ~p~n", [?MODULE, Info]),
     {noreply, State}.
@@ -118,9 +131,8 @@ handle_info(Info, State) ->
 %% @spec terminate(Reason, State) -> void()
 %% @end
 %%--------------------------------------------------------------------
-terminate(Reason, State) ->
+terminate(Reason, _State) ->
     io:format("[~p] Termination: ~p~n", [?MODULE, Reason]),
-    logout(State),
     ok.
 
 %%--------------------------------------------------------------------
@@ -139,35 +151,32 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 list_characters(State, #{email := _Email, username := Username} = Request) ->
     io:format("[~p] Querying ~p's characters...~n", [?MODULE, Username]),
-    Reply = character:player_characters(Request, State#state.connection),
+    Reply = character:player_characters(Request, State#user_state.connection),
     io:format("[~p] Characters: ~p~n", [?MODULE, Reply]),
-    State#state.pid ! Reply.
+    State#user_state.pid ! Reply.
 
 joining_map(State,
             #{username := _Username,
               email := _Email,
               name := Name} =
                 Request) ->
-    Pid = State#state.pid,
-    case character:activate(Request, erlang:pid_to_list(Pid), State#state.connection) of
+    Pid = State#user_state.pid,
+    case character:activate(Request, State#user_state.connection) of
         ok ->
             io:format("[~p] Retriving ~p's updated info...", [?MODULE, Name]),
-            Result = character:player_character(Request, State#state.connection),
+            Result = character:player_character(Request, State#user_state.connection),
             io:format("Got: ~p~n", [Result]),
             Pid ! Result;
         {error, Message} ->
-            io:format("Failed to Join Map: ~p\n", [Message]),
+            io:format("Failed to Join Map: ~p~n", [Message]),
             Pid ! {error, "Could not join map"}
     end.
 
 update(State, CharacterMap) ->
-    Pid = State#state.pid,
-    case character:update(CharacterMap, State#state.connection) of
+    Pid = State#user_state.pid,
+    case character:update(CharacterMap, State#user_state.connection) of
         ok ->
-            Result =
-                character:retrieve_near_players(CharacterMap,
-                                                erlang:pid_to_list(Pid),
-                                                State#state.connection),
+            Result = character:retrieve_near_players(CharacterMap, State#user_state.connection),
             Pid ! Result;
         {error, Message} ->
             io:format("Failed to Update: ~p\n", [Message]),
@@ -175,25 +184,30 @@ update(State, CharacterMap) ->
     end.
 
 exit_map(State) ->
-    Pid = State#state.pid,
-    case character:deactivate(
-             erlang:pid_to_list(Pid), State#state.connection)
+    Pid = State#user_state.pid,
+    case character:deactivate(State#user_state.name,
+                              State#user_state.email,
+                              State#user_state.username,
+                              State#user_state.connection)
     of
         ok ->
             Pid ! ok;
         {error, Message} ->
-            io:format("Failed to ExitMap: ~p\n", [Message]),
+            io:format("Failed to ExitMap: ~p~n", [Message]),
             exit(2)
     end.
 
 logout(State) ->
-    Pid = State#state.pid,
-    Connection = State#state.connection,
-    case character:deactivate(
-             erlang:pid_to_list(Pid), Connection)
+    Pid = State#user_state.pid,
+    Connection = State#user_state.connection,
+    case character:deactivate(State#user_state.name,
+                              State#user_state.email,
+                              State#user_state.username,
+                              Connection)
     of
         ok ->
             epgsql:close(Connection),
+            gen_server:cast(lyceum_server, {logout, State#user_state.email}),
             Pid ! ok,
             exit(normal);
         {error, Message} ->

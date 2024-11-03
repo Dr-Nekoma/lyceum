@@ -126,7 +126,8 @@ start:
     export SERVER_APP=lyceum_server
     export ERL_DIST_PORT=8080
     if [[ $(./result/bin/$SERVER_APP ping) == "pong" ]]; then
-        ./result/bin/$SERVER_APP restart
+        ./result/bin/$SERVER_APP stop
+        ./result/bin/$SERVER_APP foreground
     else
         ./result/bin/$SERVER_APP foreground
     fi

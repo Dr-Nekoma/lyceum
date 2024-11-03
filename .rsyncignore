@@ -9,6 +9,7 @@
 .env_*
 client
 _build
+_server/_build
 result
 erl_crash.*
 LICENSE

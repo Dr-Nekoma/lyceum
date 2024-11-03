@@ -53,7 +53,6 @@ CREATE TABLE character.active(
        name VARCHAR(18) NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
        username VARCHAR(32) NOT NULL,
-       user_pid VARCHAR(50) NOT NULL UNIQUE,       
        FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
        PRIMARY KEY(name, username, e_mail)      
 );
