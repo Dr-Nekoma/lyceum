@@ -40,3 +40,4 @@ src/.DS_Store
 
 # Extra
 *env*
+server/config/vm_prod.args

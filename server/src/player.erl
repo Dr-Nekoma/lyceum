@@ -103,6 +103,8 @@ handle_info(exit_map, State) ->
 handle_info(logout, State) ->
     logout(State),
     {noreply, State};
+handle_info({_, {login, _}}, State) ->
+    State#state.pid ! {error, "User already logged in"};
 handle_info(Info, State) ->
     io:format("[~p] INFO: ~p~n", [?MODULE, Info]),
     {noreply, State}.
