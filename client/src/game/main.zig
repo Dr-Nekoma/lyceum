@@ -89,7 +89,6 @@ fn drawWorld(player: *const GameState.World.Character, world: *const GameState.W
             }
         }
     }
-    // TODO: Implement same loop but for objects
 }
 
 pub fn spawn(gameState: *GameState) !void {
