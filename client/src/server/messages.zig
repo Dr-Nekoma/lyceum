@@ -89,7 +89,7 @@ pub const Character_Info = struct {
     y_position: f32 = 0,
     x_velocity: f32 = 0,
     y_velocity: f32 = 0,
-    face_direction: u16 = 270,
+    face_direction: i16 = 270,
     map_name: [:0]const u8 = "",
     state_type: GameState.World.Character.Animation.State = .idle,
 };
@@ -147,7 +147,7 @@ pub const Character_Update = struct {
     y_velocity: f32,
     map_name: [:0]const u8,
     username: []const u8,
-    face_direction: u16,
+    face_direction: i16,
     email: []const u8,
     state_type: GameState.World.Character.Animation.State,
 };

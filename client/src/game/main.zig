@@ -17,7 +17,7 @@ fn drawPlayers(gameState: *GameState) void {
     }
 }
 
-fn controlInput(entity: *GameState.World.Character) u16 {
+fn controlInput(entity: *GameState.World.Character) i16 {
     var tempAngle = entity.stats.face_direction;
     const velocity = &entity.velocity;
     const deltaTime = rl.getFrameTime();

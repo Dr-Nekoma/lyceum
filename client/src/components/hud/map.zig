@@ -33,10 +33,8 @@ pub fn add_borders(image: *rl.Image) void {
     return image.resizeCanvas(width, height, thickness, thickness, rl.Color.black);
 }
 
-pub fn player(world_face_direction: u16, center: rl.Vector2) void {
-    // TODO: Encounter a better to fix world face direction to map face direction
-    const temp: f32 = @floatFromInt(world_face_direction);
-    const face_direction = if (world_face_direction == 0 or world_face_direction == 180) 180 - temp else temp;
+pub fn player(world_face_direction: i16, center: rl.Vector2) void {
+    const face_direction: f32 = @floatFromInt(@mod(180 - world_face_direction, 360));
     const origin = .{ .x = 0, .y = 0 };
     const triangle_top = rotate_point(.{ .y = -8, .x = 0 }, origin, face_direction);
     const triangle_left = rotate_point(.{ .y = 4, .x = -4 }, origin, face_direction);
