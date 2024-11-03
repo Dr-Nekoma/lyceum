@@ -31,8 +31,8 @@ start_link() ->
 init([]) ->
     SupFlags =
         #{strategy => one_for_one,
-          intensity => 1,
-          period => 5},
+          intensity => 12,
+          period => 3600},
 
     DispatcherSup =
         #{id => dispatcher_sup,
