@@ -11,10 +11,6 @@ const Button = @import("../components/button.zig");
 const GameState = @import("../game/state.zig");
 
 pub fn goToSpawn(gameState: *GameState) !void {
-    // Source: https://free3d.com/3d-model/knight-low-poly-542752.html
-    // Source: https://bztsrc.gitlab.io/model3d/#models
-    // Source: https://youtu.be/gFf5eGCjUUg?si=cmJcKlSzoV4ES0p8
-
     const character = &gameState.world.character;
     character.animation.frames = assets.animations(config.assets.paths.game.character.walker) catch {
         gameState.errorElem.update(.loading_assets);

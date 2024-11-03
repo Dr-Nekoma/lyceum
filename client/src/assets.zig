@@ -2,6 +2,7 @@ const config = @import("config.zig");
 const map = @import("components/hud/map.zig");
 const messages = @import("server/messages.zig");
 const rl = @import("raylib");
+const rm = rl.math;
 const std = @import("std");
 const GameState = @import("game/state.zig");
 
@@ -93,15 +94,39 @@ pub fn tilesTable() !GameState.Tile_Table {
     return initTable;
 }
 
-fn loadObject(kind: messages.Object) !rl.Model {
+pub const Object = struct {
+    model: ?rl.Model = null,
+    scale: rl.Vector3 = .{ .x = 0, .y = 0, .z = 0 },
+    axis: rl.Vector3 = config.assets.object.defaultAxis,
+    angle: f32 = config.assets.object.defaultAngle,
+};
+
+fn loadObject(kind: messages.Object) !Object {
     return switch (kind) {
-        .bush, .tree, .chest => try model(config.assets.paths.game.character.knight),
+        .chest => .{
+            .model = try model(config.assets.paths.game.world.objects.chest.model),
+            .scale = config.assets.object.chest.scale,
+            .axis = config.assets.object.chest.axis,
+            .angle = config.assets.object.chest.angle,
+        },
+        .tree => .{
+            .model = try model(config.assets.paths.game.world.objects.tree.model),
+            .scale = config.assets.object.tree.scale,
+            .axis = config.assets.object.tree.axis,
+            .angle = config.assets.object.tree.angle,
+        },
+        .bush => .{
+            .model = try model(config.assets.paths.game.world.objects.bush.model),
+            .scale = config.assets.object.bush.scale,
+            .axis = config.assets.object.bush.axis,
+            .angle = config.assets.object.bush.angle,
+        },
         .empty => unreachable,
     };
 }
 
 pub fn objectsTable() !GameState.Object_Table {
-    var initTable = GameState.Object_Table.initFull(null);
+    var initTable = GameState.Object_Table.initFull(.{});
     inline for (@typeInfo(messages.Object).Enum.fields) |field| {
         if (!std.mem.eql(u8, field.name, "empty")) {
             const key: messages.Object = @enumFromInt(field.value);

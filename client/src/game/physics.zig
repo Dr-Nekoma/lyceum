@@ -12,9 +12,9 @@ pub const heightAxis: rl.Vector3 = .{
 
 pub const character = struct {
     pub const modelScale: rl.Vector3 = .{
-        .x = 18,
-        .y = 18,
-        .z = 18,
+        .x = 11,
+        .y = 11,
+        .z = 11,
     };
 
     const velocityCeiling: rl.Vector3 = .{
@@ -44,7 +44,11 @@ pub const character = struct {
         const y_tile: i32 = @intFromFloat(position.z / config.assets.tile.size);
 
         const iWidth: i32 = @intCast(width);
-        return map.instance.tiles[@intCast(iWidth * y_tile + x_tile)] != .water;
+        const walkableTile = map.instance.tiles[@intCast(iWidth * y_tile + x_tile)] != .water;
+        const object = map.instance.objects[@intCast(iWidth * y_tile + x_tile)];
+        const hasObject = object != .empty and object != .bush;
+
+        return walkableTile and !hasObject;
     }
 
     pub fn draw(entity: *GameState.World.Character, map: *const GameState.World.Map, tempAngle: u16) void {

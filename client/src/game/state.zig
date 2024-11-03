@@ -25,7 +25,7 @@ pub const Scene = enum {
 
 pub const Character_Table = std.StringHashMap(World.Character);
 pub const Tile_Table = std.EnumMap(messages.Tile, struct { ?rl.Model, ?rl.Image });
-pub const Object_Table = std.EnumMap(messages.Object, ?rl.Model);
+pub const Object_Table = std.EnumMap(messages.Object, assets.Object);
 
 pub const World = struct {
     pub const Chat = struct {

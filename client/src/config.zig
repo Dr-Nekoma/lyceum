@@ -14,17 +14,57 @@ pub const map = struct {
 pub const assets = struct {
     pub const tile = struct {
         pub const level = 9;
-        pub const size = 75;
+        pub const size = 12;
         pub const scale: rl.Vector3 = .{
-            .x = 0.25,
-            .y = 0.25,
-            .z = 0.25,
+            .x = 0.04,
+            .y = 0.04,
+            .z = 0.04,
         };
         pub const angle = -90;
         pub const axis: rl.Vector3 = .{
             .x = 1,
             .y = 0,
             .z = 0,
+        };
+    };
+    pub const object = struct {
+        pub const defaultLevel = 10;
+        pub const defaultAngle = -90;
+        pub const defaultAxis: rl.Vector3 = .{
+            .x = 1,
+            .y = 0,
+            .z = 0,
+        };
+        pub const chest = struct {
+            pub const scale: rl.Vector3 = .{
+                .x = 0.15,
+                .y = 0.15,
+                .z = 0.15,
+            };
+            pub const angle = defaultAngle;
+            pub const axis = defaultAxis;
+        };
+        pub const bush = struct {
+            pub const scale: rl.Vector3 = .{
+                .x = 2.05,
+                .y = 2.05,
+                .z = 2.05,
+            };
+            pub const angle = defaultAngle;
+            pub const axis = defaultAxis;
+        };
+        pub const tree = struct {
+            pub const scale: rl.Vector3 = .{
+                .x = 2.0,
+                .y = 2.0,
+                .z = 2.0,
+            };
+            pub const angle = defaultAngle;
+            pub const axis: rl.Vector3 = .{
+                .x = 0,
+                .y = 1,
+                .z = 0,
+            };
         };
     };
     pub const paths = struct {
@@ -65,6 +105,12 @@ pub const assets = struct {
                     pub const chest = struct {
                         pub const model = "game/world/objects/chest/chest.obj";
                     };
+                    pub const tree = struct {
+                        pub const model = "game/world/objects/tree/tree.glb";
+                    };
+                    pub const bush = struct {
+                        pub const model = "game/world/objects/bush/bush.obj";
+                    };
                 };
             };
         };
@@ -72,7 +118,7 @@ pub const assets = struct {
 };
 
 pub const fov = 2;
-pub const defaultCameraDistance = 72;
+pub const defaultCameraDistance = 35;
 pub const buttonFontSize = 20;
 pub const textFontSize = 20;
 pub const hubFontSize = 6;
