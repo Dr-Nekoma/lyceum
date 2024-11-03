@@ -62,7 +62,7 @@ References for assets used in this project:
 - [[https://opengameart.org/content/tree-24][tree_model]]   
 - [[https://youtu.be/gFf5eGCjUUg?si=cmJcKlSzoV4ES0p8][character_model]] (slighly modified in blender)
 
-Everything was made by developers from the project.  
+Everything else was made by developers from the project.  
 
 * Lore
 
