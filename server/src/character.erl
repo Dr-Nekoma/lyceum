@@ -1,6 +1,6 @@
 -module(character).
 
--export([create/2, player_characters/2, player_character/2, update/2, retrieve_near_players/3, activate/3, deactivate/2]).
+-export([create/2, player_characters/2, player_character/2, update/2, retrieve_near_players/2, activate/2, deactivate/4]).
 
 create(#{name := Name, 
 	 username := Username, 
@@ -21,22 +21,20 @@ create(#{name := Name,
 activate(#{name := Name, 
 	   username := Username, 
 	   email := Email},
-	   UserPid, Connection) ->
-    Query = "INSERT INTO character.active (name,  e_mail, username, user_pid) \
-             VALUES ($1::VARCHAR(18), $2::TEXT, $3::VARCHAR(32), $4::VARCHAR(50)) \
-             ON CONFLICT (name, username, e_mail) \
-             DO UPDATE SET user_pid = $4::VARCHAR(50)",
-    Result = epgsql:equery(Connection, Query, [Name, Email, Username, UserPid]),
+	   Connection) ->
+    Query = "INSERT INTO character.active (name,  e_mail, username) \
+             VALUES ($1::VARCHAR(18), $2::TEXT, $3::VARCHAR(32))",
+    Result = epgsql:equery(Connection, Query, [Name, Email, Username]),
     Fun = (fun (_) -> ok end),
     util:process_postgres_result(Result, insert, Fun).
 
 %% TODO: Add a Select first in order to check already being deactivated
-deactivate(UserPid, Connection) ->
+deactivate(Name, Email, Username, Connection) ->
     Query = "DELETE FROM character.active \ 
-             WHERE user_pid = $1::VARCHAR(50)",
-    Result = epgsql:equery(Connection, Query, [UserPid]),
+             WHERE name = $1::VARCHAR(18) AND e_mail = $2::TEXT AND username = $3::VARCHAR(32)",
+    Result = epgsql:equery(Connection, Query, [Name, Email, Username]),
     Fun = (fun (_) -> ok end),
-    util:process_postgres_result(Result, insert, Fun).
+    util:process_postgres_result(Result, delete, Fun).
 
 update(#{name := Name, 
 	 username := Username, 
@@ -65,7 +63,7 @@ update(#{name := Name,
     Fun = (fun (_) -> epgsql:sync(Connection) end),
     util:process_postgres_result(Result, update, Fun).
 
-retrieve_near_players(#{map_name := MapName}, UserPid, Connection) ->
+retrieve_near_players(#{map_name := MapName, name := Name}, Connection) ->
     Query = "SELECT character.view.name, \
                     character.view.constitution, \
                     character.view.wisdom, \
@@ -87,8 +85,8 @@ retrieve_near_players(#{map_name := MapName}, UserPid, Connection) ->
                     character.view.state_type \
              FROM character.view \
              NATURAL JOIN character.active \
-             WHERE map_name = $1::VARCHAR(64) AND user_pid <> $2::VARCHAR(50)",
-    Result = epgsql:equery(Connection, Query, [MapName, UserPid]),
+             WHERE map_name = $1::VARCHAR(64) AND name <> $2::VARCHAR(18)",
+    Result = epgsql:equery(Connection, Query, [MapName, Name]),
     Fun = (fun (FullColumns, Values) -> {ok, util:transform_character_map(util:columns_and_rows(FullColumns, Values))} end),
     util:process_postgres_result(Result, select, Fun).
 

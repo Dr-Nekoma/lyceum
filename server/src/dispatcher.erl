@@ -51,9 +51,9 @@ init([]) ->
     % This is a temporary solution using the built-in k/v store
     Table = ets:new(?MODULE, [named_table, private, set]),
     State =
-        #state{connection = Connection,
-               pid = self(),
-               table = Table},
+        #server_state{connection = Connection,
+                      pid = self(),
+                      table = Table},
     {ok, State}.
 
 %%--------------------------------------------------------------------
@@ -84,6 +84,9 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+handle_cast({logout, Email}, State) ->
+    ets:delete(State#server_state.table, Email),
+    {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -135,13 +138,13 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 login(State, From, #{username := Username, password := _Password} = Request) ->
     io:format("[~p] User ~p is attempting to login from ~p~n", [?SERVER, Username, From]),
-    case registry:check_user(Request, State#state.connection) of
+    case registry:check_user(Request, State#server_state.connection) of
         {ok, Email} ->
             io:format("[~p] USER: ~p successfully logged in!~n", [?SERVER, Email]),
             {ok, Connection} = database:database_connect(),
-            PlayerState = #state{pid = From, connection = Connection},
+            PlayerState = #user_state{pid = From, connection = Connection},
             io:format("[~p] Setting USER_STATE=~p...~n", [?SERVER, PlayerState]),
-            {ok, Pid} = get_active_pid(Email, State),
+            {ok, Pid} = get_active_pid(Email, PlayerState),
             io:format("[~p] Successfully Spawned ~p~n", [?SERVER, Pid]),
             From ! {ok, {Pid, Email}};
         {error, Message} ->
