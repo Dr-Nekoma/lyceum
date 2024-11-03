@@ -47,6 +47,19 @@ if you prefer running a container for the server:
     docker container run --network=host lyceum:latest
 #+END_SRC
 
+* Assets
+
+References for assets used in this project:
+
+- [[https://opengameart.org/node/33425][sand_texture]]
+- [[https://opengameart.org/content/stylized-grass][grass_texture]]
+- [[https://opengameart.org/content/simple-seamless-tiles-of-dirt-and-sand-dirt-2-png][dirt_texture]]
+- [[https://opengameart.org/content/texture-water][water_texture]]
+- [[https://free3d.com/3d-model/-rectangular-grass-patch--205749.html][tile_model]] (used for all types of tiles)
+- [[https://youtu.be/gFf5eGCjUUg?si=cmJcKlSzoV4ES0p8][character_model]] (slighly modified in blender)
+
+Everything was made by developers from the project.  
+
 * Lore
 
 In the dawn of ages, a solitary tower rose at the very heart of
