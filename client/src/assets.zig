@@ -68,7 +68,7 @@ pub fn animations(animationFilePath: [:0]const u8) ![]rl.ModelAnimation {
 
 fn resizeImage(imageFilePath: [:0]const u8) !rl.Image {
     var img = try image(imageFilePath);
-    rl.imageResizeNN(&img, config.map.mini_map_size, config.map.mini_map_size);
+    img.resizeNN(config.map.mini_map_size, config.map.mini_map_size);
     return img;
 }
 
