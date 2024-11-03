@@ -152,6 +152,7 @@ login(State, From, #{username := Username, password := _Password} = Request) ->
 get_active_pid(Email, State) ->
     case ets:lookup(?MODULE, Email) of
         [{_, Pid}] ->
+            io:format("[~p] Logging ~p at ~p...~n", [?SERVER, Email, Pid]),
             Pid ! logout,
             start(Email, State);
         _ ->
