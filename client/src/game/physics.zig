@@ -31,19 +31,20 @@ pub const character = struct {
         const width = map.instance.width;
         const height = map.instance.height;
 
-        const x_tile: i32 = @intFromFloat(position.x / config.assets.tile.size);
-        const y_tile: i32 = @intFromFloat(position.z / config.assets.tile.size);
-        const iWidth: i32 = @intCast(width);
-        const canWalk = map.instance.tiles[@intCast(iWidth * x_tile + y_tile)] != .water;
-
         const fWidth: f32 = @floatFromInt(width);
         const fHeight: f32 = @floatFromInt(height);
-        const outsideLimits = (position.z > (fWidth + 1) * config.assets.tile.size or
+        const outsideLimits = (position.z > fWidth * config.assets.tile.size or
             position.z < 0 or
-            position.x > (fHeight + 1) * config.assets.tile.size or
+            position.x > fHeight * config.assets.tile.size or
             position.x < 0);
 
-        return canWalk and !outsideLimits;
+        if (outsideLimits) return false;
+
+        const x_tile: i32 = @intFromFloat(position.x / config.assets.tile.size);
+        const y_tile: i32 = @intFromFloat(position.z / config.assets.tile.size);
+
+        const iWidth: i32 = @intCast(width);
+        return map.instance.tiles[@intCast(iWidth * y_tile + x_tile)] != .water;
     }
 
     pub fn draw(entity: *GameState.World.Character, map: *const GameState.World.Map, tempAngle: u16) void {
@@ -64,13 +65,13 @@ pub const character = struct {
         if (velocity.y > 0) FrictionVector.y = -FrictionVector.y;
         if (velocity.z > 0) FrictionVector.z = -FrictionVector.z;
 
-        velocity.* = rm.vector3Add(velocity.*, FrictionVector);
+        velocity.* = velocity.*.add(FrictionVector);
 
         velocity.* = rm.vector3Clamp(velocity.*, rm.vector3Scale(velocityCeiling, -1), velocityCeiling);
 
         state.* = if (rm.vector3Equals(velocity.*, rm.vector3Zero()) == 0) .walking else .idle;
 
-        var tempPosition: rl.Vector3 = rm.vector3Add(entity.position, rm.vector3Scale(velocity.*, deltaTime));
+        var tempPosition: rl.Vector3 = entity.position.add(rm.vector3Scale(velocity.*, deltaTime));
         tempPosition.y = rm.clamp(tempPosition.y, floorLevel, ceilingLevel);
 
         const previous = &entity.stats.face_direction;

@@ -1,9 +1,9 @@
 const rl = @import("raylib");
 
 pub const angleCameraVector: rl.Vector3 = .{
-    .x = 25,
+    .x = -25,
     .y = 30,
-    .z = 20,
+    .z = 25,
 };
 
 pub const map = struct {

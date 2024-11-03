@@ -25,16 +25,16 @@ fn controlInput(entity: *GameState.World.Character) u16 {
 
     if (entity.inventory.hud.chat.mode == .writing) return tempAngle;
 
-    if (rl.isKeyDown(.key_d)) {
+    if (rl.isKeyDown(.key_w)) {
         velocity.z -= deltaVelocity;
         tempAngle = 180;
-    } else if (rl.isKeyDown(.key_a)) {
+    } else if (rl.isKeyDown(.key_s)) {
         velocity.z += deltaVelocity;
         tempAngle = 0;
-    } else if (rl.isKeyDown(.key_w)) {
+    } else if (rl.isKeyDown(.key_a)) {
         velocity.x -= deltaVelocity;
         tempAngle = 270;
-    } else if (rl.isKeyDown(.key_s)) {
+    } else if (rl.isKeyDown(.key_d)) {
         velocity.x += deltaVelocity;
         tempAngle = 90;
     }
@@ -49,6 +49,7 @@ fn drawWorld(player: *const GameState.World.Character, world: *const GameState.W
 
     const x_tile: i32 = @intFromFloat(player.position.x / config.assets.tile.size);
     const y_tile: i32 = @intFromFloat(player.position.z / config.assets.tile.size);
+
     const widthBoundaries: struct { usize, usize } = .{
         @intCast(std.math.clamp(x_tile - config.fov, 0, width)),
         @intCast(std.math.clamp(x_tile + config.fov, 0, width)),
@@ -57,19 +58,17 @@ fn drawWorld(player: *const GameState.World.Character, world: *const GameState.W
         @intCast(std.math.clamp(y_tile - config.fov, 0, height)),
         @intCast(std.math.clamp(y_tile + config.fov, 0, height)),
     };
-    for (widthBoundaries.@"0"..(widthBoundaries.@"1") + 1) |i| {
-        for (heightBoundaries.@"0"..(heightBoundaries.@"1") + 1) |j| {
-            const clamped_i = std.math.clamp(i, widthBoundaries.@"0", widthBoundaries.@"1" - 1);
-            const clamped_j = std.math.clamp(j, heightBoundaries.@"0", heightBoundaries.@"1" - 1);
-            const tile = tiles[world.instance.width * clamped_i + clamped_j];
+    for (heightBoundaries.@"0"..(heightBoundaries.@"1")) |y| {
+        for (widthBoundaries.@"0"..(widthBoundaries.@"1")) |x| {
+            const tile = tiles[world.instance.width * y + x];
             if (world.tiles.get(tile)) |tileData| {
                 const tileModel, _ = tileData;
-                const fi: f32 = @floatFromInt(i);
-                const fj: f32 = @floatFromInt(j);
+                const fy: f32 = @floatFromInt(y);
+                const fx: f32 = @floatFromInt(x);
                 const position: rl.Vector3 = .{
-                    .x = (fi * config.assets.tile.size) + config.assets.tile.size / 2,
+                    .x = (fx * config.assets.tile.size) + config.assets.tile.size / 2,
                     .y = config.assets.tile.level,
-                    .z = (fj * config.assets.tile.size) + config.assets.tile.size / 2,
+                    .z = (fy * config.assets.tile.size) + config.assets.tile.size / 2,
                 };
                 rl.drawModelEx(tileModel.?, position, config.assets.tile.axis, config.assets.tile.angle, config.assets.tile.scale, rl.Color.white);
             } else {

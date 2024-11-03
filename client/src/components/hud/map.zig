@@ -33,13 +33,14 @@ pub fn add_borders(image: *rl.Image) void {
     return image.resizeCanvas(width, height, thickness, thickness, rl.Color.black);
 }
 
-pub fn player(character: *const GameState.World.Character, center: rl.Vector2) void {
-    const face_direction: f32 = @floatFromInt(@abs(270 - character.stats.face_direction));
+pub fn player(world_face_direction: u16, center: rl.Vector2) void {
+    // TODO: Encounter a better to fix world face direction to map face direction
+    const temp: f32 = @floatFromInt(world_face_direction);
+    const face_direction = if (world_face_direction == 0 or world_face_direction == 180) 180 - temp else temp;
     const origin = .{ .x = 0, .y = 0 };
     const triangle_top = rotate_point(.{ .y = -8, .x = 0 }, origin, face_direction);
     const triangle_left = rotate_point(.{ .y = 4, .x = -4 }, origin, face_direction);
     const triangle_right = rotate_point(.{ .y = 4, .x = 4 }, origin, face_direction);
-    std.debug.print(" Center: {}\n", .{center});
     rl.drawTriangle(
         center.add(triangle_top),
         center.add(triangle_left),
@@ -49,7 +50,7 @@ pub fn player(character: *const GameState.World.Character, center: rl.Vector2) v
 }
 
 const outerRadius = config.map.border_thickness;
-const innerRadius = outerRadius - 10;
+pub const innerRadius = outerRadius - 10;
 
 pub fn getCenter(width: f32, height: f32) rl.Vector2 {
     return .{
@@ -59,30 +60,27 @@ pub fn getCenter(width: f32, height: f32) rl.Vector2 {
 }
 
 pub const coordinates = struct {
-    fn screenToMap(character: *const GameState.World.Character, world: *const GameState.World.Map) struct { f32, f32 } {
-        const limit_x: f32 = @floatFromInt(world.instance.width * config.map.mini_map_size);
-        const character_x: f32 = limit_x - rm.clamp(character.stats.y_position, 0, limit_x);
-        const character_y: f32 = rm.clamp(character.stats.x_position, 0, @floatFromInt(world.instance.height * config.map.mini_map_size));
+    fn worldToMap(position: rl.Vector2, world: *const GameState.World.Map) struct { f32, f32 } {
+        const character_x: f32 = rm.clamp(position.x, 0, @floatFromInt(world.instance.width * config.map.mini_map_size));
+        const character_y: f32 = rm.clamp(position.y, 0, @floatFromInt(world.instance.height * config.map.mini_map_size));
         return .{ character_x, character_y };
     }
-    pub fn normalize(character: *const GameState.World.Character, map_image: *const rl.Image, world: *const GameState.World.Map) struct { f32, f32 } {
-        const character_x, const character_y = screenToMap(character, world);
-        const normalized_x = character_x * @as(
-            f32,
-            @as(f32, @floatFromInt(map_image.width - 2 * config.map.border_thickness)) /
-                @as(f32, @floatFromInt(world.instance.width * config.map.mini_map_size)),
-        );
-        const normalized_y = character_y * @as(
-            f32,
-            @as(f32, @floatFromInt(map_image.height - 2 * config.map.border_thickness)) /
-                @as(f32, @floatFromInt(world.instance.height * config.map.mini_map_size)),
-        );
+    pub fn normalize(position: rl.Vector2, map_image: *const rl.Image, world: *const GameState.World.Map) struct { f32, f32 } {
+        const character_x, const character_y = worldToMap(position, world);
+        const fWidth: f32 = @floatFromInt(world.instance.width);
+        const fHeight: f32 = @floatFromInt(world.instance.height);
+        const normalized_x = character_x * @as(f32, @as(f32, @floatFromInt(map_image.width - 2 * config.map.border_thickness)) / (config.assets.tile.size * fWidth));
+        const normalized_y = character_y * @as(f32, @as(f32, @floatFromInt(map_image.height - 2 * config.map.border_thickness)) / (config.assets.tile.size * fHeight));
         return .{ normalized_x, normalized_y };
     }
 };
 
 pub fn at(character: *const GameState.World.Character, world: *const GameState.World.Map, width: f32, height: f32) !void {
-    const normalized_x, const normalized_y = coordinates.normalize(character, &character.inventory.hud.minimap.map.?, world);
+    const position: rl.Vector2 = .{
+        .x = character.stats.x_position,
+        .y = character.stats.y_position,
+    };
+    const normalized_x, const normalized_y = coordinates.normalize(position, &character.inventory.hud.minimap.map.?, world);
 
     const center: rl.Vector2 = getCenter(width, height);
     const map_image = character.inventory.hud.minimap.map.?;
@@ -120,6 +118,6 @@ pub fn at(character: *const GameState.World.Character, world: *const GameState.W
     rl.drawRing(center, innerRadius, outerRadius, 0, 360, 0, config.ColorPalette.primary);
     rl.drawCircleLinesV(center, innerRadius, rl.Color.white);
     rl.drawCircleLinesV(center, innerRadius - 1, rl.Color.white);
-    std.debug.print("Main Player", .{});
-    player(character, center);
+    // std.debug.print("Main Player", .{});
+    player(character.stats.face_direction, center);
 }

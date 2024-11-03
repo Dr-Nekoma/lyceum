@@ -16,11 +16,11 @@ pub fn goToSpawn(gameState: *GameState) !void {
     // Source: https://youtu.be/gFf5eGCjUUg?si=cmJcKlSzoV4ES0p8
 
     const character = &gameState.world.character;
-    character.animation.frames = assets.animations("walker.m3d") catch {
+    character.animation.frames = assets.animations("character/game/walker.m3d") catch {
         gameState.errorElem.update(.loading_assets);
         return;
     };
-    character.model = assets.model("walker.m3d") catch {
+    character.model = assets.model("character/game/walker.m3d") catch {
         gameState.errorElem.update(.loading_assets);
         return;
     };
@@ -121,10 +121,10 @@ pub fn selection(gameState: *GameState) !void {
         .y = characterButtonY,
     };
 
-    const joinButtonSize = Button.Sizes.medium(gameState);
+    const joinButtonSize = Button.Sizes.small(gameState);
     const joinButtonPosition: rl.Vector2 = .{
         .x = (gameState.width / 2) - (joinButtonSize.x / 2),
-        .y = (gameState.height / 2) - (joinButtonSize.y / 2) + (gameState.height / 3),
+        .y = gameState.height - joinButtonSize.y - 3 * config.menuButtonsPadding,
     };
 
     var texturePosition: rl.Vector2 = .{

@@ -243,7 +243,7 @@ pub const user = struct {
                 // todo: discover how to make this work
                 // const teapotembed = @embedfile("../assets/teapot.png");
                 // const teapotloaded = rl.loadimagefrommemory(".png", teapotembed, teapotembed.len);
-                const teapot = try assets.texture("teapot.png");
+                const teapot = try assets.texture("character/selection/placeholder.png");
 
                 var characters = std.ArrayList(GameState.World.Character).init(gameState.allocator);
                 for (erlang_characters) |stats| {

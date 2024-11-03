@@ -67,7 +67,7 @@ pub fn animations(animationFilePath: [:0]const u8) ![]rl.ModelAnimation {
 
 fn resizeImage(imageFilePath: [:0]const u8) !rl.Image {
     var img = try image(imageFilePath);
-    rl.imageResize(&img, config.map.mini_map_size, config.map.mini_map_size);
+    rl.imageResizeNN(&img, config.map.mini_map_size, config.map.mini_map_size);
     return img;
 }
 
@@ -128,9 +128,9 @@ pub fn createMapImage(world: *const GameState.World.Map) !rl.Image {
     const iHeight: i32 = @intCast(height * miniMapSize);
     var img = rl.genImageColor(iWidth, iHeight, rl.Color.init(0, 0, 0, 255));
 
-    for (0..width) |j| {
-        for (0..height) |i| {
-            const tile = tiles[height * j + i];
+    for (0..height) |j| {
+        for (0..width) |i| {
+            const tile = tiles[width * j + i];
             if (tile != .empty) {
                 if (world.tiles.get(tile)) |tileData| {
                     _, const reducedTileImg = tileData;
