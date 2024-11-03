@@ -45,7 +45,7 @@ jobs:
 
       - name: "[Server] Push release to the server"
         run: |
-          echo "${{ secrets.VM_ARGS }}" > $(pwd)/server/config/vm_prod.args
+          echo "${{ secrets.VM_ARGS }}" > $(pwd)/server/config/vm.args
           echo "${{ secrets.APP_SETTINGS }}" > $(pwd)/.env
 
       - name: "[Server] Push release to the server"
