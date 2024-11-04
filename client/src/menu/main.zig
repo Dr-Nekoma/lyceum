@@ -36,6 +36,7 @@ pub const Menu = struct {
             not_connected_icon: rl.Texture2D,
         },
         music: rl.Music,
+        logo: rl.Texture,
     };
     pub const Character = struct {
         pub const Creation = struct {
@@ -146,15 +147,23 @@ pub fn spawn(gameState: *GameState) !void {
     userLogoutButton(gameState);
 }
 
+pub fn displayLogo(gameState: *GameState) void {
+    const texture = gameState.menu.assets.logo;
+    const width: f32 = @floatFromInt(texture.width);
+    const position: rl.Vector2 = .{
+        .x = gameState.width / 2 - width / 2,
+        .y = gameState.height / 20,
+    };
+    rl.drawTextureEx(texture, position, 0.0, 1, rl.Color.white);
+}
+
 pub fn loadAssets() !Menu.Assets {
-    const notConnected = try assets.texture(config.assets.paths.menu.connection.connected);
-    const connected = try assets.texture(config.assets.paths.menu.connection.notConnected);
-    const music = try assets.music(config.assets.paths.menu.music.background);
     return .{
         .connection = .{
-            .not_connected_icon = notConnected,
-            .connected_icon = connected,
+            .not_connected_icon = try assets.texture(config.assets.paths.menu.connection.notConnected),
+            .connected_icon = try assets.texture(config.assets.paths.menu.connection.connected),
         },
-        .music = music,
+        .music = try assets.music(config.assets.paths.menu.music.background),
+        .logo = try assets.texture(config.assets.paths.menu.logo),
     };
 }

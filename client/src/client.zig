@@ -19,56 +19,59 @@ pub fn main() anyerror!void {
     rl.setConfigFlags(.{ .window_resizable = true });
     rl.initWindow(@intFromFloat(config.Screen.initialWidth), @intFromFloat(config.Screen.initialHeight), "Lyceum");
     defer rl.closeWindow();
-    // rl.setTargetFPS(60);
-    // var errorElem = errorC{};
-    // var node = try zerl.Node.init("lyceum");
+    rl.setTargetFPS(60);
+    var errorElem = errorC{};
+    var node = try zerl.Node.init("lyceum");
 
-    // var gameState = try state.init(
-    //     std.heap.c_allocator, // Revisit this later
-    //     config.Screen.initialWidth,
-    //     config.Screen.initialHeight,
-    //     &node,
-    //     &errorElem,
-    // );
-    rl.initAudioDevice();
-    defer rl.closeAudioDevice();
-    const musicX = try assets.music(config.assets.paths.menu.music.background);
-    rl.playMusicStream(musicX);
+    var gameState = try state.init(
+        std.heap.c_allocator, // Revisit this later
+        config.Screen.initialWidth,
+        config.Screen.initialHeight,
+        &node,
+        &errorElem,
+    );
+    // rl.initAudioDevice();
+    // defer rl.closeAudioDevice();
+    // const musicX = try assets.music(config.assets.paths.menu.music.background);
+    // rl.playMusicStream(musicX);
     while (!rl.windowShouldClose()) {
         // music.play(&gameState);
-        rl.updateMusicStream(musicX);
+        // rl.updateMusicStream(musicX);
         rl.beginDrawing();
         defer rl.endDrawing();
 
         rl.clearBackground(config.ColorPalette.background);
-        // gameState.width = @floatFromInt(rl.getScreenWidth());
-        // gameState.height = @floatFromInt(rl.getScreenHeight());
+        gameState.width = @floatFromInt(rl.getScreenWidth());
+        gameState.height = @floatFromInt(rl.getScreenHeight());
 
-        // switch (gameState.scene) {
-        //     .user_registry => {
-        //         rl.openURL("https://github.com/Dr-Nekoma/lyceum");
-        //         gameState.scene = .nothing;
-        //     },
-        //     .user_login => {
-        //         try userMenu.login(&gameState);
-        //     },
-        //     .spawn => {
-        //         try inGame.spawn(&gameState);
-        //         try hud.at(&gameState);
-        //     },
-        //     .character_selection => {
-        //         try characterMenu.selection(&gameState);
-        //     },
-        //     .connect => {
-        //         try connectionMenu.connect(&gameState);
-        //     },
-        //     .nothing => {
-        //         try mainMenu.spawn(&gameState);
-        //     },
-        // }
-        // connectionMenu.status(&gameState);
-        // gameState.errorElem.at(gameState.width, gameState.height);
-        // Button.Clickable.Back.at(&gameState.scene, gameState.height);
+        switch (gameState.scene) {
+            .user_registry => {
+                rl.openURL("https://github.com/Dr-Nekoma/lyceum");
+                gameState.scene = .nothing;
+            },
+            .user_login => {
+                mainMenu.displayLogo(&gameState);
+                try userMenu.login(&gameState);
+            },
+            .spawn => {
+                try inGame.spawn(&gameState);
+                try hud.at(&gameState);
+            },
+            .character_selection => {
+                try characterMenu.selection(&gameState);
+            },
+            .connect => {
+                mainMenu.displayLogo(&gameState);
+                try connectionMenu.connect(&gameState);
+            },
+            .nothing => {
+                mainMenu.displayLogo(&gameState);
+                try mainMenu.spawn(&gameState);
+            },
+        }
+        connectionMenu.status(&gameState);
+        gameState.errorElem.at(gameState.width, gameState.height);
+        Button.Clickable.Back.at(&gameState.scene, gameState.height);
         // music.control(&gameState);
     }
     // rl.stopMusicStream(gameState.menu.assets.music);

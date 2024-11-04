@@ -79,6 +79,7 @@ pub const assets = struct {
             pub const music = struct {
                 pub const background = "menu/music/03-Linear-B.ogg";
             };
+            pub const logo = "menu/logo.png";
         };
         pub const game = struct {
             pub const character = struct {
