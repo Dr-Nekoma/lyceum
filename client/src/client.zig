@@ -84,6 +84,7 @@ pub fn main() anyerror!void {
         connectionMenu.status(&gameState);
         gameState.errorElem.at(gameState.width, gameState.height);
         gameState.menu.main.back_button.at(&gameState.scene, gameState.height);
+        music.control(&gameState);
     }
     music.stop(&gameState);
 }
