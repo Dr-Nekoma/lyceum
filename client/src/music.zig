@@ -16,9 +16,9 @@ const Action = struct {
 };
 
 const availableActions = [_]Action{
-    .{ .key = .key_m, .kind = .mute },
-    .{ .key = .key_r, .kind = .restart },
-    .{ .key = .key_p, .kind = .toggle },
+    .{ .key = .key_f1, .kind = .mute },
+    .{ .key = .key_f2, .kind = .restart },
+    .{ .key = .key_f3, .kind = .toggle },
     .{ .key = .key_comma, .kind = .decrease_volume },
     .{ .key = .key_period, .kind = .increase_volume },
 };
