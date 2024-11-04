@@ -39,7 +39,7 @@ pub fn connect(gameState: *GameState) !void {
         position,
         config.titleFontSize,
         config.textSpacing,
-        rl.Color.white,
+        config.ColorPalette.secondary,
     );
     const serverInfoText = text{
         .content = &gameState.menu.connect.address,

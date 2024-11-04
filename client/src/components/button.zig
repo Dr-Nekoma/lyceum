@@ -103,7 +103,7 @@ pub const Clickable = struct {
                 triangle_top,
                 triangle_left,
                 triangle_bottom,
-                rl.Color.white,
+                config.ColorPalette.secondary,
             );
 
             return isHovered;

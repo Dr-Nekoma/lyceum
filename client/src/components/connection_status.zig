@@ -46,7 +46,7 @@ pub fn at(
         .{ .x = statusLabelPositionX, .y = statusLabelPositionY },
         config.textFontSize,
         config.textSpacing,
-        rl.Color.white,
+        config.ColorPalette.secondary,
     );
-    rl.drawTextureEx(icon, iconPosition, 0.0, 0.16, rl.Color.white);
+    rl.drawTextureEx(icon, iconPosition, 0.0, 0.16, config.ColorPalette.secondary);
 }

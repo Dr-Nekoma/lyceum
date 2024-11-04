@@ -43,7 +43,7 @@ pub fn player(world_face_direction: i16, center: rl.Vector2) void {
         center.add(triangle_top),
         center.add(triangle_left),
         center.add(triangle_right),
-        rl.Color.white,
+        config.ColorPalette.secondary,
     );
 }
 
@@ -89,7 +89,7 @@ fn drawMapName(center: rl.Vector2, name: [:0]const u8, font: *rl.Font) void {
         .x = position.x - border,
         .y = position.y - border,
     };
-    
+
     rl.drawRectangleV(bannerPosition, bannerSize, config.ColorPalette.primary);
     rl.drawRectangleLinesEx(.{ .x = bannerPosition.x, .y = bannerPosition.y, .width = bannerSize.x, .height = bannerSize.y }, 2, config.ColorPalette.secondary);
 
@@ -134,7 +134,7 @@ pub fn at(character: *const GameState.World.Character, world: *const GameState.W
         outerRadius,
         outerRadius,
         innerRadius,
-        rl.Color.white,
+        config.ColorPalette.secondary,
     );
     map.alphaMask(alpha_mask);
 
@@ -142,10 +142,10 @@ pub fn at(character: *const GameState.World.Character, world: *const GameState.W
     const texture = character.inventory.hud.minimap.texture.?;
     rl.updateTexture(texture, pixels.ptr);
 
-    texture.draw(@intFromFloat(map_x), @intFromFloat(map_y), rl.Color.white);
+    texture.draw(@intFromFloat(map_x), @intFromFloat(map_y), config.ColorPalette.secondary);
     rl.drawRing(center, innerRadius, outerRadius, 0, 360, 0, config.ColorPalette.primary);
-    rl.drawCircleLinesV(center, innerRadius, rl.Color.white);
-    rl.drawCircleLinesV(center, innerRadius - 1, rl.Color.white);
+    rl.drawCircleLinesV(center, innerRadius, config.ColorPalette.secondary);
+    rl.drawCircleLinesV(center, innerRadius - 1, config.ColorPalette.secondary);
     // std.debug.print("Main Player", .{});
     player(character.stats.face_direction, center);
     drawMapName(center, character.stats.map_name, font);

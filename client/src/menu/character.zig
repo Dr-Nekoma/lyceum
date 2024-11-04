@@ -67,7 +67,7 @@ fn emptyCharacter(gameState: *GameState) !void {
                     .y = currentTextPosition.y,
                 },
                 .textSize = textSize,
-                .textColor = rl.Color.white,
+                .textColor = config.ColorPalette.secondary,
                 .font = &gameState.menu.assets.font,
                 .sound = &gameState.menu.assets.sounds.buttons.click,
             };
@@ -87,7 +87,7 @@ fn emptyCharacter(gameState: *GameState) !void {
                 .{ .x = 50, .y = nameLabelPositionY },
                 config.buttonFontSize,
                 config.textSpacing,
-                rl.Color.white,
+                config.ColorPalette.secondary,
             );
             const nameText = text{
                 .content = gameState.menu.character.create.name,
@@ -150,7 +150,7 @@ pub fn selection(gameState: *GameState) !void {
             }
 
             if (character.preview) |preview| {
-                rl.drawTextureEx(preview, texturePosition, 0.0, 1, rl.Color.white);
+                rl.drawTextureEx(preview, texturePosition, 0.0, 1, config.ColorPalette.secondary);
             }
             joinButton.disabled = currentSelected.* == null;
             if (joinButton.at(

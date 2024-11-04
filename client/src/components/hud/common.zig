@@ -31,7 +31,7 @@ fn drawBoundary(position: rl.Vector2) void {
         .width = slotInternalSize.x + 2 * internalPadding,
         .height = slotInternalSize.y + 2 * internalPadding,
     };
-    rl.drawRectangleLinesEx(slot, thickness, rl.Color.white);
+    rl.drawRectangleLinesEx(slot, thickness, config.ColorPalette.secondary);
 }
 
 pub fn highlightSlots(position: rl.Vector2, keysAndLabels: []const Slot) void {
@@ -57,5 +57,5 @@ pub fn drawSlot(xPosition: f32, yPosition: f32, label: [:0]const u8, font: *rl.F
         .x = xPosition,
         .y = yPosition,
     }, textBoxSize, rl.Color.black);
-    rl.drawTextEx(font.*, label, .{ .x = xPosition, .y = yPosition }, config.hubFontSize, config.textSpacing, rl.Color.white);
+    rl.drawTextEx(font.*, label, .{ .x = xPosition, .y = yPosition }, config.hubFontSize, config.textSpacing, config.ColorPalette.secondary);
 }

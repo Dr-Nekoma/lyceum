@@ -90,8 +90,8 @@ fn faceStats(character: *const GameState.World.Character, font: *rl.Font) !void 
     rl.drawTextEx(font.*, manaNumberStr, .{ .x = manaBarPosition.x + 15, .y = manaNumberPositionY }, config.textFontSize, config.textSpacing, rl.Color.black);
 
     rl.drawCircleV(center, outerRadius, config.ColorPalette.primary);
-    rl.drawCircleLinesV(center, innerRadius, rl.Color.white);
-    rl.drawCircleLinesV(center, innerRadius - 1, rl.Color.white);
+    rl.drawCircleLinesV(center, innerRadius, config.ColorPalette.secondary);
+    rl.drawCircleLinesV(center, innerRadius - 1, config.ColorPalette.secondary);
     rl.drawCircleV(center, innerRadius - 2, rl.Color.sky_blue);
 }
 

@@ -195,7 +195,7 @@ pub fn displayLogo(gameState: *GameState) void {
         .y = gameState.height / 20,
     };
     drawBackgroundColor(width, height, position);
-    rl.drawTextureEx(texture, position, 0.0, 1, rl.Color.white);
+    rl.drawTextureEx(texture, position, 0.0, 1, config.ColorPalette.secondary);
 }
 
 pub fn manageBackground(gameState: *GameState) void {
@@ -205,8 +205,8 @@ pub fn manageBackground(gameState: *GameState) void {
     scrolling.* -= 0.25;
     if (scrolling.* <= -fWidth * 2) scrolling.* = 0;
 
-    rl.drawTextureEx(background, .{ .x = scrolling.*, .y = 0 }, 0, 1, rl.Color.white);
-    rl.drawTextureEx(background, .{ .x = fWidth + scrolling.*, .y = 0 }, 0, 1, rl.Color.white);
+    rl.drawTextureEx(background, .{ .x = scrolling.*, .y = 0 }, 0, 1, config.ColorPalette.secondary);
+    rl.drawTextureEx(background, .{ .x = fWidth + scrolling.*, .y = 0 }, 0, 1, config.ColorPalette.secondary);
 }
 
 pub fn loadAssets() !Menu.Assets {

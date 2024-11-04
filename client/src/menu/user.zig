@@ -30,7 +30,7 @@ pub fn login(gameState: *GameState) !void {
         userPosition,
         config.titleFontSize,
         config.textSpacing,
-        rl.Color.white,
+        config.ColorPalette.secondary,
     );
     const usernameText = text{
         .content = &gameState.menu.login.username,
@@ -59,7 +59,7 @@ pub fn login(gameState: *GameState) !void {
         passPosition,
         config.titleFontSize,
         config.textSpacing,
-        rl.Color.white,
+        config.ColorPalette.secondary,
     );
     const passwordText = text{
         .content = &gameState.menu.login.password,

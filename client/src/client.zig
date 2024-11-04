@@ -67,7 +67,7 @@ pub fn main() anyerror!void {
                 try hud.at(&gameState);
             },
             .character_selection => {
-                rl.drawTextureEx(gameState.menu.assets.backgrounds.character_selection, .{ .x = 0, .y = 0 }, 0, 1, rl.Color.white);
+                rl.drawTextureEx(gameState.menu.assets.backgrounds.character_selection, .{ .x = 0, .y = 0 }, 0, 1, config.ColorPalette.secondary);
                 try characterMenu.selection(&gameState);
             },
             .connect => {

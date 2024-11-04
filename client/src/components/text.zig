@@ -68,7 +68,7 @@ fn drawText(content: [:0]u8, position: rl.Vector2, size: rl.Vector2, font: *rl.F
         },
         config.textFontSize,
         config.textSpacing,
-        rl.Color.white,
+        config.ColorPalette.secondary,
     );
 }
 
@@ -79,7 +79,7 @@ pub fn chat(
     font: *rl.Font,
 ) void {
     pushCharacters(self);
-    drawTextBox(textBoxPosition, textBoxSize, rl.Color.white);
+    drawTextBox(textBoxPosition, textBoxSize, config.ColorPalette.secondary);
     drawText(self.content, textBoxPosition, textBoxSize, font);
 }
 
@@ -108,7 +108,7 @@ fn at_impl(
         }
     };
 
-    drawTextBox(textBoxPosition, textBoxSize, if (mouseOnText) config.ColorPalette.secondary else rl.Color.white);
+    drawTextBox(textBoxPosition, textBoxSize, if (mouseOnText) config.ColorPalette.secondary else config.ColorPalette.secondary);
 
     const is_redacted = buffer_size != 0;
     var redaction: [buffer_size:0]u8 = .{0} ** buffer_size;

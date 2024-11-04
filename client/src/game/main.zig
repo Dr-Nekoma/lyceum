@@ -85,7 +85,7 @@ fn drawWorld(player: *const GameState.World.Character, world: *const GameState.W
             if (world.tiles.get(tile)) |tileData| {
                 const tileModel, _ = tileData;
                 const position = assetPosition(fx, fy, config.assets.tile.level);
-                rl.drawModelEx(tileModel.?, position, config.assets.tile.axis, config.assets.tile.angle, config.assets.tile.scale, rl.Color.white);
+                rl.drawModelEx(tileModel.?, position, config.assets.tile.axis, config.assets.tile.angle, config.assets.tile.scale, config.ColorPalette.secondary);
             } else {
                 std.debug.print("[ERROR] Tile kind not present in asset pool: .{}\n", .{tile});
                 return error.tile_kind_not_found;
@@ -93,7 +93,7 @@ fn drawWorld(player: *const GameState.World.Character, world: *const GameState.W
             if (object != .empty) {
                 if (world.objects.get(object)) |objectData| {
                     const position = assetPosition(fx, fy, config.assets.object.defaultLevel);
-                    rl.drawModelEx(objectData.model.?, position, objectData.axis, objectData.angle, objectData.scale, rl.Color.white);
+                    rl.drawModelEx(objectData.model.?, position, objectData.axis, objectData.angle, objectData.scale, config.ColorPalette.secondary);
                 }
             }
         }
