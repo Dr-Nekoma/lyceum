@@ -63,7 +63,7 @@
             pkgs.pkg-config
             erlangLibs
             raylib
-          ];
+          ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux (with pkgs; [libpulseaudio]);
           customRuntimeDeps = [
             erlangLibs
             raylib
