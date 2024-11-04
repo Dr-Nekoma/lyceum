@@ -26,9 +26,10 @@ fn stats(character: *const GameState.World.Character, size: rl.Vector2, position
     };
 
     rl.drawRectangleV(boundaryPosition, boundarySize, config.ColorPalette.primary);
+    rl.drawRectangleLinesEx(.{ .x = boundaryPosition.x, .y = boundaryPosition.y, .width = boundarySize.x, .height = boundarySize.y }, 2, config.ColorPalette.secondary);
     const positionX: f32 = boundaryPosition.x + 3 * common.internalPadding;
     const positionY: f32 = boundaryPosition.y + (boundarySize.y / 2 - fontSize / 2);
-    rl.drawTextEx(font.*, character.stats.name, .{ .x = positionX, .y = positionY }, fontSize, config.textSpacing, rl.Color.white);
+    rl.drawTextEx(font.*, character.stats.name, .{ .x = positionX, .y = positionY }, fontSize, config.textSpacing, config.ColorPalette.secondary);
     const top: rl.Vector2 = .{
         .x = boundaryPosition.x + nameLength + 6 * common.internalPadding,
         .y = boundaryPosition.y,
@@ -38,9 +39,9 @@ fn stats(character: *const GameState.World.Character, size: rl.Vector2, position
         .y = boundaryPosition.y + boundarySize.y,
     };
     const thickness = 4;
-    rl.drawLineEx(top, down, thickness, rl.Color.white);
+    rl.drawLineEx(top, down, thickness, config.ColorPalette.secondary);
     const levelPositionX: f32 = top.x + 3 * common.internalPadding;
-    rl.drawTextEx(font.*, levelStr, .{ .x = levelPositionX, .y = positionY }, fontSize, config.textSpacing, rl.Color.white);
+    rl.drawTextEx(font.*, levelStr, .{ .x = levelPositionX, .y = positionY }, fontSize, config.textSpacing, config.ColorPalette.secondary);
 }
 
 fn bar(currentValue: u32, maxValue: u32, position: rl.Vector2, barWidth: u32, inner_color: rl.Color, outer_color: rl.Color) void {

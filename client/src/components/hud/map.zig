@@ -73,7 +73,37 @@ pub const coordinates = struct {
     }
 };
 
-pub fn at(character: *const GameState.World.Character, world: *const GameState.World.Map, width: f32, height: f32) !void {
+fn drawMapName(center: rl.Vector2, name: [:0]const u8, font: *rl.Font) void {
+    const nameMeasure = rl.measureTextEx(font.*, name, config.textFontSize, config.textSpacing);
+    const position: rl.Vector2 = .{
+        .x = center.x - nameMeasure.x / 2,
+        .y = center.y - innerRadius - (nameMeasure.y / 2),
+    };
+
+    const border = 10;
+    const bannerSize: rl.Vector2 = .{
+        .x = nameMeasure.x + 2 * border,
+        .y = config.textFontSize + 2 * border,
+    };
+    const bannerPosition: rl.Vector2 = .{
+        .x = position.x - border,
+        .y = position.y - border,
+    };
+    
+    rl.drawRectangleV(bannerPosition, bannerSize, config.ColorPalette.primary);
+    rl.drawRectangleLinesEx(.{ .x = bannerPosition.x, .y = bannerPosition.y, .width = bannerSize.x, .height = bannerSize.y }, 2, config.ColorPalette.secondary);
+
+    rl.drawTextEx(
+        font.*,
+        name,
+        position,
+        config.textFontSize,
+        config.textSpacing,
+        config.ColorPalette.secondary,
+    );
+}
+
+pub fn at(character: *const GameState.World.Character, world: *const GameState.World.Map, width: f32, height: f32, font: *rl.Font) !void {
     const position: rl.Vector2 = .{
         .x = character.stats.x_position,
         .y = character.stats.y_position,
@@ -118,4 +148,5 @@ pub fn at(character: *const GameState.World.Character, world: *const GameState.W
     rl.drawCircleLinesV(center, innerRadius - 1, rl.Color.white);
     // std.debug.print("Main Player", .{});
     player(character.stats.face_direction, center);
+    drawMapName(center, character.stats.map_name, font);
 }
