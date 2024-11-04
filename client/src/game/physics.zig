@@ -69,7 +69,7 @@ pub const character = struct {
         if (velocity.y > 0) FrictionVector.y = -FrictionVector.y;
         if (velocity.z > 0) FrictionVector.z = -FrictionVector.z;
 
-        velocity.* = velocity.*.add(FrictionVector);
+        velocity.* = velocity.add(FrictionVector);
 
         velocity.* = rm.vector3Clamp(velocity.*, rm.vector3Scale(velocityCeiling, -1), velocityCeiling);
 
