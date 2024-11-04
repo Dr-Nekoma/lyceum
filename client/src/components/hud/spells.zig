@@ -28,7 +28,7 @@ pub fn at(slots: []const [:0]const u8, width: f32, height: f32, font: *rl.Font) 
     };
     const boundaryPosition: rl.Vector2 = .{
         .x = width / 2 - boundarySize.x / 2,
-        .y = height - common.slotBoxSize.y - config.menuButtonsPadding,
+        .y = height - common.slotBoxSize.y - 6,
     };
 
     rl.drawRectangleV(boundaryPosition, boundarySize, config.ColorPalette.primary);

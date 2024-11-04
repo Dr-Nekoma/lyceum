@@ -51,7 +51,7 @@ pub fn at(gameState: *GameState) !void {
 
     const mainPosition: rl.Vector2 = .{
         .x = width / 2,
-        .y = 3 * config.menuButtonsPadding,
+        .y = 18,
     };
 
     try info.at(character, info.mainSize, mainPosition, config.textFontSize, gameState.allocator, &gameState.menu.assets.font);
