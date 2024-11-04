@@ -52,6 +52,15 @@ pub fn texture(textureFilePath: [:0]const u8) !rl.Texture {
     );
 }
 
+pub fn font(fontFilePath: [:0]const u8) !rl.Font {
+    return load(
+        rl.Font,
+        error.could_not_load_font,
+        .{.{".otf"}},
+        fontFilePath,
+    );
+}
+
 pub fn music(musicFilePath: [:0]const u8) !rl.Music {
     // TODO: figure out the lack of init for this return type
     const allocator: std.mem.Allocator = std.heap.c_allocator;
@@ -78,20 +87,6 @@ pub fn sound(soundFilePath: [:0]const u8) !rl.Sound {
         return error.could_not_load_sound;
     }
     return rl.loadSound(fullFilePath);
-}
-
-pub fn font(fontFilePath: [:0]const u8) !rl.Font {
-    // TODO: figure out the lack of init for this return type
-    const allocator: std.mem.Allocator = std.heap.c_allocator;
-    const fullFilePath = try std.fs.path.joinZ(allocator, &.{ base_filepath, fontFilePath });
-    defer allocator.free(fullFilePath);
-    const valid_extensions = comptime std.StaticStringMap(void).initComptime(.{.{".otf"}});
-    const extension = std.fs.path.extension(fullFilePath);
-    if (!valid_extensions.has(extension)) {
-        std.debug.print("Error trying to load font: .{s}", .{fullFilePath});
-        return error.could_not_load_font;
-    }
-    return rl.loadFont(fullFilePath);
 }
 
 pub fn animations(animationFilePath: [:0]const u8) ![]rl.ModelAnimation {
