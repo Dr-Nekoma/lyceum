@@ -53,10 +53,12 @@ pub fn main() anyerror!void {
 
         switch (gameState.scene) {
             .user_registry => {
-                rl.openURL("https://github.com/Dr-Nekoma/lyceum");
+                mainMenu.manageBackground(&gameState);
+                gameState.errorElem.update(.create_account_not_implemented);
                 gameState.scene = .nothing;
             },
             .user_login => {
+                mainMenu.manageBackground(&gameState);
                 mainMenu.displayLogo(&gameState);
                 try userMenu.login(&gameState);
             },
@@ -65,13 +67,16 @@ pub fn main() anyerror!void {
                 try hud.at(&gameState);
             },
             .character_selection => {
+                rl.drawTextureEx(gameState.menu.assets.backgrounds.character_selection, .{ .x = 0, .y = 0 }, 0, 1, rl.Color.white);
                 try characterMenu.selection(&gameState);
             },
             .connect => {
+                mainMenu.manageBackground(&gameState);
                 mainMenu.displayLogo(&gameState);
                 try connectionMenu.connect(&gameState);
             },
             .nothing => {
+                mainMenu.manageBackground(&gameState);
                 mainMenu.displayLogo(&gameState);
                 try mainMenu.spawn(&gameState);
             },

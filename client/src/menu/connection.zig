@@ -31,10 +31,12 @@ pub fn connect(gameState: *GameState) !void {
     const serverInfoLabelPositionY =
         serverInfoBoxPosition.y - config.buttonFontSize - 3 * config.menuButtonsPadding;
 
+    const position: rl.Vector2 = .{ .x = serverInfoLabelPositionX, .y = serverInfoLabelPositionY };
+    menu.drawBackgroundColor(serverInfoLabelSize, config.titleFontSize, position);
     rl.drawTextEx(
         gameState.menu.assets.font,
         serverInfoLabel,
-        .{ .x = serverInfoLabelPositionX, .y = serverInfoLabelPositionY },
+        position,
         config.titleFontSize,
         config.textSpacing,
         rl.Color.white,

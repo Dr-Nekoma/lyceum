@@ -22,10 +22,12 @@ pub fn login(gameState: *GameState) !void {
     const usernameLabelPositionY =
         usernameBoxPosition.y - config.buttonFontSize - 2 * config.menuButtonsPadding;
 
+    const userPosition = .{ .x = usernameLabelPositionX, .y = usernameLabelPositionY };
+    menu.drawBackgroundColor(usernameLabelSize, config.titleFontSize, userPosition);
     rl.drawTextEx(
         gameState.menu.assets.font,
         usernameLabel,
-        .{ .x = usernameLabelPositionX, .y = usernameLabelPositionY },
+        userPosition,
         config.titleFontSize,
         config.textSpacing,
         rl.Color.white,
@@ -48,10 +50,13 @@ pub fn login(gameState: *GameState) !void {
         .x = gameState.width / 2,
         .y = passwordLabelPositionY + config.buttonFontSize + 2 * config.menuButtonsPadding,
     };
+
+    const passPosition = .{ .x = passwordLabelPositionX, .y = passwordLabelPositionY };
+    menu.drawBackgroundColor(passwordLabelSize, config.titleFontSize, passPosition);
     rl.drawTextEx(
         gameState.menu.assets.font,
         passwordLabel,
-        .{ .x = passwordLabelPositionX, .y = passwordLabelPositionY },
+        passPosition,
         config.titleFontSize,
         config.textSpacing,
         rl.Color.white,

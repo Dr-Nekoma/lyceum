@@ -28,6 +28,7 @@ const Error = @Type(.{ .Enum = .{
 } });
 
 const errorMessage = struct {
+    pub const create_account_not_implemented = "Account creation is not implemented yet!";
     pub const node_status = "Failed to Initialize Node!";
     pub const node_connection = "Node Connection Failure!";
     pub const login_send = "Failed to Send Credentials!";

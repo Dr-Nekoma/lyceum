@@ -81,10 +81,10 @@ pub const Clickable = struct {
             );
             if (isHovered) {
                 const time = rl.getTime();
-                const offset: f32 = @floatCast(2 * @sin(2 * time) + 3);
+                const offset: f32 = @floatCast(5 * @sin(2 * time) + 3);
                 highlighting(position, size, offset);
             }
-            rl.drawRectangleV(position, size, config.ColorPalette.primary);
+            rl.drawRectangleV(position, size, config.ColorPalette.background);
 
             const triangle_top: rl.Vector2 = .{
                 .x = 2 * size.x / 3 + position.x,
@@ -149,7 +149,7 @@ pub const Clickable = struct {
         if (!self.disabled) {
             if (isHovered) {
                 const time = rl.getTime();
-                const offset: f32 = @floatCast(2 * @sin(2 * time) + 3);
+                const offset: f32 = @floatCast(5 * @sin(2 * time) + 3);
                 highlighting(position, size, offset);
             }
         } else {
@@ -203,7 +203,7 @@ pub const Selectable = struct {
             highlighting(position, size, offset);
         } else if (isHovered) {
             const time = rl.getTime();
-            const offset: f32 = @floatCast(2 * @sin(2 * time) + 3);
+            const offset: f32 = @floatCast(5 * @sin(2 * time) + 3);
             highlighting(position, size, offset);
         }
         rl.drawRectangleV(position, size, color);

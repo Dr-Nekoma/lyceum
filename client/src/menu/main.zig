@@ -36,6 +36,14 @@ pub const Menu = struct {
         },
         music: rl.Music,
         logo: rl.Texture,
+
+        backgrounds: struct {
+            main: struct {
+                texture: rl.Texture,
+                scrolling: f32 = 0,
+            },
+            character_selection: rl.Texture,
+        },
         font: rl.Font,
         sounds: struct {
             buttons: struct {
@@ -164,21 +172,50 @@ pub fn spawn(gameState: *GameState) !void {
     userLogoutButton(gameState);
 }
 
+pub fn drawBackgroundColor(width: f32, height: f32, position: rl.Vector2) void {
+    const border = 10;
+    const bannerSize: rl.Vector2 = .{
+        .x = width + 2 * border,
+        .y = height + 2 * border,
+    };
+    const bannerPosition: rl.Vector2 = .{
+        .x = position.x - border,
+        .y = position.y - border,
+    };
+    rl.drawRectangleV(bannerPosition, bannerSize, config.ColorPalette.background);
+}
+
 pub fn displayLogo(gameState: *GameState) void {
     const texture = gameState.menu.assets.logo;
     const width: f32 = @floatFromInt(texture.width);
+    const height: f32 = @floatFromInt(texture.height);
     const position: rl.Vector2 = .{
         .x = gameState.width / 2 - width / 2,
         .y = gameState.height / 20,
     };
+    drawBackgroundColor(width, height, position);
     rl.drawTextureEx(texture, position, 0.0, 1, rl.Color.white);
+}
+
+pub fn manageBackground(gameState: *GameState) void {
+    const scrolling = &gameState.menu.assets.backgrounds.main.scrolling;
+    const background = gameState.menu.assets.backgrounds.main.texture;
+    const fWidth: f32 = @floatFromInt(background.width);
+    scrolling.* -= 0.25;
+    if (scrolling.* <= -fWidth * 2) scrolling.* = 0;
+
+    rl.drawTextureEx(background, .{ .x = scrolling.*, .y = 0 }, 0, 1, rl.Color.white);
+    rl.drawTextureEx(background, .{ .x = fWidth + scrolling.*, .y = 0 }, 0, 1, rl.Color.white);
 }
 
 pub fn loadAssets() !Menu.Assets {
     return .{ .connection = .{
         .not_connected_icon = try assets.texture(config.assets.paths.menu.connection.notConnected),
         .connected_icon = try assets.texture(config.assets.paths.menu.connection.connected),
-    }, .music = try assets.music(config.assets.paths.menu.music.background), .logo = try assets.texture(config.assets.paths.menu.logo), .font = try assets.font(config.assets.paths.menu.font), .sounds = .{
+    }, .music = try assets.music(config.assets.paths.menu.music.background), .logo = try assets.texture(config.assets.paths.menu.logo), .backgrounds = .{
+        .main = .{ .texture = try assets.texture(config.assets.paths.menu.background.main) },
+        .character_selection = try assets.texture(config.assets.paths.menu.background.character_selection),
+    }, .font = try assets.font(config.assets.paths.menu.font), .sounds = .{
         .buttons = .{
             .select = try assets.sound(config.assets.paths.menu.sounds.buttons.select),
             .click = try assets.sound(config.assets.paths.menu.sounds.buttons.click),
