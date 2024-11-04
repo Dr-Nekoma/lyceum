@@ -183,6 +183,7 @@ pub fn drawBackgroundColor(width: f32, height: f32, position: rl.Vector2) void {
         .y = position.y - border,
     };
     rl.drawRectangleV(bannerPosition, bannerSize, config.ColorPalette.background);
+    rl.drawRectangleLinesEx(.{ .x = bannerPosition.x, .y = bannerPosition.y, .width = bannerSize.x, .height = bannerSize.y }, 2, config.ColorPalette.primary);
 }
 
 pub fn displayLogo(gameState: *GameState) void {
