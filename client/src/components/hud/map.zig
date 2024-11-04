@@ -146,7 +146,8 @@ pub fn at(character: *const GameState.World.Character, world: *const GameState.W
     rl.drawRing(center, innerRadius, outerRadius, 0, 360, 0, config.ColorPalette.primary);
     rl.drawCircleLinesV(center, innerRadius, config.ColorPalette.secondary);
     rl.drawCircleLinesV(center, innerRadius - 1, config.ColorPalette.secondary);
-    // std.debug.print("Main Player", .{});
+
     player(character.stats.face_direction, center);
+
     drawMapName(center, character.stats.map_name, font);
 }
