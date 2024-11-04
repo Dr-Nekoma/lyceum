@@ -52,6 +52,20 @@ pub fn texture(textureFilePath: [:0]const u8) !rl.Texture {
     );
 }
 
+pub fn music(musicFilePath: [:0]const u8) !rl.Music {
+    // TODO: figure out the lack of init for this return type
+    const allocator: std.mem.Allocator = std.heap.c_allocator;
+    const fullFilePath = try std.fs.path.joinZ(allocator, &.{ base_filepath, musicFilePath });
+    defer allocator.free(fullFilePath);
+    const valid_extensions = comptime std.StaticStringMap(void).initComptime(.{.{".ogg"}});
+    const extension = std.fs.path.extension(fullFilePath);
+    if (!valid_extensions.has(extension)) {
+        std.debug.print("Error trying to load music: .{s}", .{fullFilePath});
+        return error.could_not_load_music;
+    }
+    return rl.loadMusicStream(fullFilePath);
+}
+
 pub fn animations(animationFilePath: [:0]const u8) ![]rl.ModelAnimation {
     // TODO: figure out the lack of init for this return type
     const allocator: std.mem.Allocator = std.heap.c_allocator;

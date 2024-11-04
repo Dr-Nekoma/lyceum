@@ -101,6 +101,10 @@ scene: Scene = .nothing,
 connection: Connection,
 world: World = undefined,
 errorElem: *errorC,
+music: struct {
+    playing: bool = true,
+    volume: f32 = 0.5,
+} = .{},
 
 pub fn send(state: *@This(), data: anytype) !void {
     try if (state.connection.handler) |*pid|

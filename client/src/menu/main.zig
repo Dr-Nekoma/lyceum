@@ -35,6 +35,7 @@ pub const Menu = struct {
             connected_icon: rl.Texture2D,
             not_connected_icon: rl.Texture2D,
         },
+        music: rl.Music,
     };
     pub const Character = struct {
         pub const Creation = struct {
@@ -148,10 +149,12 @@ pub fn spawn(gameState: *GameState) !void {
 pub fn loadAssets() !Menu.Assets {
     const notConnected = try assets.texture(config.assets.paths.menu.connection.connected);
     const connected = try assets.texture(config.assets.paths.menu.connection.notConnected);
+    const music = try assets.music(config.assets.paths.menu.music.background);
     return .{
         .connection = .{
             .not_connected_icon = notConnected,
             .connected_icon = connected,
         },
+        .music = music,
     };
 }

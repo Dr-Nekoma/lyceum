@@ -76,6 +76,9 @@ pub const assets = struct {
             pub const character = struct {
                 pub const placeholder = "menu/character/placeholder.png";
             };
+            pub const music = struct {
+                pub const background = "menu/music/03-Linear-B.ogg";
+            };
         };
         pub const game = struct {
             pub const character = struct {
