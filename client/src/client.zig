@@ -17,12 +17,16 @@ const zerl = @import("zerl");
 
 pub fn main() anyerror!void {
     rl.setConfigFlags(.{ .window_resizable = true });
+
     rl.initWindow(@intFromFloat(config.Screen.initialWidth), @intFromFloat(config.Screen.initialHeight), "Lyceum");
     defer rl.closeWindow();
+    rl.initAudioDevice();
+    defer rl.closeAudioDevice();
+
     rl.setTargetFPS(60);
+
     var errorElem = errorC{};
     var node = try zerl.Node.init("lyceum");
-
     var gameState = try state.init(
         std.heap.c_allocator, // Revisit this later
         config.Screen.initialWidth,
@@ -30,13 +34,10 @@ pub fn main() anyerror!void {
         &node,
         &errorElem,
     );
-    // rl.initAudioDevice();
-    // defer rl.closeAudioDevice();
-    // const musicX = try assets.music(config.assets.paths.menu.music.background);
-    // rl.playMusicStream(musicX);
+
+    rl.playMusicStream(gameState.menu.assets.music);
     while (!rl.windowShouldClose()) {
-        // music.play(&gameState);
-        // rl.updateMusicStream(musicX);
+        music.play(&gameState);
         rl.beginDrawing();
         defer rl.endDrawing();
 
@@ -72,8 +73,7 @@ pub fn main() anyerror!void {
         connectionMenu.status(&gameState);
         gameState.errorElem.at(gameState.width, gameState.height);
         Button.Clickable.Back.at(&gameState.scene, gameState.height);
-        // music.control(&gameState);
+        music.control(&gameState);
     }
-    // rl.stopMusicStream(gameState.menu.assets.music);
-    // rl.unloadMusicStream(gameState.menu.assets.music);
+    music.stop(&gameState);
 }

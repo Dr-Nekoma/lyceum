@@ -18,7 +18,7 @@ pub fn at(
     status: bool,
     height: f32,
 ) void {
-    const icon, const statusLabel = if (status) .{ self.icons.not_connected.*, "Connected" } else .{ self.icons.connected.*, "Not Connected" };
+    const icon, const statusLabel = if (status) .{ self.icons.connected.*, "Connected" } else .{ self.icons.not_connected.*, "Not Connected" };
     const statusLabelLength: f32 = @floatFromInt(rl.measureText(statusLabel, config.textFontSize));
 
     const size: rl.Vector2 = .{

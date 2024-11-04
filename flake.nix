@@ -193,6 +193,7 @@
               xorg.libXi
               xorg.libXi
               libGL
+              libpulseaudio
             ];
             darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
               CoreFoundation
