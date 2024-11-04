@@ -80,6 +80,7 @@ pub const assets = struct {
                 pub const background = "menu/music/03-Linear-B.ogg";
             };
             pub const logo = "menu/logo.png";
+            pub const font = "menu/font.otf";
         };
         pub const game = struct {
             pub const character = struct {
@@ -123,9 +124,11 @@ pub const assets = struct {
 
 pub const fov = 2;
 pub const defaultCameraDistance = 35;
-pub const buttonFontSize = 20;
+pub const buttonFontSize = 27;
+pub const titleFontSize = 25;
 pub const textFontSize = 20;
-pub const hubFontSize = 6;
+pub const textSpacing = 2.5;
+pub const hubFontSize = 13;
 pub const menuButtonsPadding = 6;
 pub const nameSize = 18;
 pub const messageSize = 50;

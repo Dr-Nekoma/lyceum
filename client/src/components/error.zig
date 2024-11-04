@@ -68,12 +68,13 @@ pub fn at(
     self: *@This(),
     width: f32,
     height: f32,
+    font: *rl.Font,
 ) void {
     const current_timestamp = rl.getTime();
     if (current_timestamp <= self.expiration) {
         if (self.type) |kind| {
             const message = error_message(kind);
-            const textSize: f32 = @floatFromInt(rl.measureText(message, fontSize));
+            const textSize: f32 = rl.measureTextEx(font.*, message, fontSize, config.textSpacing).x;
             const size: rl.Vector2 = .{
                 .x = 7 * padding + textSize,
                 .y = 7 * padding + fontSize,
@@ -81,7 +82,7 @@ pub fn at(
 
             const position: rl.Vector2 = .{
                 .x = width / 2 - size.x / 2,
-                .y = height / 4 - size.y / 2,
+                .y = height / 3 - size.y / 2,
             };
 
             const black = rl.Color.init(0, 0, 0, self.transparency);
@@ -99,11 +100,12 @@ pub fn at(
             const messageX = position.x + size.x / 2 - textSize / 2;
             const floatFont: f32 = @floatFromInt(fontSize);
             const messageY = position.y + size.y / 2 - floatFont / 2;
-            rl.drawText(
+            rl.drawTextEx(
+                font.*,
                 message,
-                @intFromFloat(messageX),
-                @intFromFloat(messageY),
+                .{ .x = messageX, .y = messageY },
                 fontSize,
+                config.textSpacing,
                 red,
             );
 

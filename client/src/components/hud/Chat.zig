@@ -54,6 +54,7 @@ pub fn at(
                 .x = boundarySize.x,
                 .y = text.menuTextBoxSize.y,
             },
+            &gameState.menu.assets.font,
         );
     } else if (self.mode.* == .idle and self.position.* > 0) {
         const message: Message = .{

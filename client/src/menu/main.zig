@@ -37,6 +37,7 @@ pub const Menu = struct {
         },
         music: rl.Music,
         logo: rl.Texture,
+        font: rl.Font,
     };
     pub const Character = struct {
         pub const Creation = struct {
@@ -70,6 +71,7 @@ fn userRegistryButton(gameState: *GameState) void {
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
+        &gameState.menu.assets.font,
     )) gameState.scene = .user_registry;
 }
 
@@ -90,6 +92,7 @@ fn userLoginButton(gameState: *GameState) !void {
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
+        &gameState.menu.assets.font,
     )) {
         if (next_scene == .character_selection) try server.user.getCharacters(gameState);
         gameState.scene = next_scene;
@@ -111,6 +114,7 @@ pub fn userLogoutButton(gameState: *GameState) void {
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
+        &gameState.menu.assets.font,
     )) {
         server.user.logout(gameState);
     }
@@ -130,6 +134,7 @@ fn userConnectButton(gameState: *GameState) void {
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
+        &gameState.menu.assets.font,
     )) {
         if (next_scene == .nothing) {
             server.user.logout(gameState);
@@ -165,5 +170,6 @@ pub fn loadAssets() !Menu.Assets {
         },
         .music = try assets.music(config.assets.paths.menu.music.background),
         .logo = try assets.texture(config.assets.paths.menu.logo),
+        .font = try assets.font(config.assets.paths.menu.font),
     };
 }

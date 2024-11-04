@@ -71,7 +71,7 @@ pub fn main() anyerror!void {
             },
         }
         connectionMenu.status(&gameState);
-        gameState.errorElem.at(gameState.width, gameState.height);
+        gameState.errorElem.at(gameState.width, gameState.height, &gameState.menu.assets.font);
         Button.Clickable.Back.at(&gameState.scene, gameState.height);
         music.control(&gameState);
     }

@@ -66,6 +66,20 @@ pub fn music(musicFilePath: [:0]const u8) !rl.Music {
     return rl.loadMusicStream(fullFilePath);
 }
 
+pub fn font(fontFilePath: [:0]const u8) !rl.Font {
+    // TODO: figure out the lack of init for this return type
+    const allocator: std.mem.Allocator = std.heap.c_allocator;
+    const fullFilePath = try std.fs.path.joinZ(allocator, &.{ base_filepath, fontFilePath });
+    defer allocator.free(fullFilePath);
+    const valid_extensions = comptime std.StaticStringMap(void).initComptime(.{.{".otf"}});
+    const extension = std.fs.path.extension(fullFilePath);
+    if (!valid_extensions.has(extension)) {
+        std.debug.print("Error trying to load font: .{s}", .{fullFilePath});
+        return error.could_not_load_font;
+    }
+    return rl.loadFont(fullFilePath);
+}
+
 pub fn animations(animationFilePath: [:0]const u8) ![]rl.ModelAnimation {
     // TODO: figure out the lack of init for this return type
     const allocator: std.mem.Allocator = std.heap.c_allocator;

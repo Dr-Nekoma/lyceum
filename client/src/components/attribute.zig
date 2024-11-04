@@ -15,18 +15,20 @@ textColor: rl.Color,
 
 pub fn at(
     self: @This(),
+    font: *rl.Font,
 ) !void {
     const padding = 15;
 
-    const messageSize: f32 = @floatFromInt(rl.measureText(self.text, config.buttonFontSize));
+    const messageSize: f32 = rl.measureTextEx(font.*, self.text, config.buttonFontSize, config.textSpacing).x;
     const messageX = self.textPosition.x;
     const floatFont: f32 = @floatFromInt(config.buttonFontSize);
     const messageY = self.textPosition.y + self.textSize.y / 2 - floatFont / 2;
-    rl.drawText(
+    rl.drawTextEx(
+        font.*,
         self.text,
-        @intFromFloat(messageX),
-        @intFromFloat(messageY),
+        .{ .x = messageX, .y = messageY },
         config.buttonFontSize,
+        config.textSpacing,
         self.textColor,
     );
 
@@ -42,13 +44,14 @@ pub fn at(
 
     var buf: [3:0]u8 = .{ 0, 0, 0 };
     _ = std.fmt.bufPrint(&buf, "{}", .{self.current.*}) catch unreachable;
-    const currentMessageSize: f32 = @floatFromInt(rl.measureText(&buf, config.buttonFontSize));
+    const currentMessageSize: f32 = rl.measureTextEx(font.*, &buf, config.buttonFontSize, config.textSpacing).x;
     const currentMessageX = minusPosition.x + padding + attrButtonSize.x;
-    rl.drawText(
+    rl.drawTextEx(
+        font.*,
         &buf,
-        @intFromFloat(currentMessageX),
-        @intFromFloat(messageY),
+        .{ .x = currentMessageX, .y = messageY },
         config.buttonFontSize,
+        config.textSpacing,
         self.textColor,
     );
 
@@ -62,6 +65,7 @@ pub fn at(
         plusPosition,
         attrButtonSize,
         config.ColorPalette.primary,
+        font,
     )) self.current.* +|= 1;
 
     if (Clickable.at(
@@ -69,5 +73,6 @@ pub fn at(
         minusPosition,
         attrButtonSize,
         config.ColorPalette.primary,
+        font,
     )) self.current.* -|= 1;
 }

@@ -128,6 +128,7 @@ pub const Clickable = struct {
         position: rl.Vector2,
         size: rl.Vector2,
         activeColor: rl.Color,
+        font: *rl.Font,
     ) bool {
         const buttonArea = rl.Rectangle.init(
             position.x,
@@ -150,15 +151,16 @@ pub const Clickable = struct {
             color = config.ColorPalette.disabled;
         }
         rl.drawRectangleV(position, size, color);
-        const messageSize: f32 = @floatFromInt(rl.measureText(message, config.buttonFontSize));
+        const messageSize: f32 = rl.measureTextEx(font.*, message, config.buttonFontSize, config.textSpacing).x;
         const messageX = position.x + size.x / 2 - messageSize / 2;
         const floatFont: f32 = @floatFromInt(config.buttonFontSize);
         const messageY = position.y + size.y / 2 - floatFont / 2;
-        rl.drawText(
+        rl.drawTextEx(
+            font.*,
             message,
-            @intFromFloat(messageX),
-            @intFromFloat(messageY),
+            .{ .x = messageX, .y = messageY },
             config.buttonFontSize,
+            config.textSpacing,
             config.ColorPalette.secondary,
         );
         return !self.disabled and (isHovered and rl.isMouseButtonPressed(.mouse_button_left));
@@ -174,6 +176,7 @@ pub const Selectable = struct {
         size: rl.Vector2,
         color: rl.Color,
         currentIndex: ?usize,
+        font: *rl.Font,
     ) bool {
         const buttonArea = rl.Rectangle.init(
             position.x,
@@ -195,15 +198,16 @@ pub const Selectable = struct {
             highlighting(position, size, offset);
         }
         rl.drawRectangleV(position, size, color);
-        const messageSize: f32 = @floatFromInt(rl.measureText(message, config.buttonFontSize));
+        const messageSize: f32 = rl.measureTextEx(font.*, message, config.buttonFontSize, config.textSpacing).x;
         const messageX = position.x + size.x / 2 - messageSize / 2;
         const floatFont: f32 = @floatFromInt(config.buttonFontSize);
         const messageY = position.y + size.y / 2 - floatFont / 2;
-        rl.drawText(
+        rl.drawTextEx(
+            font.*,
             message,
-            @intFromFloat(messageX),
-            @intFromFloat(messageY),
+            .{ .x = messageX, .y = messageY },
             config.buttonFontSize,
+            config.textSpacing,
             config.ColorPalette.secondary,
         );
 

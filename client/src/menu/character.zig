@@ -69,7 +69,7 @@ fn emptyCharacter(gameState: *GameState) !void {
                 .textSize = textSize,
                 .textColor = rl.Color.white,
             };
-            try attributeComp.at();
+            try attributeComp.at(&gameState.menu.assets.font);
             currentTextPosition.y += textSize.y + fieldPadding;
         } else if (std.mem.eql(u8, field.name, "name")) {
             const nameBoxPosition: rl.Vector2 = .{
@@ -79,18 +79,19 @@ fn emptyCharacter(gameState: *GameState) !void {
             const nameLabelPositionY =
                 nameBoxPosition.y - config.buttonFontSize - 2 * config.menuButtonsPadding;
 
-            rl.drawText(
+            rl.drawTextEx(
+                gameState.menu.assets.font,
                 "Name:",
-                50,
-                @intFromFloat(nameLabelPositionY),
+                .{ .x = 50, .y = nameLabelPositionY },
                 config.buttonFontSize,
+                config.textSpacing,
                 rl.Color.white,
             );
             const nameText = text{
                 .content = gameState.menu.character.create.name,
                 .position = &gameState.menu.character.create.name_position,
             };
-            nameText.at(nameBoxPosition, text.menuTextBoxSize);
+            nameText.at(nameBoxPosition, text.menuTextBoxSize, &gameState.menu.assets.font);
             gameState.world.character.stats.name = gameState.menu.character.create.name;
         } else {
             // std.debug.print("Not editable: .{s}\n", .{field.name});
@@ -142,6 +143,7 @@ pub fn selection(gameState: *GameState) !void {
                 buttonSize,
                 config.ColorPalette.primary,
                 currentSelected.*,
+                &gameState.menu.assets.font,
             )) {
                 currentSelected.* = index;
                 gameState.world.character.stats = character.stats;
@@ -156,6 +158,7 @@ pub fn selection(gameState: *GameState) !void {
                 joinButtonPosition,
                 joinButtonSize,
                 config.ColorPalette.primary,
+                &gameState.menu.assets.font,
             )) {
                 try goToSpawn(gameState);
             }

@@ -17,8 +17,8 @@ pub const slotInternalSize: rl.Vector2 = .{
 };
 
 const textBoxSize: rl.Vector2 = .{
-    .x = config.hubFontSize + 4,
-    .y = config.hubFontSize + 6,
+    .x = config.hubFontSize + 3,
+    .y = config.hubFontSize + 4,
 };
 
 pub const internalPadding = 5;
@@ -48,7 +48,7 @@ pub fn highlightSlots(position: rl.Vector2, keysAndLabels: []const Slot) void {
     }
 }
 
-pub fn drawSlot(xPosition: f32, yPosition: f32, label: [:0]const u8) void {
+pub fn drawSlot(xPosition: f32, yPosition: f32, label: [:0]const u8, font: *rl.Font) void {
     rl.drawRectangleV(.{
         .x = xPosition,
         .y = yPosition,
@@ -57,5 +57,5 @@ pub fn drawSlot(xPosition: f32, yPosition: f32, label: [:0]const u8) void {
         .x = xPosition,
         .y = yPosition,
     }, textBoxSize, rl.Color.black);
-    rl.drawText(label, @intFromFloat(xPosition), @intFromFloat(yPosition), config.hubFontSize, rl.Color.white);
+    rl.drawTextEx(font.*, label, .{ .x = xPosition, .y = yPosition }, config.hubFontSize, config.textSpacing, rl.Color.white);
 }

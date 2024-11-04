@@ -15,28 +15,29 @@ pub fn login(gameState: *GameState) !void {
         .y = (gameState.height / 2) - (buttonSize.y / 2),
     };
     const usernameLabel = "User Name";
-    const usernameLabelSize: f32 = @floatFromInt(rl.measureText(usernameLabel, config.textFontSize));
+    const usernameLabelSize: f32 = rl.measureTextEx(gameState.menu.assets.font, usernameLabel, config.titleFontSize, config.textSpacing).x;
 
     const usernameLabelPositionX =
         (gameState.width / 2) - (usernameLabelSize / 2);
     const usernameLabelPositionY =
         usernameBoxPosition.y - config.buttonFontSize - 2 * config.menuButtonsPadding;
 
-    rl.drawText(
+    rl.drawTextEx(
+        gameState.menu.assets.font,
         usernameLabel,
-        @intFromFloat(usernameLabelPositionX),
-        @intFromFloat(usernameLabelPositionY),
-        config.textFontSize,
+        .{ .x = usernameLabelPositionX, .y = usernameLabelPositionY },
+        config.titleFontSize,
+        config.textSpacing,
         rl.Color.white,
     );
     const usernameText = text{
         .content = &gameState.menu.credentials.username,
         .position = &gameState.menu.credentials.usernamePosition,
     };
-    usernameText.at(usernameBoxPosition, text.menuTextBoxSize);
+    usernameText.at(usernameBoxPosition, text.menuTextBoxSize, &gameState.menu.assets.font);
 
     const passwordLabel = "Password";
-    const passwordLabelSize: f32 = @floatFromInt(rl.measureText(passwordLabel, config.textFontSize));
+    const passwordLabelSize: f32 = rl.measureTextEx(gameState.menu.assets.font, passwordLabel, config.titleFontSize, config.textSpacing).x;
 
     const passwordLabelPositionX =
         (gameState.width / 2) - (passwordLabelSize / 2);
@@ -47,18 +48,19 @@ pub fn login(gameState: *GameState) !void {
         .x = gameState.width / 2,
         .y = passwordLabelPositionY + config.buttonFontSize + 2 * config.menuButtonsPadding,
     };
-    rl.drawText(
+    rl.drawTextEx(
+        gameState.menu.assets.font,
         passwordLabel,
-        @intFromFloat(passwordLabelPositionX),
-        @intFromFloat(passwordLabelPositionY),
-        config.textFontSize,
+        .{ .x = passwordLabelPositionX, .y = passwordLabelPositionY },
+        config.titleFontSize,
+        config.textSpacing,
         rl.Color.white,
     );
     const passwordText = text{
         .content = &gameState.menu.credentials.password,
         .position = &gameState.menu.credentials.passwordPosition,
     };
-    passwordText.at(passwordBoxPosition, text.menuTextBoxSize);
+    passwordText.at(passwordBoxPosition, text.menuTextBoxSize, &gameState.menu.assets.font);
 
     const buttonPosition: rl.Vector2 = .{
         .x = (gameState.width / 2) - (buttonSize.x / 2),
@@ -72,6 +74,7 @@ pub fn login(gameState: *GameState) !void {
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
+        &gameState.menu.assets.font,
     )) {
         // TODO: Add loading animation to wait for response
         // TODO: Add a timeout for login

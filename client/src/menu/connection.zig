@@ -24,25 +24,26 @@ pub fn connect(gameState: *GameState) !void {
         .y = (gameState.height / 2) - (buttonSize.y / 2),
     };
     const serverInfoLabel = "Server Address";
-    const serverInfoLabelSize: f32 = @floatFromInt(rl.measureText(serverInfoLabel, config.textFontSize));
+    const serverInfoLabelSize: f32 = rl.measureTextEx(gameState.menu.assets.font, serverInfoLabel, config.titleFontSize, config.textSpacing).x;
 
     const serverInfoLabelPositionX =
         (gameState.width / 2) - (serverInfoLabelSize / 2);
     const serverInfoLabelPositionY =
-        serverInfoBoxPosition.y - config.buttonFontSize - 2 * config.menuButtonsPadding;
+        serverInfoBoxPosition.y - config.buttonFontSize - 3 * config.menuButtonsPadding;
 
-    rl.drawText(
+    rl.drawTextEx(
+        gameState.menu.assets.font,
         serverInfoLabel,
-        @intFromFloat(serverInfoLabelPositionX),
-        @intFromFloat(serverInfoLabelPositionY),
-        config.textFontSize,
+        .{ .x = serverInfoLabelPositionX, .y = serverInfoLabelPositionY },
+        config.titleFontSize,
+        config.textSpacing,
         rl.Color.white,
     );
     const serverInfoText = text{
         .content = &gameState.menu.server.address,
         .position = &gameState.menu.server.addressPosition,
     };
-    serverInfoText.at(serverInfoBoxPosition, text.menuTextBoxSize);
+    serverInfoText.at(serverInfoBoxPosition, text.menuTextBoxSize, &gameState.menu.assets.font);
 
     const buttonPosition: rl.Vector2 = .{
         .x = (gameState.width / 2) - (buttonSize.x / 2),
@@ -56,6 +57,7 @@ pub fn connect(gameState: *GameState) !void {
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
+        &gameState.menu.assets.font,
     )) {
         const node_status = zerl.ei.ei_init();
         if (node_status != 0) {
@@ -84,5 +86,5 @@ pub fn status(gameState: *GameState) void {
             .not_connected = &gameState.menu.assets.connection.not_connected_icon,
         },
     };
-    statusWidget.at(gameState.connection.is_connected, gameState.height);
+    statusWidget.at(gameState.connection.is_connected, gameState.height, &gameState.menu.assets.font);
 }
