@@ -2,6 +2,7 @@ const animate = @import("animation.zig");
 const camera = @import("camera.zig");
 const config = @import("../config.zig");
 const messages = @import("../server/messages.zig");
+const music = @import("../music.zig");
 const physics = @import("physics.zig");
 const rl = @import("raylib");
 const rm = rl.math;
@@ -20,7 +21,8 @@ fn drawPlayers(gameState: *GameState) void {
     }
 }
 
-fn controlInput(entity: *GameState.World.Character) i16 {
+fn controlInput(gameState: *GameState) !i16 {
+    const entity = &gameState.world.character;
     var tempAngle = entity.stats.face_direction;
     const velocity = &entity.velocity;
     const deltaTime = rl.getFrameTime();
@@ -40,6 +42,13 @@ fn controlInput(entity: *GameState.World.Character) i16 {
     } else if (rl.isKeyDown(.key_d)) {
         velocity.x += deltaVelocity;
         tempAngle = 90;
+    }
+
+    music.control(gameState);
+
+    if (rl.isKeyDown(.key_backslash)) {
+        try server.character.exitMap(gameState);
+        rl.enableCursor();
     }
 
     return tempAngle;
@@ -98,20 +107,17 @@ pub fn spawn(gameState: *GameState) !void {
     rl.beginMode3D(gameState.world.camera);
     defer rl.endMode3D();
 
-    drawPlayers(gameState);
+    const tempAngle = try controlInput(gameState);
 
-    const tempAngle = controlInput(&gameState.world.character);
     physics.character.draw(&gameState.world.character, &gameState.world.map, tempAngle);
     animate.character.update(&gameState.world.character);
     camera.update(gameState);
+
     try server.character.update(gameState);
 
     rl.drawGrid(2000, 10.0);
 
-    if (rl.isKeyDown(.key_backslash)) {
-        try server.character.exitMap(gameState);
-        rl.enableCursor();
-    }
+    drawPlayers(gameState);
 
     try drawWorld(&gameState.world.character, &gameState.world.map);
 }
