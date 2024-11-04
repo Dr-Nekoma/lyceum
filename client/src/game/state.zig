@@ -10,6 +10,7 @@ const physics = @import("physics.zig");
 const rl = @import("raylib");
 const std = @import("std");
 const zerl = @import("zerl");
+const Button = @import("../components/button.zig");
 
 // TODO: Make this a tagged union in which we have different data available
 // per scene, so we can have more guarantees of what is happening with the data
@@ -134,6 +135,7 @@ pub fn init(
     height: f32,
     node: *zerl.Node,
     errorElem: *errorC,
+    menuAssets: *mainMenu.Menu.Assets,
 ) !@This() {
     const camera: rl.Camera = .{
         .position = .{ .x = 50.0, .y = 50.0, .z = 50.0 },
@@ -173,8 +175,54 @@ pub fn init(
             },
         },
         .menu = .{
-            .assets = try mainMenu.loadAssets(),
+            .assets = menuAssets,
+            .connect = .{
+                .connect_button = Button.Clickable{
+                    .font = &menuAssets.font,
+                    .sound = &menuAssets.sounds.buttons.click,
+                },
+            },
+            .login = .{
+                .login_button = Button.Clickable{
+                    .disabled = true,
+                    .font = &menuAssets.font,
+                    .sound = &menuAssets.sounds.buttons.click,
+                },
+            },
+            .main = .{
+                .back_button = Button.Clickable.Back{
+                    .sound = &menuAssets.sounds.buttons.click,
+                },
+                .registry_button = Button.Clickable{
+                    .font = &menuAssets.font,
+                    .sound = &menuAssets.sounds.buttons.click,
+                },
+                .connect_button = Button.Clickable{
+                    .font = &menuAssets.font,
+                    .sound = &menuAssets.sounds.buttons.click,
+                },
+                .login_button = Button.Clickable{
+                    .disabled = true,
+                    .font = &menuAssets.font,
+                    .sound = &menuAssets.sounds.buttons.click,
+                },
+                .logout_button = Button.Clickable{
+                    .font = &menuAssets.font,
+                    .sound = &menuAssets.sounds.buttons.click,
+                },
+            },
             .character = .{
+                .select = .{
+                    .buttons = Button.SelectableGroup.init(
+                        &menuAssets.font,
+                        &menuAssets.sounds.buttons.select,
+                    ),
+                    .join_world_button = Button.Clickable{
+                        .disabled = true,
+                        .font = &menuAssets.font,
+                        .sound = &menuAssets.sounds.buttons.click,
+                    },
+                },
                 .create = .{
                     .name = name,
                 },

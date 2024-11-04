@@ -31,8 +31,8 @@ pub fn login(gameState: *GameState) !void {
         rl.Color.white,
     );
     const usernameText = text{
-        .content = &gameState.menu.credentials.username,
-        .position = &gameState.menu.credentials.usernamePosition,
+        .content = &gameState.menu.login.username,
+        .position = &gameState.menu.login.usernamePosition,
     };
     usernameText.at(usernameBoxPosition, text.menuTextBoxSize, &gameState.menu.assets.font);
 
@@ -57,8 +57,8 @@ pub fn login(gameState: *GameState) !void {
         rl.Color.white,
     );
     const passwordText = text{
-        .content = &gameState.menu.credentials.password,
-        .position = &gameState.menu.credentials.passwordPosition,
+        .content = &gameState.menu.login.password,
+        .position = &gameState.menu.login.passwordPosition,
     };
     passwordText.at(passwordBoxPosition, text.menuTextBoxSize, &gameState.menu.assets.font);
 
@@ -66,15 +66,14 @@ pub fn login(gameState: *GameState) !void {
         .x = (gameState.width / 2) - (buttonSize.x / 2),
         .y = passwordBoxPosition.y + text.menuTextBoxSize.y + 5 * config.menuButtonsPadding,
     };
-    const loginButton = Button.Clickable{
-        .disabled = !(passwordText.position.* > 0 and usernameText.position.* > 0),
-    };
+
+    const loginButton = &gameState.menu.login.login_button;
+    loginButton.disabled = !(passwordText.position.* > 0 and usernameText.position.* > 0);
     if (loginButton.at(
         "Login",
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
-        &gameState.menu.assets.font,
     )) {
         // TODO: Add loading animation to wait for response
         // TODO: Add a timeout for login

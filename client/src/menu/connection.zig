@@ -40,8 +40,8 @@ pub fn connect(gameState: *GameState) !void {
         rl.Color.white,
     );
     const serverInfoText = text{
-        .content = &gameState.menu.server.address,
-        .position = &gameState.menu.server.addressPosition,
+        .content = &gameState.menu.connect.address,
+        .position = &gameState.menu.connect.addressPosition,
     };
     serverInfoText.at(serverInfoBoxPosition, text.menuTextBoxSize, &gameState.menu.assets.font);
 
@@ -49,15 +49,14 @@ pub fn connect(gameState: *GameState) !void {
         .x = (gameState.width / 2) - (buttonSize.x / 2),
         .y = serverInfoBoxPosition.y + text.menuTextBoxSize.y + 5 * config.menuButtonsPadding,
     };
-    const connectButton = Button.Clickable{
-        .disabled = !(serverInfoText.position.* > 0),
-    };
+
+    var connectButton = &gameState.menu.connect.connect_button;
+    connectButton.disabled = !(serverInfoText.position.* > 0);
     if (connectButton.at(
         "Connect",
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
-        &gameState.menu.assets.font,
     )) {
         const node_status = zerl.ei.ei_init();
         if (node_status != 0) {
@@ -68,7 +67,7 @@ pub fn connect(gameState: *GameState) !void {
         zerl.establish_connection(
             node,
             GameState.Connection.process_name,
-            gameState.menu.server.address[0..gameState.menu.server.addressPosition],
+            gameState.menu.connect.address[0..gameState.menu.connect.addressPosition],
         ) catch |error_value| {
             try print_connect_server_error(error_value);
             gameState.errorElem.update(.node_connection);

@@ -25,7 +25,12 @@ pub fn main() anyerror!void {
 
     rl.setTargetFPS(60);
 
-    var errorElem = errorC{};
+    var menuAssets = try mainMenu.loadAssets();
+
+    var errorElem = errorC{
+        .sound = &menuAssets.sounds.error_sound,
+        .font = &menuAssets.font,
+    };
     var node = try zerl.Node.init("lyceum");
     var gameState = try state.init(
         std.heap.c_allocator, // Revisit this later
@@ -33,6 +38,7 @@ pub fn main() anyerror!void {
         config.Screen.initialHeight,
         &node,
         &errorElem,
+        &menuAssets,
     );
 
     rl.playMusicStream(gameState.menu.assets.music);
@@ -71,8 +77,8 @@ pub fn main() anyerror!void {
             },
         }
         connectionMenu.status(&gameState);
-        gameState.errorElem.at(gameState.width, gameState.height, &gameState.menu.assets.font);
-        Button.Clickable.Back.at(&gameState.scene, gameState.height);
+        gameState.errorElem.at(gameState.width, gameState.height);
+        gameState.menu.main.back_button.at(&gameState.scene, gameState.height);
         music.control(&gameState);
     }
     music.stop(&gameState);

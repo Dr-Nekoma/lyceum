@@ -51,11 +51,15 @@ const errorMessage = struct {
 expiration: f64 = 0,
 transparency: u8 = 255,
 type: ?Error = null,
+sound: *rl.Sound,
+font: *rl.Font,
 
 pub fn update(self: *@This(), tag: Error) void {
     self.expiration = rl.getTime() + defaultErrorDuration;
     self.type = tag;
     self.transparency = 255;
+    rl.setSoundVolume(self.sound.*, 0.17);
+    rl.playSound(self.sound.*);
 }
 
 fn error_message(kind: Error) [:0]const u8 {
@@ -68,13 +72,12 @@ pub fn at(
     self: *@This(),
     width: f32,
     height: f32,
-    font: *rl.Font,
 ) void {
     const current_timestamp = rl.getTime();
     if (current_timestamp <= self.expiration) {
         if (self.type) |kind| {
             const message = error_message(kind);
-            const textSize: f32 = rl.measureTextEx(font.*, message, fontSize, config.textSpacing).x;
+            const textSize: f32 = rl.measureTextEx(self.font.*, message, fontSize, config.textSpacing).x;
             const size: rl.Vector2 = .{
                 .x = 7 * padding + textSize,
                 .y = 7 * padding + fontSize,
@@ -101,7 +104,7 @@ pub fn at(
             const floatFont: f32 = @floatFromInt(fontSize);
             const messageY = position.y + size.y / 2 - floatFont / 2;
             rl.drawTextEx(
-                font.*,
+                self.font.*,
                 message,
                 .{ .x = messageX, .y = messageY },
                 fontSize,

@@ -4,25 +4,24 @@ const rl = @import("raylib");
 const server = @import("../server/main.zig");
 const std = @import("std");
 const Button = @import("../components/button.zig");
-const Clickable = Button.Clickable{};
 const GameState = @import("../game/state.zig");
 
 pub const Menu = struct {
-    pub const Server = struct {
+    pub const Connect = struct {
         pub const bufferSize = 50;
         address: [bufferSize:0]u8 = .{0} ** bufferSize,
         addressPosition: usize = 0,
         connectionStatus: bool = false,
+        connect_button: Button.Clickable,
     };
-    pub const Credentials = struct {
+    pub const Login = struct {
         pub const bufferSize = 50;
-        pub const logout_button: Button.Clickable = Button.Clickable{};
         username: [bufferSize:0]u8 = .{0} ** bufferSize,
         usernamePosition: usize = 0,
         password: [bufferSize:0]u8 = .{0} ** bufferSize,
         passwordPosition: usize = 0,
         email: [:0]const u8 = "",
-        login_button: Button.Clickable = Button.Clickable{ .disabled = true },
+        login_button: Button.Clickable,
     };
     pub const Configuration = struct {
         currentScreenMode: enum {
@@ -38,6 +37,13 @@ pub const Menu = struct {
         music: rl.Music,
         logo: rl.Texture,
         font: rl.Font,
+        sounds: struct {
+            buttons: struct {
+                select: rl.Sound,
+                click: rl.Sound,
+            },
+            error_sound: rl.Sound,
+        },
     };
     pub const Character = struct {
         pub const Creation = struct {
@@ -46,18 +52,26 @@ pub const Menu = struct {
         };
         pub const Selection = struct {
             list: []const GameState.World.Character = &.{},
-            buttons: Button.SelectableGroup = .{},
-            join_world_button: Button.Clickable = Button.Clickable{ .disabled = true },
+            buttons: Button.SelectableGroup,
+            join_world_button: Button.Clickable,
         };
         create: Creation,
-        select: Selection = .{},
+        select: Selection,
+    };
+    pub const Main = struct {
+        login_button: Button.Clickable,
+        logout_button: Button.Clickable,
+        registry_button: Button.Clickable,
+        connect_button: Button.Clickable,
+        back_button: Button.Clickable.Back,
     };
 
-    credentials: Credentials = .{},
-    server: Server = .{},
+    login: Login,
+    connect: Connect,
     config: Configuration = .{},
     character: Character,
-    assets: Assets,
+    main: Main,
+    assets: *Menu.Assets,
 };
 
 fn userRegistryButton(gameState: *GameState) void {
@@ -66,12 +80,12 @@ fn userRegistryButton(gameState: *GameState) void {
         .x = (gameState.width / 2) - (buttonSize.x / 2),
         .y = (gameState.height / 2) - (buttonSize.y / 2),
     };
-    if (Clickable.at(
+    var registry_button = &gameState.menu.main.registry_button;
+    if (registry_button.at(
         "Create User",
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
-        &gameState.menu.assets.font,
     )) gameState.scene = .user_registry;
 }
 
@@ -85,14 +99,13 @@ fn userLoginButton(gameState: *GameState) !void {
     };
 
     const label, const next_scene: GameState.Scene = if (gameState.connection.handler == null) .{ "Login", .user_login } else .{ "Select Character", .character_selection };
-    const loginButton = &gameState.menu.credentials.login_button;
+    const loginButton = &gameState.menu.main.login_button;
     loginButton.disabled = !gameState.connection.is_connected;
     if (loginButton.at(
         label,
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
-        &gameState.menu.assets.font,
     )) {
         if (next_scene == .character_selection) try server.user.getCharacters(gameState);
         gameState.scene = next_scene;
@@ -108,13 +121,12 @@ pub fn userLogoutButton(gameState: *GameState) void {
         .y = gameState.height - buttonSize.y - 3 * config.menuButtonsPadding,
     };
 
-    const logoutButton = Menu.Credentials.logout_button;
+    const logoutButton = gameState.menu.main.logout_button;
     if (logoutButton.at(
         "Logout",
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
-        &gameState.menu.assets.font,
     )) {
         server.user.logout(gameState);
     }
@@ -129,12 +141,12 @@ fn userConnectButton(gameState: *GameState) void {
         .y = createUserButtonY + 2 * buttonSize.y + 2 * config.menuButtonsPadding,
     };
     const label, const next_scene: GameState.Scene = if (gameState.connection.is_connected) .{ "Disconnect", .nothing } else .{ "Connect", .connect };
-    if (Clickable.at(
+    const connect_button = &gameState.menu.main.connect_button;
+    if (connect_button.at(
         label,
         buttonPosition,
         buttonSize,
         config.ColorPalette.primary,
-        &gameState.menu.assets.font,
     )) {
         if (next_scene == .nothing) {
             server.user.logout(gameState);
@@ -163,13 +175,14 @@ pub fn displayLogo(gameState: *GameState) void {
 }
 
 pub fn loadAssets() !Menu.Assets {
-    return .{
-        .connection = .{
-            .not_connected_icon = try assets.texture(config.assets.paths.menu.connection.notConnected),
-            .connected_icon = try assets.texture(config.assets.paths.menu.connection.connected),
+    return .{ .connection = .{
+        .not_connected_icon = try assets.texture(config.assets.paths.menu.connection.notConnected),
+        .connected_icon = try assets.texture(config.assets.paths.menu.connection.connected),
+    }, .music = try assets.music(config.assets.paths.menu.music.background), .logo = try assets.texture(config.assets.paths.menu.logo), .font = try assets.font(config.assets.paths.menu.font), .sounds = .{
+        .buttons = .{
+            .select = try assets.sound(config.assets.paths.menu.sounds.buttons.select),
+            .click = try assets.sound(config.assets.paths.menu.sounds.buttons.click),
         },
-        .music = try assets.music(config.assets.paths.menu.music.background),
-        .logo = try assets.texture(config.assets.paths.menu.logo),
-        .font = try assets.font(config.assets.paths.menu.font),
-    };
+        .error_sound = try assets.sound(config.assets.paths.menu.sounds.error_sound),
+    } };
 }

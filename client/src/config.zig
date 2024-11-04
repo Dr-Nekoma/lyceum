@@ -81,6 +81,13 @@ pub const assets = struct {
             };
             pub const logo = "menu/logo.png";
             pub const font = "menu/font.otf";
+            pub const sounds = struct {
+                pub const buttons = struct {
+                    pub const select = "menu/sounds/buttons/select.ogg";
+                    pub const click = "menu/sounds/buttons/click.ogg";
+                };
+                pub const error_sound = "menu/sounds/error.ogg";
+            };
         };
         pub const game = struct {
             pub const character = struct {

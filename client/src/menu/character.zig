@@ -68,8 +68,10 @@ fn emptyCharacter(gameState: *GameState) !void {
                 },
                 .textSize = textSize,
                 .textColor = rl.Color.white,
+                .font = &gameState.menu.assets.font,
+                .sound = &gameState.menu.assets.sounds.buttons.click,
             };
-            try attributeComp.at(&gameState.menu.assets.font);
+            try attributeComp.at();
             currentTextPosition.y += textSize.y + fieldPadding;
         } else if (std.mem.eql(u8, field.name, "name")) {
             const nameBoxPosition: rl.Vector2 = .{
@@ -136,14 +138,12 @@ pub fn selection(gameState: *GameState) !void {
         for (0.., gameState.menu.character.select.list) |index, character| {
             var currentButton = gameState.menu.character.select.buttons.instances[index];
             currentButton.index = index;
-            if (Button.Selectable.at(
-                &currentButton,
+            if (currentButton.at(
                 character.stats.name,
                 buttonPosition,
                 buttonSize,
                 config.ColorPalette.primary,
                 currentSelected.*,
-                &gameState.menu.assets.font,
             )) {
                 currentSelected.* = index;
                 gameState.world.character.stats = character.stats;
@@ -158,7 +158,6 @@ pub fn selection(gameState: *GameState) !void {
                 joinButtonPosition,
                 joinButtonSize,
                 config.ColorPalette.primary,
-                &gameState.menu.assets.font,
             )) {
                 try goToSpawn(gameState);
             }

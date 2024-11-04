@@ -55,7 +55,11 @@ pub const Sizes = struct {
 
 pub const Clickable = struct {
     disabled: bool = false,
+    font: *rl.Font,
+    sound: *rl.Sound,
+
     pub const Back = struct {
+        sound: *rl.Sound,
         fn draw(height: f32) bool {
             const size: rl.Vector2 = .{
                 .x = height / 15,
@@ -106,6 +110,7 @@ pub const Clickable = struct {
         }
 
         pub fn at(
+            self: *@This(),
             scene: *GameState.Scene,
             height: f32,
         ) void {
@@ -115,6 +120,7 @@ pub const Clickable = struct {
             }
             const isHovered = draw(height);
             if (isHovered and rl.isMouseButtonPressed(.mouse_button_left)) {
+                rl.playSound(self.sound.*);
                 scene.* = switch (scene.*) {
                     .user_registry, .user_login, .nothing, .spawn, .character_selection, .connect => .nothing,
                 };
@@ -128,7 +134,6 @@ pub const Clickable = struct {
         position: rl.Vector2,
         size: rl.Vector2,
         activeColor: rl.Color,
-        font: *rl.Font,
     ) bool {
         const buttonArea = rl.Rectangle.init(
             position.x,
@@ -151,24 +156,29 @@ pub const Clickable = struct {
             color = config.ColorPalette.disabled;
         }
         rl.drawRectangleV(position, size, color);
-        const messageSize: f32 = rl.measureTextEx(font.*, message, config.buttonFontSize, config.textSpacing).x;
+        const messageSize: f32 = rl.measureTextEx(self.font.*, message, config.buttonFontSize, config.textSpacing).x;
         const messageX = position.x + size.x / 2 - messageSize / 2;
         const floatFont: f32 = @floatFromInt(config.buttonFontSize);
         const messageY = position.y + size.y / 2 - floatFont / 2;
         rl.drawTextEx(
-            font.*,
+            self.font.*,
             message,
             .{ .x = messageX, .y = messageY },
             config.buttonFontSize,
             config.textSpacing,
             config.ColorPalette.secondary,
         );
-        return !self.disabled and (isHovered and rl.isMouseButtonPressed(.mouse_button_left));
+        const clicked = !self.disabled and (isHovered and rl.isMouseButtonPressed(.mouse_button_left));
+        if (clicked) rl.playSound(self.sound.*);
+        return clicked;
     }
 };
 
 pub const Selectable = struct {
     index: ?usize = null,
+    font: *rl.Font,
+    sound: *rl.Sound,
+
     pub fn at(
         self: *@This(),
         message: [:0]const u8,
@@ -176,7 +186,6 @@ pub const Selectable = struct {
         size: rl.Vector2,
         color: rl.Color,
         currentIndex: ?usize,
-        font: *rl.Font,
     ) bool {
         const buttonArea = rl.Rectangle.init(
             position.x,
@@ -198,12 +207,12 @@ pub const Selectable = struct {
             highlighting(position, size, offset);
         }
         rl.drawRectangleV(position, size, color);
-        const messageSize: f32 = rl.measureTextEx(font.*, message, config.buttonFontSize, config.textSpacing).x;
+        const messageSize: f32 = rl.measureTextEx(self.font.*, message, config.buttonFontSize, config.textSpacing).x;
         const messageX = position.x + size.x / 2 - messageSize / 2;
         const floatFont: f32 = @floatFromInt(config.buttonFontSize);
         const messageY = position.y + size.y / 2 - floatFont / 2;
         rl.drawTextEx(
-            font.*,
+            self.font.*,
             message,
             .{ .x = messageX, .y = messageY },
             config.buttonFontSize,
@@ -212,11 +221,19 @@ pub const Selectable = struct {
         );
 
         const clicked = isHovered and rl.isMouseButtonPressed(.mouse_button_left);
+        if (clicked) rl.playSound(self.sound.*);
         return clicked or isSelected;
     }
 };
 
 pub const SelectableGroup = struct {
     selected: ?usize = null,
-    instances: [config.maximumCharacters]Selectable = .{Selectable{}} ** config.maximumCharacters,
+    instances: [config.maximumCharacters]Selectable,
+
+    pub fn init(font: *rl.Font, sound: *rl.Sound) @This() {
+        return .{ .instances = .{Selectable{
+            .font = font,
+            .sound = sound,
+        }} ** config.maximumCharacters };
+    }
 };
