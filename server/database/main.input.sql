@@ -5,8 +5,8 @@ VALUES ('mmagueta', 'password123', 'mmagueta@example.com'),
        ('lambdu', 'pass123', 'lambdu@example.com');
 
 -- Insert into lyceum.map
-INSERT INTO map.instance (name)
-VALUES ('CASTLE_HALL'), ('CASTLE_YARD');
+INSERT INTO map.instance (name, width, height)
+VALUES ('LOW_LAND', 150, 150), ('CASTLE_HALL', 150, 150), ('TEST', 6, 6), ('TEST_2', 6, 6);
 
 -- Insert into lyceum.character and related tables
 INSERT INTO character.instance (name, e_mail, username)
@@ -22,10 +22,10 @@ VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 100, 110, 95, 120, 105, 1
        ('Legion', 'lambdu@example.com', 'lambdu', 60, 110, 55, 150, 150, 50, 15, 85, 77);
 
 INSERT INTO character.position (name, e_mail, username, x_position, y_position, map_name, face_direction)
-VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 590, -525, 'CASTLE_HALL', 270),
-       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 590, -525, 'CASTLE_HALL', 270),
-       ('Scipio', 'benin@example.com', 'benin', 590, -525, 'CASTLE_HALL', 270),
-       ('Legion', 'lambdu@example.com', 'lambdu', 590, -525, 'CASTLE_HALL', 270);
+VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 10, 10, 'TEST', 270),
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 10, 10, 'TEST', 270),
+       ('Scipio', 'benin@example.com', 'benin', 10, 10, 'TEST', 270),
+       ('Legion', 'lambdu@example.com', 'lambdu', 10, 10, 'TEST', 270);
 
 -- Insert into lyceum.equipment
 INSERT INTO equipment.instance (name, description, kind)
@@ -46,4 +46,3 @@ VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Vandal''s Prima', 
 -- INSERT INTO lyceum.view_spell_destruction (name, description, cost, duration, cast_time, kind, target, base_damage, damage_kind, destruction_kind)
 -- VALUES ('Fire Ball', 'Something cool', 10, 50, 1, 'PROJECTILE'::lyceum.spell_type, 'SINGULAR'::lyceum.spell_target, 100, 'FIRE'::lyceum.spell_damage_type, 'MAGIC'::lyceum.spell_destruction_type),
 --        ('Ice Ball', 'Another cool thing', 10, 50, 1, 'PROJECTILE'::lyceum.spell_type, 'SINGULAR'::lyceum.spell_target, 100, 'FIRE'::lyceum.spell_damage_type, 'MAGIC'::lyceum.spell_destruction_type);
-

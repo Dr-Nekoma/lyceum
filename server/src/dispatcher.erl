@@ -45,7 +45,7 @@ start_link() ->
 %%--------------------------------------------------------------------
 init([]) ->
     % Setup a DB connection and bootstrap process state
-    {ok, Connection} = database:database_connect(),
+    {ok, Connection} = database:connect(),
     Pid = self(),
     io:format("[~p] Starting at ~p...~n", [?SERVER, Pid]),
     % This is a temporary solution using the built-in k/v store
@@ -141,7 +141,7 @@ login(State, From, #{username := Username, password := _Password} = Request) ->
     case registry:check_user(Request, State#server_state.connection) of
         {ok, Email} ->
             io:format("[~p] USER: ~p successfully logged in!~n", [?SERVER, Email]),
-            {ok, Connection} = database:database_connect(),
+            {ok, Connection} = database:connect(),
             PlayerState = #user_state{pid = From, connection = Connection},
             io:format("[~p] Setting USER_STATE=~p...~n", [?SERVER, PlayerState]),
             {ok, Pid} = get_active_pid(Email, PlayerState),

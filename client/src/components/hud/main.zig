@@ -9,13 +9,34 @@ const rl = @import("raylib");
 const rm = rl.math;
 const std = @import("std");
 
-fn drawPlayersInfo(gameState: *GameState) !void {
+fn drawPlayers(gameState: *GameState) !void {
+    const mainPlayer = &gameState.world.character;
     var player_iterator = gameState.world.other_players.valueIterator();
     while (player_iterator.next()) |player| {
-        const fontSize = 15;
-        var infoPosition = rl.getWorldToScreen(player.position, gameState.world.camera);
-        infoPosition.y += 30;
-        try info.at(player, info.mainSize, infoPosition, fontSize, gameState.allocator);
+        if (GameState.canDisplayPlayer(mainPlayer, player)) {
+            var infoPosition = rl.getWorldToScreen(player.position, gameState.world.camera);
+            infoPosition.y += 30;
+            const fontSize = 15;
+            try info.at(player, info.mainSize, infoPosition, fontSize, gameState.allocator);
+        }
+        const character = gameState.world.character;
+        const map_image = gameState.world.character.inventory.hud.minimap.map.?;
+        const c_x, const c_y = map.coordinates.normalize(.{
+            .x = character.stats.x_position,
+            .y = character.stats.y_position,
+        }, &map_image, &gameState.world.map);
+        const p_x, const p_y = map.coordinates.normalize(.{
+            .x = player.stats.x_position,
+            .y = player.stats.y_position,
+        }, &map_image, &gameState.world.map);
+        const delta: rl.Vector2 = .{
+            .x = p_x - c_x,
+            .y = p_y - c_y,
+        };
+        if (delta.length() < map.innerRadius) {
+            const center: rl.Vector2 = map.getCenter(gameState.width, gameState.height).add(delta);
+            map.player(player.stats.face_direction, center);
+        }
     }
 }
 
@@ -35,7 +56,7 @@ pub fn at(gameState: *GameState) !void {
 
     try info.at(character, info.mainSize, mainPosition, config.textFontSize, gameState.allocator);
 
-    try map.at(character, width, height);
+    try map.at(character, &gameState.world.map, width, height);
 
     const chatC = chat{
         .content = &character.inventory.hud.chat.content,
@@ -45,5 +66,7 @@ pub fn at(gameState: *GameState) !void {
     };
     try chatC.at(character.stats.name, gameState);
 
-    try drawPlayersInfo(gameState);
+    // TODO: This should be at the beginning, but mini-map screw us over.
+    // Putting this on the top makes the other players pointers disappear.
+    try drawPlayers(gameState);
 }

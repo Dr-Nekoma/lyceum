@@ -103,6 +103,9 @@
               src = pkgs.lib.cleanSource ./server;
               releaseType = "release";
               profile = "prod";
+              include = [
+                "rebar.config"
+              ];
               beamDeps = builtins.attrValues deps;
             };
 
@@ -226,6 +229,7 @@
                       [
                         just
                         raylib
+                        sqls
                       ]
                       ++ lib.optionals stdenv.isLinux (linuxPkgs)
                       ++ lib.optionals stdenv.isDarwin darwinPkgs;
@@ -253,7 +257,6 @@
 
                     enterShell = ''
                       echo "Starting Development Environment..."
-                      just deps
                     '';
 
                     services.postgres = {

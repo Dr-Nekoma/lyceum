@@ -24,6 +24,8 @@ pub const Scene = enum {
 };
 
 pub const Character_Table = std.StringHashMap(World.Character);
+pub const Tile_Table = std.EnumMap(messages.Tile, struct { ?rl.Model, ?rl.Image });
+pub const Object_Table = std.EnumMap(messages.Object, assets.Object);
 
 pub const World = struct {
     pub const Chat = struct {
@@ -32,6 +34,11 @@ pub const World = struct {
         messages: std.ArrayList(chat.Message) = std.ArrayList(chat.Message).init(std.heap.c_allocator),
         position: usize = 0,
         mode: chat.Mode = .idle,
+    };
+    pub const Map = struct {
+        instance: messages.Map = .{},
+        tiles: Tile_Table,
+        objects: Object_Table,
     };
     pub const Character = struct {
         pub const Animation = struct {
@@ -64,8 +71,10 @@ pub const World = struct {
             hud: struct {
                 spells: []const [:0]const u8 = &.{},
                 consumables: []const [:0]const u8 = &.{},
-                map: ?rl.Image = null,
-                texture: ?rl.Texture = null,
+                minimap: struct {
+                    map: ?rl.Image = null,
+                    texture: ?rl.Texture = null,
+                } = .{},
                 chat: Chat = .{},
             } = .{},
         } = .{},
@@ -74,6 +83,7 @@ pub const World = struct {
     other_players: Character_Table,
     camera: rl.Camera = undefined,
     cameraDistance: f32 = config.defaultCameraDistance,
+    map: Map,
 };
 
 pub const Connection = struct {
@@ -103,6 +113,17 @@ pub fn send_with_self(state: *@This(), message: messages.Payload) !void {
     try state.send(.{ try state.connection.node.self(), message });
 }
 
+pub fn canDisplayPlayer(mainPlayer: *const World.Character, player: *const World.Character) bool {
+    const main_x_tile: i32 = @intFromFloat(mainPlayer.position.x / config.assets.tile.size);
+    const main_y_tile: i32 = @intFromFloat(mainPlayer.position.z / config.assets.tile.size);
+    const intXTile: i32 = @intFromFloat(player.position.x / config.assets.tile.size);
+    const intYTile: i32 = @intFromFloat(player.position.z / config.assets.tile.size);
+    const delta_x_tile = @abs(intXTile - main_x_tile);
+    const delta_y_tile = @abs(intYTile - main_y_tile);
+
+    return (delta_x_tile <= config.fov and delta_y_tile <= config.fov);
+}
+
 pub fn init(
     allocator: std.mem.Allocator,
     width: f32,
@@ -121,7 +142,7 @@ pub fn init(
     if (height < 0) return error.negative_height;
     const name = try allocator.allocSentinel(u8, config.nameSize, 0);
     @memset(name, 0);
-    var state: @This() = .{
+    return .{
         .width = width,
         .height = height,
         .allocator = allocator,
@@ -136,11 +157,15 @@ pub fn init(
                         .spells = &.{ "item1", "item2", "item3", "item4", "item5" },
                         // TODO: use actual consumables
                         .consumables = &.{ "item6", "item7" },
-                        // TODO: use an actual map
-                        .map = try assets.image("teapot.png"),
-                        .texture = map.init_map_texture(),
+                        .minimap = .{
+                            .texture = map.init_map_texture(),
+                        },
                     },
                 },
+            },
+            .map = .{
+                .tiles = try assets.tilesTable(),
+                .objects = try assets.objectsTable(),
             },
         },
         .menu = .{
@@ -153,6 +178,4 @@ pub fn init(
         },
         .errorElem = errorElem,
     };
-    map.add_borders(&state.world.character.inventory.hud.map.?);
-    return state;
 }

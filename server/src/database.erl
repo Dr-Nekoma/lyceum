@@ -6,7 +6,7 @@
 
 -module(database).
 
--export([database_connect/0, migrate/1]).
+-export([connect/0, migrate/1]).
 
 -define(PGHOST, os:getenv("PGHOST", "127.0.0.1")).
 -define(PGPORT, os:getenv("PGPORT", 5432)).
@@ -79,7 +79,7 @@ epgsql_query_fun(Conn) ->
        end
     end.
 
-database_connect() ->
+connect() ->
     io:format("Connecting to ~p at ~p~n", [?PGHOST, ?PGPORT]),
     Connection =
         #{host => ?PGHOST,

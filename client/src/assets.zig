@@ -1,5 +1,10 @@
+const config = @import("config.zig");
+const map = @import("components/hud/map.zig");
+const messages = @import("server/messages.zig");
 const rl = @import("raylib");
+const rm = rl.math;
 const std = @import("std");
+const GameState = @import("game/state.zig");
 
 const base_filepath = "./assets/";
 
@@ -59,4 +64,127 @@ pub fn animations(animationFilePath: [:0]const u8) ![]rl.ModelAnimation {
         return error.could_not_load_animation;
     }
     return try rl.loadModelAnimations(fullFilePath);
+}
+
+fn resizeImage(imageFilePath: [:0]const u8) !rl.Image {
+    var img = try image(imageFilePath);
+    img.resizeNN(config.map.mini_map_size, config.map.mini_map_size);
+    return img;
+}
+
+fn loadTile(kind: messages.Tile) !struct { ?rl.Model, ?rl.Image } {
+    return switch (kind) {
+        .dirt => .{
+            try model(config.assets.paths.game.world.tiles.dirt.model),
+            try resizeImage(config.assets.paths.game.world.tiles.dirt.img),
+        },
+        .grass => .{
+            try model(config.assets.paths.game.world.tiles.grass.model),
+            try resizeImage(config.assets.paths.game.world.tiles.grass.img),
+        },
+        .sand => .{
+            try model(config.assets.paths.game.world.tiles.sand.model),
+            try resizeImage(config.assets.paths.game.world.tiles.sand.img),
+        },
+        .water => .{
+            try model(config.assets.paths.game.world.tiles.water.model),
+            try resizeImage(config.assets.paths.game.world.tiles.water.img),
+        },
+        .empty => unreachable,
+    };
+}
+
+pub fn tilesTable() !GameState.Tile_Table {
+    var initTable = GameState.Tile_Table.initFull(.{ null, null });
+    inline for (@typeInfo(messages.Tile).Enum.fields) |field| {
+        if (!std.mem.eql(u8, field.name, "empty")) {
+            const key: messages.Tile = @enumFromInt(field.value);
+            const assets = try loadTile(key);
+            initTable.put(key, assets);
+        }
+    }
+    return initTable;
+}
+
+pub const Object = struct {
+    model: ?rl.Model = null,
+    scale: rl.Vector3 = .{ .x = 0, .y = 0, .z = 0 },
+    axis: rl.Vector3 = config.assets.object.defaultAxis,
+    angle: f32 = config.assets.object.defaultAngle,
+};
+
+fn loadObject(kind: messages.Object) !Object {
+    return switch (kind) {
+        .chest => .{
+            .model = try model(config.assets.paths.game.world.objects.chest.model),
+            .scale = config.assets.object.chest.scale,
+            .axis = config.assets.object.chest.axis,
+            .angle = config.assets.object.chest.angle,
+        },
+        .tree => .{
+            .model = try model(config.assets.paths.game.world.objects.tree.model),
+            .scale = config.assets.object.tree.scale,
+            .axis = config.assets.object.tree.axis,
+            .angle = config.assets.object.tree.angle,
+        },
+        .bush => .{
+            .model = try model(config.assets.paths.game.world.objects.bush.model),
+            .scale = config.assets.object.bush.scale,
+            .axis = config.assets.object.bush.axis,
+            .angle = config.assets.object.bush.angle,
+        },
+        .empty => unreachable,
+    };
+}
+
+pub fn objectsTable() !GameState.Object_Table {
+    var initTable = GameState.Object_Table.initFull(.{});
+    inline for (@typeInfo(messages.Object).Enum.fields) |field| {
+        if (!std.mem.eql(u8, field.name, "empty")) {
+            const key: messages.Object = @enumFromInt(field.value);
+            const asset = try loadObject(key);
+            initTable.put(key, asset);
+        }
+    }
+    return initTable;
+}
+
+const tileRec: rl.Rectangle = .{
+    .x = 0,
+    .y = 0,
+    .width = config.map.mini_map_size,
+    .height = config.map.mini_map_size,
+};
+
+pub fn createMapImage(world: *const GameState.World.Map) !rl.Image {
+    const width = world.instance.width;
+    const height = world.instance.height;
+    const tiles = world.instance.tiles;
+    const miniMapSize: i32 = @intFromFloat(config.map.mini_map_size);
+    const iWidth: i32 = @intCast(width * miniMapSize);
+    const iHeight: i32 = @intCast(height * miniMapSize);
+    var img = rl.genImageColor(iWidth, iHeight, rl.Color.init(0, 0, 0, 255));
+
+    for (0..height) |j| {
+        for (0..width) |i| {
+            const tile = tiles[width * j + i];
+            if (tile != .empty) {
+                if (world.tiles.get(tile)) |tileData| {
+                    _, const reducedTileImg = tileData;
+                    const imgRec: rl.Rectangle = .{
+                        .x = @floatFromInt(i * config.map.mini_map_size),
+                        .y = @floatFromInt(j * config.map.mini_map_size),
+                        .width = config.map.mini_map_size,
+                        .height = config.map.mini_map_size,
+                    };
+                    rl.imageDraw(&img, reducedTileImg.?, tileRec, imgRec, rl.Color.init(0, 0, 0, 255));
+                } else {
+                    std.debug.print("[ERROR] Tile kind not present in asset pool: .{}\n", .{tile});
+                    return error.tile_kind_not_found;
+                }
+            }
+        }
+    }
+    map.add_borders(&img);
+    return img;
 }

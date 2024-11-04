@@ -89,7 +89,7 @@ pub const Character_Info = struct {
     y_position: f32 = 0,
     x_velocity: f32 = 0,
     y_velocity: f32 = 0,
-    face_direction: u16 = 270,
+    face_direction: i16 = 270,
     map_name: [:0]const u8 = "",
     state_type: GameState.World.Character.Animation.State = .idle,
 };
@@ -103,11 +103,38 @@ pub const Characters_Response = Tuple_Response([]const Character_Info);
 
 pub const Character_Join = struct {
     username: []const u8,
-    email: []const u8,
     name: []const u8,
+    email: []const u8,
+    map_name: []const u8,
 };
 
-pub const Character_Join_Response = Tuple_Response(Character_Info);
+pub const Tile = enum {
+    empty,
+    water,
+    grass,
+    sand,
+    dirt,
+};
+
+pub const Object = enum {
+    empty,
+    bush,
+    tree,
+    chest,
+};
+
+pub const Map = struct {
+    width: u32 = 10,
+    height: u32 = 10,
+    tiles: []const Tile = &.{},
+    objects: []const Object = &.{},
+};
+
+pub const Character_Join_Info = struct {
+    character: Character_Info,
+    map: Map,
+};
+pub const Character_Join_Response = Tuple_Response(Character_Join_Info);
 
 pub const Character_Update = struct {
     level: u8,
@@ -120,7 +147,7 @@ pub const Character_Update = struct {
     y_velocity: f32,
     map_name: [:0]const u8,
     username: []const u8,
-    face_direction: u16,
+    face_direction: i16,
     email: []const u8,
     state_type: GameState.World.Character.Animation.State,
 };

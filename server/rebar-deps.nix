@@ -14,6 +14,16 @@ let
       };
       beamDeps = [ ];
     };
+    pc = builder {
+      name = "pc";
+      version = "1.15.0";
+      src = fetchHex {
+        pkg = "pc";
+        version = "1.15.0";
+        sha256 = "sha256-TA+tT2Q3yuNT1RfaIY/ng0e4/6RLmBeIdJTKquVFlbM=";
+      };
+      beamDeps = [ ];
+    };
     epgsql = builder {
       name = "epgsql";
       version = "4.7.1";
@@ -23,6 +33,16 @@ let
         sha256 = "sha256-tthrfcQshVWx1OIIgOUJnW1tBTFIAA4YjlSPmOTgGDY=";
       };
       beamDeps = [ ];
+    };
+    csv = builder {
+      name = "csv";
+      version = "3.0.3";
+      src = fetchHex {
+        pkg = "csve";
+        version = "3.0.3";
+        sha256 = "sha256-dB0aVaq62qPg/hMFEFAQGnPpDEVwuflAOpOdlUaBNSE=";
+      };
+      beamDeps = [ pc ];
     };
   };
 in self
