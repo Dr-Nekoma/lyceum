@@ -120,6 +120,10 @@ deploy:
     @echo "Attemping to deploy to: {{deploy_host}}"
     ./deploy.sh --deploy-host {{deploy_host}}
 
+# Jump into an erlang shell to debug the server (dont do this, srlsy)
+shell:
+    cd server && rebar3 shell
+
 # Starts the deployed code
 start:
     #!/usr/bin/env bash

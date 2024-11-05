@@ -218,6 +218,14 @@
               ];
             };
 
+            # `nix develop .#server`
+            server = pkgs.mkShell {
+              buildInputs = with pkgs; [
+                erlangLatest
+                rebar3
+              ];
+            };
+
             # `nix develop`
             default = devenv.lib.mkShell {
               inherit inputs pkgs;
