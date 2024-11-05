@@ -45,6 +45,9 @@ format:
 client:
     cd client && zig build run
 
+client-release:
+    cd client && zig build run --release=fast
+
 client-build:
     cd client && zig build
 

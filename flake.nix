@@ -259,6 +259,7 @@
                       build.exec = "just build";
                       server.exec = "just server";
                       client.exec = "just client";
+                      client-release.exec = "just client-release";
                       db-up.exec = "just db-up";
                       db-down.exec = "just db-down";
                       db-reset.exec = "just db-reset";
