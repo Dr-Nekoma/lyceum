@@ -10,8 +10,8 @@
 This is Lyceum --- an MMO game with the server written in [[https://www.erlang.org/][Erlang]] and the client
 written in [[https://ziglang.org/][Zig]] (superchanged with [[https://github.com/raysan5/raylib][raylib]] and [[https://github.com/dont-rely-on-nulls/zerl][Zerl]]).
 
-#+html: <p align="center"><img src="./menu.jpg" alt="The Zerl Logo"></p>
-#+html: <p align="center"><img alt="game" src="https://private-user-images.githubusercontent.com/16356569/383174474-e5e0c2c4-64b2-4475-8fa7-a4bd3a8cc03c.gif?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MzA4MTcyMjcsIm5iZiI6MTczMDgxNjkyNywicGF0aCI6Ii8xNjM1NjU2OS8zODMxNzQ0NzQtZTVlMGMyYzQtNjRiMi00NDc1LThmYTctYTRiZDNhOGNjMDNjLmdpZj9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDExMDUlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQxMTA1VDE0Mjg0N1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTQ1OTQ1YTUyNmZlMDZjOGViYzYwOGJiN2Y5NTk3NzEzM2IxMTJjMTM2NDRkZWZmM2QyZTIwYjI5Y2Y4NTI1NzAmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.hzhNpTC3bM6rEXu87V5TrXEnM9qUwukf_yPgECoK1Kw" alt="game" /></p>
+#+html: <p align="center"><img src="./menu.jpg" alt="The game menu"></p>
+#+html: <p align="center"><img alt="game" src="./game.gif" alt="game"/></p>
 
 * How to run
 
