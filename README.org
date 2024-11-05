@@ -72,7 +72,7 @@ References for assets used in this project:
 - [[https://opengameart.org/content/menu-selection-click][button_select_sound]]
 - [[https://opengameart.org/content/click][button_click_sound]]
 - [[https://opengameart.org/content/soundpack-04][error_sound]]  
-- [[https://youtu.be/gFf5eGCjUUg?si=cmJcKlSzoV4ES0p8][character_model]] (slighly modified in blender)
+- [[https://youtu.be/gFf5eGCjUUg?si=cmJcKlSzoV4ES0p8][character_model]] (slightly modified in blender)
 
 Everything else was made by developers from the project or generated using tools.  
 
