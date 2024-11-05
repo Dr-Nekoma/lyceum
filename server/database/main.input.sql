@@ -23,7 +23,7 @@ INSERT INTO character.stats (name, e_mail, username, constitution, wisdom, stren
 VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 100, 110, 95, 120, 105, 100, 17, 75, 50),
        ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 60, 110, 55, 150, 150, 50, 22, 67, 33),
        ('Scipio', 'benin@example.com', 'benin', 90, 110, 75, 120, 150, 50, 22, 67, 33),
-       ('Silver', 'marinho@example.com', 'marinho', 90, 110, 40, 90, 175, 90, 22, 67, 33),
+       ('Silver', 'marinho@example.com', 'marinho', 90, 110, 70, 90, 145, 90, 22, 67, 33),
        ('Camler', 'nathan@example.com', 'nathan', 90, 110, 75, 120, 150, 50, 22, 67, 33),       
        ('Legion', 'lemos@example.com', 'lemos', 60, 110, 55, 150, 150, 50, 15, 85, 77);
 
