@@ -6,7 +6,7 @@ const GameState = @import("../../game/state.zig");
 
 const barHeight = 40;
 
-fn stats(character: *const GameState.World.Character, size: rl.Vector2, position: rl.Vector2, fontSize: f32, allocator: std.mem.Allocator, font: *rl.Font) !void {
+pub fn stats(character: *const GameState.World.Character, size: rl.Vector2, position: rl.Vector2, fontSize: f32, allocator: std.mem.Allocator, font: *rl.Font) !void {
     const nameLength: f32 = rl.measureTextEx(font.*, character.stats.name, fontSize, config.textSpacing).x;
 
     var index: [4]u8 = undefined;

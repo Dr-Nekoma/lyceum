@@ -17,7 +17,7 @@ fn drawPlayers(gameState: *GameState) !void {
             var infoPosition = rl.getWorldToScreen(player.position, gameState.world.camera);
             infoPosition.y += 30;
             const fontSize = 15;
-            try info.at(player, info.mainSize, infoPosition, fontSize, gameState.allocator, &gameState.menu.assets.font);
+            try info.stats(player, info.mainSize, infoPosition, fontSize, gameState.allocator, &gameState.menu.assets.font);
         }
         const character = gameState.world.character;
         const map_image = gameState.world.character.inventory.hud.minimap.map.?;
