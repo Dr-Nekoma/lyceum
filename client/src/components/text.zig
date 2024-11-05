@@ -13,8 +13,9 @@ pub fn at(
     self: @This(),
     textBoxPosition: rl.Vector2,
     textBoxSize: rl.Vector2,
+    font: *rl.Font,
 ) void {
-    return self.at_impl(0, textBoxPosition, textBoxSize);
+    return self.at_impl(0, textBoxPosition, textBoxSize, font);
 }
 
 pub fn redacted_at(
@@ -57,13 +58,17 @@ fn drawTextBox(position: rl.Vector2, size: rl.Vector2, color: rl.Color) void {
     );
 }
 
-fn drawText(content: [:0]u8, position: rl.Vector2) void {
-    return rl.drawText(
+fn drawText(content: [:0]u8, position: rl.Vector2, size: rl.Vector2, font: *rl.Font) void {
+    return rl.drawTextEx(
+        font.*,
         content,
-        @intFromFloat(position.x + 5),
-        @intFromFloat(position.y + 8),
+        .{
+            .x = position.x + 5,
+            .y = position.y + size.y / 2 - config.textFontSize / 2 - 2,
+        },
         config.textFontSize,
-        rl.Color.white,
+        config.textSpacing,
+        config.ColorPalette.secondary,
     );
 }
 
@@ -71,10 +76,11 @@ pub fn chat(
     self: @This(),
     textBoxPosition: rl.Vector2,
     textBoxSize: rl.Vector2,
+    font: *rl.Font,
 ) void {
     pushCharacters(self);
-    drawTextBox(textBoxPosition, textBoxSize, rl.Color.white);
-    drawText(self.content, textBoxPosition);
+    drawTextBox(textBoxPosition, textBoxSize, config.ColorPalette.secondary);
+    drawText(self.content, textBoxPosition, textBoxSize, font);
 }
 
 fn at_impl(
@@ -82,6 +88,7 @@ fn at_impl(
     comptime buffer_size: usize,
     initialTextBoxPosition: rl.Vector2,
     textBoxSize: rl.Vector2,
+    font: *rl.Font,
 ) void {
     const textBoxPosition: rl.Vector2 = .{ .x = initialTextBoxPosition.x - (textBoxSize.x / 2), .y = initialTextBoxPosition.y };
     const textBox = rl.Rectangle.init(
@@ -101,14 +108,14 @@ fn at_impl(
         }
     };
 
-    drawTextBox(textBoxPosition, textBoxSize, if (mouseOnText) config.ColorPalette.secondary else rl.Color.white);
+    drawTextBox(textBoxPosition, textBoxSize, if (mouseOnText) config.ColorPalette.secondary else config.ColorPalette.secondary);
 
     const is_redacted = buffer_size != 0;
     var redaction: [buffer_size:0]u8 = .{0} ** buffer_size;
     if (is_redacted)
         @memset(redaction[0..@min(self.content.len, buffer_size)], '*');
 
-    drawText(if (is_redacted) &redaction else self.content, textBoxPosition);
+    drawText(if (is_redacted) &redaction else self.content, textBoxPosition, textBoxSize, font);
 
     // TODO: Fix blinking cursor
     // if (mouseOnText) {

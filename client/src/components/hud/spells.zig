@@ -16,7 +16,7 @@ const availableKeysAndLabels = [_]common.Slot{
     .{ .key = .key_zero, .label = "0" },
 };
 
-pub fn at(slots: []const [:0]const u8, width: f32, height: f32) !void {
+pub fn at(slots: []const [:0]const u8, width: f32, height: f32, font: *rl.Font) !void {
     const length: usize = if (slots.len <= 10) slots.len else 10;
     const keysAndLabels = availableKeysAndLabels[0..length];
 
@@ -28,7 +28,7 @@ pub fn at(slots: []const [:0]const u8, width: f32, height: f32) !void {
     };
     const boundaryPosition: rl.Vector2 = .{
         .x = width / 2 - boundarySize.x / 2,
-        .y = height - common.slotBoxSize.y - config.menuButtonsPadding,
+        .y = height - common.slotBoxSize.y - 6,
     };
 
     rl.drawRectangleV(boundaryPosition, boundarySize, config.ColorPalette.primary);
@@ -36,7 +36,7 @@ pub fn at(slots: []const [:0]const u8, width: f32, height: f32) !void {
     var xPosition = boundaryPosition.x + common.internalPadding;
     const yPosition = boundaryPosition.y + common.internalPadding;
     for (keysAndLabels) |keyAndLabel| {
-        common.drawSlot(xPosition, yPosition, keyAndLabel.label);
+        common.drawSlot(xPosition, yPosition, keyAndLabel.label, font);
         xPosition += common.internalPadding + common.slotInternalSize.x;
     }
     common.highlightSlots(boundaryPosition, keysAndLabels);

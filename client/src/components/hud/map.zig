@@ -43,7 +43,7 @@ pub fn player(world_face_direction: i16, center: rl.Vector2) void {
         center.add(triangle_top),
         center.add(triangle_left),
         center.add(triangle_right),
-        rl.Color.white,
+        config.ColorPalette.secondary,
     );
 }
 
@@ -73,7 +73,37 @@ pub const coordinates = struct {
     }
 };
 
-pub fn at(character: *const GameState.World.Character, world: *const GameState.World.Map, width: f32, height: f32) !void {
+fn drawMapName(center: rl.Vector2, name: [:0]const u8, font: *rl.Font) void {
+    const nameMeasure = rl.measureTextEx(font.*, name, config.textFontSize, config.textSpacing);
+    const position: rl.Vector2 = .{
+        .x = center.x - nameMeasure.x / 2,
+        .y = center.y - innerRadius - (nameMeasure.y / 2),
+    };
+
+    const border = 10;
+    const bannerSize: rl.Vector2 = .{
+        .x = nameMeasure.x + 2 * border,
+        .y = config.textFontSize + 2 * border,
+    };
+    const bannerPosition: rl.Vector2 = .{
+        .x = position.x - border,
+        .y = position.y - border,
+    };
+
+    rl.drawRectangleV(bannerPosition, bannerSize, config.ColorPalette.primary);
+    rl.drawRectangleLinesEx(.{ .x = bannerPosition.x, .y = bannerPosition.y, .width = bannerSize.x, .height = bannerSize.y }, 2, config.ColorPalette.secondary);
+
+    rl.drawTextEx(
+        font.*,
+        name,
+        position,
+        config.textFontSize,
+        config.textSpacing,
+        config.ColorPalette.secondary,
+    );
+}
+
+pub fn at(character: *const GameState.World.Character, world: *const GameState.World.Map, width: f32, height: f32, font: *rl.Font) !void {
     const position: rl.Vector2 = .{
         .x = character.stats.x_position,
         .y = character.stats.y_position,
@@ -104,7 +134,7 @@ pub fn at(character: *const GameState.World.Character, world: *const GameState.W
         outerRadius,
         outerRadius,
         innerRadius,
-        rl.Color.white,
+        config.ColorPalette.secondary,
     );
     map.alphaMask(alpha_mask);
 
@@ -112,10 +142,12 @@ pub fn at(character: *const GameState.World.Character, world: *const GameState.W
     const texture = character.inventory.hud.minimap.texture.?;
     rl.updateTexture(texture, pixels.ptr);
 
-    texture.draw(@intFromFloat(map_x), @intFromFloat(map_y), rl.Color.white);
+    texture.draw(@intFromFloat(map_x), @intFromFloat(map_y), config.ColorPalette.secondary);
     rl.drawRing(center, innerRadius, outerRadius, 0, 360, 0, config.ColorPalette.primary);
-    rl.drawCircleLinesV(center, innerRadius, rl.Color.white);
-    rl.drawCircleLinesV(center, innerRadius - 1, rl.Color.white);
-    // std.debug.print("Main Player", .{});
+    rl.drawCircleLinesV(center, innerRadius, config.ColorPalette.secondary);
+    rl.drawCircleLinesV(center, innerRadius - 1, config.ColorPalette.secondary);
+
     player(character.stats.face_direction, center);
+
+    drawMapName(center, character.stats.map_name, font);
 }

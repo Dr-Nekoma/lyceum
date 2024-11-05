@@ -63,7 +63,7 @@
             pkgs.pkg-config
             erlangLibs
             raylib
-          ];
+          ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux (with pkgs; [libpulseaudio]);
           customRuntimeDeps = [
             erlangLibs
             raylib
@@ -196,6 +196,7 @@
               xorg.libXi
               xorg.libXi
               libGL
+              libpulseaudio
             ];
             darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
               CoreFoundation
@@ -214,6 +215,14 @@
                 rsync
                 zigLatest
                 raylib
+              ];
+            };
+
+            # `nix develop .#server`
+            server = pkgs.mkShell {
+              buildInputs = with pkgs; [
+                erlangLatest
+                rebar3
               ];
             };
 
@@ -250,6 +259,7 @@
                       build.exec = "just build";
                       server.exec = "just server";
                       client.exec = "just client";
+                      client-release.exec = "just client-release";
                       db-up.exec = "just db-up";
                       db-down.exec = "just db-down";
                       db-reset.exec = "just db-reset";

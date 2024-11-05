@@ -76,6 +76,22 @@ pub const assets = struct {
             pub const character = struct {
                 pub const placeholder = "menu/character/placeholder.png";
             };
+            pub const music = struct {
+                pub const background = "menu/music/03-Linear-B.ogg";
+            };
+            pub const logo = "menu/logo.png";
+            pub const background = struct {
+                pub const main = "menu/backgrounds/main.png";
+                pub const character_selection = "menu/backgrounds/character_selection.png";
+            };
+            pub const font = "menu/font.otf";
+            pub const sounds = struct {
+                pub const buttons = struct {
+                    pub const select = "menu/sounds/buttons/select.ogg";
+                    pub const click = "menu/sounds/buttons/click.ogg";
+                };
+                pub const error_sound = "menu/sounds/error.ogg";
+            };
         };
         pub const game = struct {
             pub const character = struct {
@@ -119,10 +135,12 @@ pub const assets = struct {
 
 pub const fov = 2;
 pub const defaultCameraDistance = 35;
-pub const buttonFontSize = 20;
+pub const buttonFontSize = 27;
+pub const titleFontSize = 25;
 pub const textFontSize = 20;
-pub const hubFontSize = 6;
-pub const menuButtonsPadding = 6;
+pub const textSpacing = 2.5;
+pub const hubFontSize = 13;
+pub const menuButtonsPadding = 16;
 pub const nameSize = 18;
 pub const messageSize = 50;
 pub const maximumCharacters = 6;
@@ -135,5 +153,5 @@ pub const ColorPalette = struct {
     pub const secondary = rl.Color.init(222, 222, 222, 255);
     pub const background = rl.Color.init(68, 105, 129, 255);
     pub const disabled = rl.Color.init(86, 88, 92, 255);
-    pub const connection_status = rl.Color.init(0, 0, 0, 127);
+    pub const connection_status = rl.Color.init(0, 0, 0, 225);
 };

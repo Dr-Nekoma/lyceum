@@ -2,30 +2,38 @@
 INSERT INTO player.record (username, password, e_mail)
 VALUES ('mmagueta', 'password123', 'mmagueta@example.com'),
        ('benin', 'sekrit', 'benin@example.com'),
-       ('lambdu', 'pass123', 'lambdu@example.com');
+       ('marinho', 'scheme', 'marinho@example.com'),
+       ('nathan', 'rescript', 'nathan@example.com'),       
+       ('lemos', 'pass123', 'lemos@example.com');
 
 -- Insert into lyceum.map
 INSERT INTO map.instance (name, width, height)
-VALUES ('LOW_LAND', 150, 150), ('CASTLE_HALL', 150, 150), ('TEST', 6, 6), ('TEST_2', 6, 6);
+VALUES ('Pond', 6, 6);
 
 -- Insert into lyceum.character and related tables
 INSERT INTO character.instance (name, e_mail, username)
 VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta'),
        ('Gaiseric', 'mmagueta@example.com', 'mmagueta'),
        ('Scipio', 'benin@example.com', 'benin'),
-       ('Legion', 'lambdu@example.com', 'lambdu');
+       ('Silver', 'marinho@example.com', 'marinho'),
+       ('Camler', 'nathan@example.com', 'nathan'),       
+       ('Legion', 'lemos@example.com', 'lemos');
 
 INSERT INTO character.stats (name, e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith, level, health, mana)
 VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 100, 110, 95, 120, 105, 100, 17, 75, 50),
        ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 60, 110, 55, 150, 150, 50, 22, 67, 33),
        ('Scipio', 'benin@example.com', 'benin', 90, 110, 75, 120, 150, 50, 22, 67, 33),
-       ('Legion', 'lambdu@example.com', 'lambdu', 60, 110, 55, 150, 150, 50, 15, 85, 77);
+       ('Silver', 'marinho@example.com', 'marinho', 90, 110, 70, 90, 145, 90, 22, 67, 33),
+       ('Camler', 'nathan@example.com', 'nathan', 90, 110, 75, 120, 150, 50, 22, 67, 33),       
+       ('Legion', 'lemos@example.com', 'lemos', 60, 110, 55, 150, 150, 50, 15, 85, 77);
 
 INSERT INTO character.position (name, e_mail, username, x_position, y_position, map_name, face_direction)
-VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 10, 10, 'TEST', 270),
-       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 10, 10, 'TEST', 270),
-       ('Scipio', 'benin@example.com', 'benin', 10, 10, 'TEST', 270),
-       ('Legion', 'lambdu@example.com', 'lambdu', 10, 10, 'TEST', 270);
+VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 10, 10, 'Pond', 270),
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 10, 10, 'Pond', 270),
+       ('Scipio', 'benin@example.com', 'benin', 10, 10, 'Pond', 270),
+       ('Silver', 'marinho@example.com', 'marinho', 10, 10, 'Pond', 270),
+       ('Camler', 'nathan@example.com', 'nathan', 10, 10, 'Pond', 270),       
+       ('Legion', 'lemos@example.com', 'lemos', 10, 10, 'Pond', 270);
 
 -- Insert into lyceum.equipment
 INSERT INTO equipment.instance (name, description, kind)
@@ -40,9 +48,4 @@ VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Vandal''s Prima', 
        ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Blood-Reaver''s Gauntlet', 'ARMS'::equipment.use, 'ARMS'::equipment.kind),
        ('Gaiseric', 'mmagueta@example.com', 'mmagueta', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::equipment.kind),
        ('Scipio', 'benin@example.com', 'benin', true, 'Legate''s Pugio', 'RIGHT_ARM', 'ARMS'::equipment.kind),
-       ('Legion', 'lambdu@example.com', 'lambdu', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::equipment.kind);
-
--- Insert into lyceum.view_spell_destruction
--- INSERT INTO lyceum.view_spell_destruction (name, description, cost, duration, cast_time, kind, target, base_damage, damage_kind, destruction_kind)
--- VALUES ('Fire Ball', 'Something cool', 10, 50, 1, 'PROJECTILE'::lyceum.spell_type, 'SINGULAR'::lyceum.spell_target, 100, 'FIRE'::lyceum.spell_damage_type, 'MAGIC'::lyceum.spell_destruction_type),
---        ('Ice Ball', 'Another cool thing', 10, 50, 1, 'PROJECTILE'::lyceum.spell_type, 'SINGULAR'::lyceum.spell_target, 100, 'FIRE'::lyceum.spell_damage_type, 'MAGIC'::lyceum.spell_destruction_type);
+       ('Legion', 'lemos@example.com', 'lemos', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::equipment.kind);

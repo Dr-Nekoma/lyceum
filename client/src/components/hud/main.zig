@@ -17,7 +17,7 @@ fn drawPlayers(gameState: *GameState) !void {
             var infoPosition = rl.getWorldToScreen(player.position, gameState.world.camera);
             infoPosition.y += 30;
             const fontSize = 15;
-            try info.at(player, info.mainSize, infoPosition, fontSize, gameState.allocator);
+            try info.stats(player, info.mainSize, infoPosition, fontSize, gameState.allocator, &gameState.menu.assets.font);
         }
         const character = gameState.world.character;
         const map_image = gameState.world.character.inventory.hud.minimap.map.?;
@@ -45,18 +45,18 @@ pub fn at(gameState: *GameState) !void {
     const height = gameState.height;
     const character = &gameState.world.character;
 
-    try spells.at(character.inventory.hud.spells, width, height);
+    try spells.at(character.inventory.hud.spells, width, height, &gameState.menu.assets.font);
 
-    try consumables.at(character.inventory.hud.consumables, height);
+    try consumables.at(character.inventory.hud.consumables, height, &gameState.menu.assets.font);
 
     const mainPosition: rl.Vector2 = .{
         .x = width / 2,
-        .y = 3 * config.menuButtonsPadding,
+        .y = 18,
     };
 
-    try info.at(character, info.mainSize, mainPosition, config.textFontSize, gameState.allocator);
+    try info.at(character, info.mainSize, mainPosition, config.textFontSize, gameState.allocator, &gameState.menu.assets.font);
 
-    try map.at(character, &gameState.world.map, width, height);
+    try map.at(character, &gameState.world.map, width, height, &gameState.menu.assets.font);
 
     const chatC = chat{
         .content = &character.inventory.hud.chat.content,

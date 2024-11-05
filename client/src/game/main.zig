@@ -20,7 +20,8 @@ fn drawPlayers(gameState: *GameState) void {
     }
 }
 
-fn controlInput(entity: *GameState.World.Character) i16 {
+fn controlInput(gameState: *GameState) !i16 {
+    const entity = &gameState.world.character;
     var tempAngle = entity.stats.face_direction;
     const velocity = &entity.velocity;
     const deltaTime = rl.getFrameTime();
@@ -40,6 +41,11 @@ fn controlInput(entity: *GameState.World.Character) i16 {
     } else if (rl.isKeyDown(.key_d)) {
         velocity.x += deltaVelocity;
         tempAngle = 90;
+    }
+
+    if (rl.isKeyDown(.key_backslash)) {
+        try server.character.exitMap(gameState);
+        rl.enableCursor();
     }
 
     return tempAngle;
@@ -79,7 +85,7 @@ fn drawWorld(player: *const GameState.World.Character, world: *const GameState.W
             if (world.tiles.get(tile)) |tileData| {
                 const tileModel, _ = tileData;
                 const position = assetPosition(fx, fy, config.assets.tile.level);
-                rl.drawModelEx(tileModel.?, position, config.assets.tile.axis, config.assets.tile.angle, config.assets.tile.scale, rl.Color.white);
+                rl.drawModelEx(tileModel.?, position, config.assets.tile.axis, config.assets.tile.angle, config.assets.tile.scale, config.ColorPalette.secondary);
             } else {
                 std.debug.print("[ERROR] Tile kind not present in asset pool: .{}\n", .{tile});
                 return error.tile_kind_not_found;
@@ -87,7 +93,7 @@ fn drawWorld(player: *const GameState.World.Character, world: *const GameState.W
             if (object != .empty) {
                 if (world.objects.get(object)) |objectData| {
                     const position = assetPosition(fx, fy, config.assets.object.defaultLevel);
-                    rl.drawModelEx(objectData.model.?, position, objectData.axis, objectData.angle, objectData.scale, rl.Color.white);
+                    rl.drawModelEx(objectData.model.?, position, objectData.axis, objectData.angle, objectData.scale, config.ColorPalette.secondary);
                 }
             }
         }
@@ -98,20 +104,17 @@ pub fn spawn(gameState: *GameState) !void {
     rl.beginMode3D(gameState.world.camera);
     defer rl.endMode3D();
 
-    drawPlayers(gameState);
+    const tempAngle = try controlInput(gameState);
 
-    const tempAngle = controlInput(&gameState.world.character);
     physics.character.draw(&gameState.world.character, &gameState.world.map, tempAngle);
     animate.character.update(&gameState.world.character);
     camera.update(gameState);
+
     try server.character.update(gameState);
 
     rl.drawGrid(2000, 10.0);
 
-    if (rl.isKeyDown(.key_backslash)) {
-        try server.character.exitMap(gameState);
-        rl.enableCursor();
-    }
+    drawPlayers(gameState);
 
     try drawWorld(&gameState.world.character, &gameState.world.map);
 }

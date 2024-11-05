@@ -28,6 +28,7 @@ const Error = @Type(.{ .Enum = .{
 } });
 
 const errorMessage = struct {
+    pub const create_account_not_implemented = "Account creation is not implemented yet!";
     pub const node_status = "Failed to Initialize Node!";
     pub const node_connection = "Node Connection Failure!";
     pub const login_send = "Failed to Send Credentials!";
@@ -51,11 +52,15 @@ const errorMessage = struct {
 expiration: f64 = 0,
 transparency: u8 = 255,
 type: ?Error = null,
+sound: *rl.Sound,
+font: *rl.Font,
 
 pub fn update(self: *@This(), tag: Error) void {
     self.expiration = rl.getTime() + defaultErrorDuration;
     self.type = tag;
     self.transparency = 255;
+    rl.setSoundVolume(self.sound.*, 0.17);
+    rl.playSound(self.sound.*);
 }
 
 fn error_message(kind: Error) [:0]const u8 {
@@ -73,7 +78,7 @@ pub fn at(
     if (current_timestamp <= self.expiration) {
         if (self.type) |kind| {
             const message = error_message(kind);
-            const textSize: f32 = @floatFromInt(rl.measureText(message, fontSize));
+            const textSize: f32 = rl.measureTextEx(self.font.*, message, fontSize, config.textSpacing).x;
             const size: rl.Vector2 = .{
                 .x = 7 * padding + textSize,
                 .y = 7 * padding + fontSize,
@@ -81,7 +86,7 @@ pub fn at(
 
             const position: rl.Vector2 = .{
                 .x = width / 2 - size.x / 2,
-                .y = height / 4 - size.y / 2,
+                .y = height / 3 - size.y / 2,
             };
 
             const black = rl.Color.init(0, 0, 0, self.transparency);
@@ -99,11 +104,12 @@ pub fn at(
             const messageX = position.x + size.x / 2 - textSize / 2;
             const floatFont: f32 = @floatFromInt(fontSize);
             const messageY = position.y + size.y / 2 - floatFont / 2;
-            rl.drawText(
+            rl.drawTextEx(
+                self.font.*,
                 message,
-                @intFromFloat(messageX),
-                @intFromFloat(messageY),
+                .{ .x = messageX, .y = messageY },
                 fontSize,
+                config.textSpacing,
                 red,
             );
 

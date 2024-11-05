@@ -54,6 +54,7 @@ pub fn at(
                 .x = boundarySize.x,
                 .y = text.menuTextBoxSize.y,
             },
+            &gameState.menu.assets.font,
         );
     } else if (self.mode.* == .idle and self.position.* > 0) {
         const message: Message = .{
@@ -66,7 +67,7 @@ pub fn at(
         self.position.* = 0;
     }
 
-    if (rl.isKeyDown(.key_enter)) {
+    if (rl.isKeyPressed(.key_enter)) {
         if (self.mode.* == .idle) {
             self.mode.* = .writing;
         } else if (self.mode.* == .writing) {

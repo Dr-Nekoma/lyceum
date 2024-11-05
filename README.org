@@ -59,10 +59,16 @@ References for assets used in this project:
 - [[https://free3d.com/3d-model/-rectangular-grass-patch--205749.html][tile_model]] (used for all types of tiles)
 - [[https://free3d.com/3d-model/treasure-chest-v1--156264.html][chest_model]]
 - [[https://opengameart.org/content/fern][bush_model]]
-- [[https://opengameart.org/content/tree-24][tree_model]]   
+- [[https://opengameart.org/content/tree-24][tree_model]]
+- [[https://www.dafont.com/eari.font?text=Lyceum][logo_font]]
+- [[https://www.dafont.com/kelmscott.font?text=Connect][text_font]]
+- [[https://tholgrimar.bandcamp.com/track/linear-b][background_music]]
+- [[https://opengameart.org/content/menu-selection-click][button_select_sound]]
+- [[https://opengameart.org/content/click][button_click_sound]]
+- [[https://opengameart.org/content/soundpack-04][error_sound]]  
 - [[https://youtu.be/gFf5eGCjUUg?si=cmJcKlSzoV4ES0p8][character_model]] (slighly modified in blender)
 
-Everything else was made by developers from the project.  
+Everything else was made by developers from the project or generated using tools.  
 
 * Lore
 

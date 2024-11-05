@@ -67,7 +67,9 @@ fn emptyCharacter(gameState: *GameState) !void {
                     .y = currentTextPosition.y,
                 },
                 .textSize = textSize,
-                .textColor = rl.Color.white,
+                .textColor = config.ColorPalette.secondary,
+                .font = &gameState.menu.assets.font,
+                .sound = &gameState.menu.assets.sounds.buttons.click,
             };
             try attributeComp.at();
             currentTextPosition.y += textSize.y + fieldPadding;
@@ -79,18 +81,19 @@ fn emptyCharacter(gameState: *GameState) !void {
             const nameLabelPositionY =
                 nameBoxPosition.y - config.buttonFontSize - 2 * config.menuButtonsPadding;
 
-            rl.drawText(
+            rl.drawTextEx(
+                gameState.menu.assets.font,
                 "Name:",
-                50,
-                @intFromFloat(nameLabelPositionY),
+                .{ .x = 50, .y = nameLabelPositionY },
                 config.buttonFontSize,
-                rl.Color.white,
+                config.textSpacing,
+                config.ColorPalette.secondary,
             );
             const nameText = text{
                 .content = gameState.menu.character.create.name,
                 .position = &gameState.menu.character.create.name_position,
             };
-            nameText.at(nameBoxPosition, text.menuTextBoxSize);
+            nameText.at(nameBoxPosition, text.menuTextBoxSize, &gameState.menu.assets.font);
             gameState.world.character.stats.name = gameState.menu.character.create.name;
         } else {
             // std.debug.print("Not editable: .{s}\n", .{field.name});
@@ -135,8 +138,7 @@ pub fn selection(gameState: *GameState) !void {
         for (0.., gameState.menu.character.select.list) |index, character| {
             var currentButton = gameState.menu.character.select.buttons.instances[index];
             currentButton.index = index;
-            if (Button.Selectable.at(
-                &currentButton,
+            if (currentButton.at(
                 character.stats.name,
                 buttonPosition,
                 buttonSize,
@@ -148,7 +150,7 @@ pub fn selection(gameState: *GameState) !void {
             }
 
             if (character.preview) |preview| {
-                rl.drawTextureEx(preview, texturePosition, 0.0, 1, rl.Color.white);
+                rl.drawTextureEx(preview, texturePosition, 0.0, 1, config.ColorPalette.secondary);
             }
             joinButton.disabled = currentSelected.* == null;
             if (joinButton.at(

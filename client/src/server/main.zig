@@ -52,8 +52,8 @@ pub const character = struct {
                 .map_name = gameState.world.character.stats.map_name,
                 .face_direction = gameState.world.character.stats.face_direction,
                 .state_type = gameState.world.character.stats.state_type,
-                .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
-                .email = gameState.menu.credentials.email,
+                .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
+                .email = gameState.menu.login.email,
             },
         }) catch {
             gameState.errorElem.update(.update_character_send);
@@ -114,8 +114,8 @@ pub const character = struct {
         gameState.send(messages.Payload{
             .joining_map = .{
                 .name = gameState.world.character.stats.name,
-                .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
-                .email = gameState.menu.credentials.email,
+                .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
+                .email = gameState.menu.login.email,
                 .map_name = gameState.world.character.stats.map_name,
             },
         }) catch {
@@ -171,8 +171,8 @@ pub const user = struct {
     pub fn login(gameState: *GameState) !void {
         gameState.send_with_self(.{
             .login = .{
-                .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
-                .password = gameState.menu.credentials.password[0..gameState.menu.credentials.passwordPosition],
+                .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
+                .password = gameState.menu.login.password[0..gameState.menu.login.passwordPosition],
             },
         }) catch {
             gameState.errorElem.update(.login_send);
@@ -185,7 +185,7 @@ pub const user = struct {
         };
         switch (server_response) {
             .ok => |item| {
-                gameState.connection.handler, gameState.menu.credentials.email = item;
+                gameState.connection.handler, gameState.menu.login.email = item;
                 try getCharacters(gameState);
             },
             .@"error" => |msg| {
@@ -226,8 +226,8 @@ pub const user = struct {
     pub fn getCharacters(gameState: *GameState) !void {
         gameState.send(messages.Payload{
             .list_characters = .{
-                .username = gameState.menu.credentials.username[0..gameState.menu.credentials.usernamePosition],
-                .email = gameState.menu.credentials.email,
+                .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
+                .email = gameState.menu.login.email,
             },
         }) catch {
             gameState.errorElem.update(.get_characters_send);

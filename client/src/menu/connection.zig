@@ -24,33 +24,36 @@ pub fn connect(gameState: *GameState) !void {
         .y = (gameState.height / 2) - (buttonSize.y / 2),
     };
     const serverInfoLabel = "Server Address";
-    const serverInfoLabelSize: f32 = @floatFromInt(rl.measureText(serverInfoLabel, config.textFontSize));
+    const serverInfoLabelSize: f32 = rl.measureTextEx(gameState.menu.assets.font, serverInfoLabel, config.titleFontSize, config.textSpacing).x;
 
     const serverInfoLabelPositionX =
         (gameState.width / 2) - (serverInfoLabelSize / 2);
     const serverInfoLabelPositionY =
-        serverInfoBoxPosition.y - config.buttonFontSize - 2 * config.menuButtonsPadding;
+        serverInfoBoxPosition.y - config.buttonFontSize - 3 * config.menuButtonsPadding;
 
-    rl.drawText(
+    const position: rl.Vector2 = .{ .x = serverInfoLabelPositionX, .y = serverInfoLabelPositionY };
+    menu.drawBackgroundColor(serverInfoLabelSize, config.titleFontSize, position);
+    rl.drawTextEx(
+        gameState.menu.assets.font,
         serverInfoLabel,
-        @intFromFloat(serverInfoLabelPositionX),
-        @intFromFloat(serverInfoLabelPositionY),
-        config.textFontSize,
-        rl.Color.white,
+        position,
+        config.titleFontSize,
+        config.textSpacing,
+        config.ColorPalette.secondary,
     );
     const serverInfoText = text{
-        .content = &gameState.menu.server.address,
-        .position = &gameState.menu.server.addressPosition,
+        .content = &gameState.menu.connect.address,
+        .position = &gameState.menu.connect.addressPosition,
     };
-    serverInfoText.at(serverInfoBoxPosition, text.menuTextBoxSize);
+    serverInfoText.at(serverInfoBoxPosition, text.menuTextBoxSize, &gameState.menu.assets.font);
 
     const buttonPosition: rl.Vector2 = .{
         .x = (gameState.width / 2) - (buttonSize.x / 2),
         .y = serverInfoBoxPosition.y + text.menuTextBoxSize.y + 5 * config.menuButtonsPadding,
     };
-    const connectButton = Button.Clickable{
-        .disabled = !(serverInfoText.position.* > 0),
-    };
+
+    var connectButton = &gameState.menu.connect.connect_button;
+    connectButton.disabled = !(serverInfoText.position.* > 0);
     if (connectButton.at(
         "Connect",
         buttonPosition,
@@ -66,7 +69,7 @@ pub fn connect(gameState: *GameState) !void {
         zerl.establish_connection(
             node,
             GameState.Connection.process_name,
-            gameState.menu.server.address[0..gameState.menu.server.addressPosition],
+            gameState.menu.connect.address[0..gameState.menu.connect.addressPosition],
         ) catch |error_value| {
             try print_connect_server_error(error_value);
             gameState.errorElem.update(.node_connection);
@@ -84,5 +87,5 @@ pub fn status(gameState: *GameState) void {
             .not_connected = &gameState.menu.assets.connection.not_connected_icon,
         },
     };
-    statusWidget.at(gameState.connection.is_connected, gameState.height);
+    statusWidget.at(gameState.connection.is_connected, gameState.height, &gameState.menu.assets.font);
 }

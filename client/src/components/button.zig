@@ -55,7 +55,11 @@ pub const Sizes = struct {
 
 pub const Clickable = struct {
     disabled: bool = false,
+    font: *rl.Font,
+    sound: *rl.Sound,
+
     pub const Back = struct {
+        sound: *rl.Sound,
         fn draw(height: f32) bool {
             const size: rl.Vector2 = .{
                 .x = height / 15,
@@ -77,10 +81,10 @@ pub const Clickable = struct {
             );
             if (isHovered) {
                 const time = rl.getTime();
-                const offset: f32 = @floatCast(2 * @sin(2 * time) + 3);
+                const offset: f32 = @floatCast(5 * @sin(2 * time) + 3);
                 highlighting(position, size, offset);
             }
-            rl.drawRectangleV(position, size, config.ColorPalette.primary);
+            rl.drawRectangleV(position, size, config.ColorPalette.background);
 
             const triangle_top: rl.Vector2 = .{
                 .x = 2 * size.x / 3 + position.x,
@@ -99,13 +103,14 @@ pub const Clickable = struct {
                 triangle_top,
                 triangle_left,
                 triangle_bottom,
-                rl.Color.white,
+                config.ColorPalette.secondary,
             );
 
             return isHovered;
         }
 
         pub fn at(
+            self: *@This(),
             scene: *GameState.Scene,
             height: f32,
         ) void {
@@ -115,6 +120,7 @@ pub const Clickable = struct {
             }
             const isHovered = draw(height);
             if (isHovered and rl.isMouseButtonPressed(.mouse_button_left)) {
+                rl.playSound(self.sound.*);
                 scene.* = switch (scene.*) {
                     .user_registry, .user_login, .nothing, .spawn, .character_selection, .connect => .nothing,
                 };
@@ -143,30 +149,36 @@ pub const Clickable = struct {
         if (!self.disabled) {
             if (isHovered) {
                 const time = rl.getTime();
-                const offset: f32 = @floatCast(2 * @sin(2 * time) + 3);
+                const offset: f32 = @floatCast(5 * @sin(2 * time) + 3);
                 highlighting(position, size, offset);
             }
         } else {
             color = config.ColorPalette.disabled;
         }
         rl.drawRectangleV(position, size, color);
-        const messageSize: f32 = @floatFromInt(rl.measureText(message, config.buttonFontSize));
+        const messageSize: f32 = rl.measureTextEx(self.font.*, message, config.buttonFontSize, config.textSpacing).x;
         const messageX = position.x + size.x / 2 - messageSize / 2;
         const floatFont: f32 = @floatFromInt(config.buttonFontSize);
         const messageY = position.y + size.y / 2 - floatFont / 2;
-        rl.drawText(
+        rl.drawTextEx(
+            self.font.*,
             message,
-            @intFromFloat(messageX),
-            @intFromFloat(messageY),
+            .{ .x = messageX, .y = messageY },
             config.buttonFontSize,
+            config.textSpacing,
             config.ColorPalette.secondary,
         );
-        return !self.disabled and (isHovered and rl.isMouseButtonPressed(.mouse_button_left));
+        const clicked = !self.disabled and (isHovered and rl.isMouseButtonPressed(.mouse_button_left));
+        if (clicked) rl.playSound(self.sound.*);
+        return clicked;
     }
 };
 
 pub const Selectable = struct {
     index: ?usize = null,
+    font: *rl.Font,
+    sound: *rl.Sound,
+
     pub fn at(
         self: *@This(),
         message: [:0]const u8,
@@ -191,28 +203,37 @@ pub const Selectable = struct {
             highlighting(position, size, offset);
         } else if (isHovered) {
             const time = rl.getTime();
-            const offset: f32 = @floatCast(2 * @sin(2 * time) + 3);
+            const offset: f32 = @floatCast(5 * @sin(2 * time) + 3);
             highlighting(position, size, offset);
         }
         rl.drawRectangleV(position, size, color);
-        const messageSize: f32 = @floatFromInt(rl.measureText(message, config.buttonFontSize));
+        const messageSize: f32 = rl.measureTextEx(self.font.*, message, config.buttonFontSize, config.textSpacing).x;
         const messageX = position.x + size.x / 2 - messageSize / 2;
         const floatFont: f32 = @floatFromInt(config.buttonFontSize);
         const messageY = position.y + size.y / 2 - floatFont / 2;
-        rl.drawText(
+        rl.drawTextEx(
+            self.font.*,
             message,
-            @intFromFloat(messageX),
-            @intFromFloat(messageY),
+            .{ .x = messageX, .y = messageY },
             config.buttonFontSize,
+            config.textSpacing,
             config.ColorPalette.secondary,
         );
 
         const clicked = isHovered and rl.isMouseButtonPressed(.mouse_button_left);
+        if (clicked) rl.playSound(self.sound.*);
         return clicked or isSelected;
     }
 };
 
 pub const SelectableGroup = struct {
     selected: ?usize = null,
-    instances: [config.maximumCharacters]Selectable = .{Selectable{}} ** config.maximumCharacters,
+    instances: [config.maximumCharacters]Selectable,
+
+    pub fn init(font: *rl.Font, sound: *rl.Sound) @This() {
+        return .{ .instances = .{Selectable{
+            .font = font,
+            .sound = sound,
+        }} ** config.maximumCharacters };
+    }
 };

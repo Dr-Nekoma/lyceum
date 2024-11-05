@@ -45,6 +45,9 @@ format:
 client:
     cd client && zig build run
 
+client-release:
+    cd client && zig build run --release=fast
+
 client-build:
     cd client && zig build
 
@@ -119,6 +122,10 @@ build-docker:
 deploy:
     @echo "Attemping to deploy to: {{deploy_host}}"
     ./deploy.sh --deploy-host {{deploy_host}}
+
+# Jump into an erlang shell to debug the server (dont do this, srlsy)
+shell:
+    cd server && rebar3 shell
 
 # Starts the deployed code
 start:
