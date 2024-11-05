@@ -11,15 +11,25 @@ This is Lyceum --- an MMO game with the server written in [[https://www.erlang.o
 written in [[https://ziglang.org/][Zig]] (superchanged with [[https://github.com/raysan5/raylib][raylib]] and [[https://github.com/dont-rely-on-nulls/zerl][Zerl]]).
 
 #+html: <p align="center"><img src="./menu.jpg" alt="The game menu"></p>
-#+html: <p align="center"><img alt="game" src="./game.gif" alt="game"/></p>
+#+html: <p align="center"><img src="./game.gif" alt="game"/></p>
 
 * How to run
 
-There are several ways to run this project, but they all leverage [[https://nixos.org/][Nix]].
+There are several ways to run this project, but they all leverage [[https://nixos.org/][Nix]]. We have a
+single [[https://devenv.sh/][devenv]] configured, that has all the tooling required to run this project,
+it also includes postgres:
+
+** Testing the Game (DEMO)
+
+1. ~nix develop --impure~
+2. ~devenv up~ (or ~devenv up -d~) to launch a local ~postgres~
+3. ~just db-reset~ or ~db-reset~, to initialize ~postgres~ for local development
+4. ~server~
+5. followed by ~client-release~
+6. Once you get the client to launch, connect to ~localhost~ and you can try
+   playing with any of the local credentials [[https://github.com/Dr-Nekoma/lyceum/blob/master/server/database/main.input.sql#L3][here]].
 
 ** Development Shell
-
-We have a single [[https://devenv.sh/][devenv]] configured, that has all the tooling required to run this project, it also includes postgres:
 
 #+BEGIN_SRC shell
   # To enter the developmet shell
@@ -28,7 +38,7 @@ We have a single [[https://devenv.sh/][devenv]] configured, that has all the too
   devenv up -d
 #+END_SRC
 
-Then simply interact with ~/localhost:8080/~. For more commands, make sure to check ~just~.
+For more commands, make sure to check ~just~.
 
 #+BEGIN_SRC shell
     # Will list all commands we have right now
