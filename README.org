@@ -11,7 +11,7 @@ This is Lyceum --- an MMO game with the server written in [[https://www.erlang.o
 written in [[https://ziglang.org/][Zig]] (superchanged with [[https://github.com/raysan5/raylib][raylib]] and [[https://github.com/dont-rely-on-nulls/zerl][Zerl]]).
 
 #+html: <p align="center"><img src="./menu.jpg" alt="The Zerl Logo"></p>
-#+html: <p align="center"><img alt="game" src="https://cdn.discordapp.com/attachments/1196201167743619092/1303363874854277201/game.gif?ex=672b7bb3&is=672a2a33&hm=7fcda45f1322ce9839110ec8030f456bf60602e75d7aad85958c7901fe599875&" /><br></p>
+#+html: <p align="center"><img alt="game" src="https://cdn.discordapp.com/attachments/1196201167743619092/1303363874854277201/game.gif?ex=672b7bb3&is=672a2a33&hm=7fcda45f1322ce9839110ec8030f456bf60602e75d7aad85958c7901fe599875&" alt="game" /></p>
 
 * How to run
 
