@@ -203,7 +203,7 @@ pub fn manageBackground(gameState: *GameState) void {
     const background = gameState.menu.assets.backgrounds.main.texture;
     const fWidth: f32 = @floatFromInt(background.width);
     scrolling.* -= 0.25;
-    if (scrolling.* <= -fWidth * 2) scrolling.* = 0;
+    if (scrolling.* <= -fWidth) scrolling.* = 0;
 
     rl.drawTextureEx(background, .{ .x = scrolling.*, .y = 0 }, 0, 1, config.ColorPalette.secondary);
     rl.drawTextureEx(background, .{ .x = fWidth + scrolling.*, .y = 0 }, 0, 1, config.ColorPalette.secondary);
