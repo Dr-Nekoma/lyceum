@@ -48,6 +48,9 @@ if you prefer running a container for the server:
     docker container run --network=host lyceum:latest
 #+END_SRC
 
+** Deployment
+This game is deployed in our [[https://github.com/Dr-Nekoma/trashcan][NixOS server]].
+
 * Assets
 
 References for assets used in this project:
