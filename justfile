@@ -103,7 +103,7 @@ db-reset: db-down db-up db-input
 # --------
 
 # Create a prod release of the server
-release: deps
+release:
     rebar3 as prod release
 
 # Create a prod release (for nix) of the server

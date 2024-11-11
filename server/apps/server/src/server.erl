@@ -4,7 +4,7 @@
 %% @end
 %%%-------------------------------------------------------------------
 
--module(server_app).
+-module(server).
 
 -behaviour(application).
 
