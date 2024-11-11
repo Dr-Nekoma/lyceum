@@ -34,6 +34,8 @@ it also includes postgres.
   ok
   (lyceum_server@euclid)2> 
 #+END_SRC
+
+After populating the maps inside the DB, you can now:
 5. ~server~
 6. followed by ~client-release~
 7. Once you get the client to launch, connect to ~localhost~ and you can try
