@@ -1,0 +1,6 @@
+|   | chest         |   | bush |      |   |
+|   |               |   | bush |      |   |
+|   |               |   | bush |      |   |
+|   | totem_mahjong |   |      |      |   |
+|   |               |   |      |      |   |
+|   |               |   |      | tree |   |

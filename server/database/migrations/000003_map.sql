@@ -10,7 +10,9 @@ CREATE TYPE map.OBJECT_TYPE AS ENUM(
        'EMPTY',
        'BUSH',
        'TREE',
-       'CHEST'
+       'CHEST',
+       'TOTEM_MAHJONG',
+       'TOTEM_CHESS'
 );
 
 CREATE TABLE map.instance(
