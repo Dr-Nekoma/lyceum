@@ -155,24 +155,21 @@ list_characters(State, #{email := _Email, username := Username} = Request) ->
     io:format("[~p] Characters: ~p~n", [?MODULE, Reply]),
     State#user_state.pid ! Reply.
 
-joining_map(State,
-            #{name := Name,
-	      map_name := MapName} =
-                Request) ->
+joining_map(State, #{name := Name, map_name := MapName} = Request) ->
     Pid = State#user_state.pid,
     Connection = State#user_state.connection,
     case character:activate(Request, Connection) of
         ok ->
             io:format("[~p] Retriving ~p's updated info...", [?MODULE, Name]),
-	    Result = util:psql_bind(character:player_character(Request, Connection),
-				    [fun (Character) ->
-					     io:format("Retriving ~p's map...", [MapName]),
-					     util:psql_bind(map:get_map(MapName, Connection),
-							    [fun (Map) -> 
-								     {ok, #{character => Character,
-									    map => Map}}
-							     end])						 
-				     end]),
+            Result =
+                database_utils:psql_bind(
+                    character:player_character(Request, Connection),
+                    [fun(Character) ->
+                        io:format("Retriving ~p's map...", [MapName]),
+                        database_utils:psql_bind(
+                            map:get_map(MapName, Connection),
+                            [fun(Map) -> {ok, #{character => Character, map => Map}} end])
+                     end]),
             Pid ! Result;
         {error, Message} ->
             io:format("Failed to Join Map: ~p~n", [Message]),

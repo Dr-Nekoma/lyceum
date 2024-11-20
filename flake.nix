@@ -52,7 +52,7 @@
         # Erlang
         erlangLatest = pkgs.erlang_27;
         erlangLibs = getErlangLibs erlangLatest;
-        erl_app = "lyceum_server";
+        erl_app = "server";
 
         # Zig shit (Incomplete)
         zigLatest = pkgs.zig;
@@ -270,8 +270,12 @@
                     '';
 
                     services.postgres = {
-                      package = pkgs.postgresql_16.withPackages (p: with p; [ p.periods ]);
                       enable = true;
+                      package = pkgs.postgresql_17;
+                      extensions = ext: [
+                        ext.periods
+                      ];
+                      initdbArgs = ["--locale=C" "--encoding=UTF8"];
                       initialDatabases = [ { name = "mmo"; } ];
                       port = 5432;
                       listen_addresses = "127.0.0.1";

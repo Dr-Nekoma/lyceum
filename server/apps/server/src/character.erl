@@ -15,7 +15,7 @@ create(#{name := Name,
              VALUES ($1::VARCHAR(18), $2::TEXT, $3::VARCHAR(32), $4::SMALLINT, $5::SMALLINT, $6::SMALLINT, $7::SMALLINT, $8::SMALLINT, $9::SMALLINT)",
     Result = epgsql:equery(Connection, Query, [Name, Username, Email, Constitution, Wisdom, Strength, Endurance, Intelligence, Faith]),
     Fun = (fun (_, _, _) -> ok end),
-    util:process_postgres_result(Result, insert, Fun).
+    database_utils:process_postgres_result(Result, insert, Fun).
 
 %% TODO: Add a Select first in order to check already being activated
 activate(#{name := Name, 
@@ -26,7 +26,7 @@ activate(#{name := Name,
              VALUES ($1::VARCHAR(18), $2::TEXT, $3::VARCHAR(32))",
     Result = epgsql:equery(Connection, Query, [Name, Email, Username]),
     Fun = (fun (_) -> ok end),
-    util:process_postgres_result(Result, insert, Fun).
+    database_utils:process_postgres_result(Result, insert, Fun).
 
 %% TODO: Add a Select first in order to check already being deactivated
 deactivate(Name, Email, Username, Connection) ->
@@ -34,7 +34,7 @@ deactivate(Name, Email, Username, Connection) ->
              WHERE name = $1::VARCHAR(18) AND e_mail = $2::TEXT AND username = $3::VARCHAR(32)",
     Result = epgsql:equery(Connection, Query, [Name, Email, Username]),
     Fun = (fun (_) -> ok end),
-    util:process_postgres_result(Result, delete, Fun).
+    database_utils:process_postgres_result(Result, delete, Fun).
 
 update(#{name := Name, 
 	 username := Username, 
@@ -61,7 +61,7 @@ update(#{name := Name,
 				      end,
 				      #{ begin_opts => "ISOLATION LEVEL READ UNCOMMITTED"}),
     Fun = (fun (_) -> epgsql:sync(Connection) end),
-    util:process_postgres_result(Result, update, Fun).
+    database_utils:process_postgres_result(Result, update, Fun).
 
 retrieve_near_players(#{map_name := MapName, name := Name}, Connection) ->
     Query = "SELECT character.view.name, \
@@ -87,8 +87,8 @@ retrieve_near_players(#{map_name := MapName, name := Name}, Connection) ->
              NATURAL JOIN character.active \
              WHERE map_name = $1::VARCHAR(64) AND name <> $2::VARCHAR(18)",
     Result = epgsql:equery(Connection, Query, [MapName, Name]),
-    Fun = (fun (FullColumns, Values) -> {ok, util:transform_character_map(util:columns_and_rows(FullColumns, Values))} end),
-    util:process_postgres_result(Result, select, Fun).
+    Fun = (fun (FullColumns, Values) -> {ok, database_utils:transform_character_map(database_utils:columns_and_rows(FullColumns, Values))} end),
+    database_utils:process_postgres_result(Result, select, Fun).
 
 player_characters(#{username := Username, 
 		    email := Email}, Connection) ->
@@ -113,8 +113,8 @@ player_characters(#{username := Username,
                     character.view.state_type \
              FROM character.view WHERE username = $1::VARCHAR(32) AND e_mail = $2::TEXT",
     Result = epgsql:equery(Connection, Query, [Username, Email]),
-    Fun = (fun (FullColumns, Values) -> {ok, util:transform_character_map(util:columns_and_rows(FullColumns, Values))} end),
-    util:process_postgres_result(Result, select, Fun).
+    Fun = (fun (FullColumns, Values) -> {ok, database_utils:transform_character_map(database_utils:columns_and_rows(FullColumns, Values))} end),
+    database_utils:process_postgres_result(Result, select, Fun).
     %% io:format("Username: ~p, Email: ~p, Data: ~p\n", [Username, Email, Something]),    
 
 
@@ -140,11 +140,11 @@ player_character(#{name := Name,
              FROM character.view WHERE username = $1::VARCHAR(32) AND e_mail = $2::TEXT AND name = $3::TEXT",
     Result = epgsql:equery(Connection, Query, [Username, Email, Name]),
     Fun = (fun (FullColumns, Values) -> 
-		   case util:transform_character_map(util:columns_and_rows(FullColumns, Values)) of
+		   case database_utils:transform_character_map(database_utils:columns_and_rows(FullColumns, Values)) of
 		       [C|[]] -> {ok, C};
 		       [] -> {error, "Updated Character not found!"};
 		       _ -> {error, "Found more than one Character!"}
 		   end
 	   end),
-    util:process_postgres_result(Result, select, Fun).
+    database_utils:process_postgres_result(Result, select, Fun).
     %% io:format("Username: ~p, Email: ~p, Data: ~p\n", [Username, Email, Something]),    

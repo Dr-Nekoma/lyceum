@@ -1,0 +1,16 @@
+{application, database, [
+    {description, "An OTP library"},
+    {vsn, "0.1.0"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib,
+        pure_migrations,
+        epgsql,
+        sasl
+    ]},
+    {env, []},
+    {modules, [database, database_util]},
+    {licenses, ["Apache-2.0"]},
+    {links, []}
+ ]}.
