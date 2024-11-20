@@ -22,21 +22,9 @@ it also includes postgres.
 ** Testing the Game (DEMO)
 
 1. ~nix develop --impure~
-2. ~devenv up~ (or ~devenv up -d~) to launch a local ~postgres~
+2. ~devenv up~ to launch a local ~postgres~
 3. ~just db-reset~ or ~db-reset~, to initialize ~postgres~ for local development
-4. Initialize the map:
-#+BEGIN_SRC shell
-  just shell
-  # (...) 
-  (lyceum_server@euclid)1> map_generator:main(["Pond", "./maps/Pond"]).
-  Connecting to "127.0.0.1" at "5432"
-  Successfully connected to "127.0.0.1"
-  ok
-  (lyceum_server@euclid)2> 
-#+END_SRC
-
-After populating the maps inside the DB, you can now:
-5. ~server~
+5. ~server~ (or ~./result/bin/server foreground~ if you want to run the pure nix build)
 6. followed by ~client-release~
 7. Once you get the client to launch, connect to ~localhost~ and you can try
    playing with any of the local credentials [[https://github.com/Dr-Nekoma/lyceum/blob/master/server/database/main.input.sql#L3][here]].

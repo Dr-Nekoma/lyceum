@@ -16,9 +16,6 @@
 %%%===================================================================
 
 start(_StartType, _StartArgs) ->
-    %Connection = database:database_connect(),
-    %database:migrate(Connection),
-    %{ok, _} = epgsql:close(Connection),
     io:format("Starting Server Application...~n"),
     server_sup:start_link().
 
