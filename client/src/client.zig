@@ -7,6 +7,7 @@ const errorC = @import("components/error.zig");
 const inGame = @import("game/main.zig");
 const hud = @import("components/hud/main.zig");
 const mainMenu = @import("menu/main.zig");
+const mahjong = @import("game/minigames/mahjong/main.zig");
 const music = @import("music.zig");
 const rl = @import("raylib");
 const server = @import("server/main.zig");
@@ -41,6 +42,7 @@ pub fn main() anyerror!void {
         &menuAssets,
     );
 
+    gameState.scene = .mahjong;
     rl.playMusicStream(gameState.menu.assets.music);
     while (!rl.windowShouldClose()) {
         music.play(&gameState);
@@ -80,11 +82,14 @@ pub fn main() anyerror!void {
                 mainMenu.displayLogo(&gameState);
                 try mainMenu.spawn(&gameState);
             },
+            .mahjong => {
+                try mahjong.drawPlayer(&gameState);
+            },
         }
-        connectionMenu.status(&gameState);
-        gameState.errorElem.at(gameState.width, gameState.height);
-        gameState.menu.main.back_button.at(&gameState.scene, gameState.height);
-        music.control(&gameState);
+        // connectionMenu.status(&gameState);
+        // gameState.errorElem.at(gameState.width, gameState.height);
+        // gameState.menu.main.back_button.at(&gameState.scene, gameState.height);
+        // music.control(&gameState);
     }
-    music.stop(&gameState);
+    // music.stop(&gameState);
 }

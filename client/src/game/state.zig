@@ -20,6 +20,7 @@ pub const Scene = enum {
     user_login,
     nothing,
     spawn,
+    mahjong,
     character_selection,
     connect,
 };
@@ -103,7 +104,7 @@ connection: Connection,
 world: World = undefined,
 errorElem: *errorC,
 music: struct {
-    playing: bool = true,
+    playing: bool = false,
     volume: f32 = 0.5,
 } = .{},
 
