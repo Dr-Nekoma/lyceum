@@ -1,24 +1,21 @@
 -module(map_generator).
 
-%% API exports
--export([main/1]).
+-export([create_map/3]).
 
-%%====================================================================
-%% API functions
-%%====================================================================
+create_map(Connection, MapPath, MapName) ->
+    create_tiles(Connection, MapPath, MapName),
+    create_objects(Connection, MapPath, MapName).
 
-%% escript Entry point
-main([MapName, MapFolderPath]) ->
-    {ok, Connection} = database:connect(),
-    Tiles = fetch_file(string:concat(MapFolderPath, "/tile.csv")),
-    generate(Connection, MapName, Tiles),
-    Objects = fetch_file(string:concat(MapFolderPath, "/object.csv")),
-    generate(Connection, MapName, Objects),
-    ok.
+create_tiles(Connection, MapPath, MapName) ->
+    TilePath = filename:join([MapPath, MapName, "tile.csv"]),
+    Tiles = fetch_file(TilePath),
+    generate(Connection, MapName, Tiles).
 
-%%====================================================================
-%% Internal functions
-%%====================================================================
+create_objects(Connection, MapPath, MapName) ->
+    ObjectsPath = filename:join([MapPath, MapName, "object.csv"]),
+    Objects = fetch_file(ObjectsPath),
+    generate(Connection, MapName, Objects).
+
 fetch_file(CsvPath) ->
     {ok, Bin} = file:read_file(CsvPath),
     Content = csv:decode_binary(Bin),
@@ -47,9 +44,10 @@ generate(Connection, MapName, {Name, Table}) ->
                                            end,
                                            lists:enumerate(0, Table))))),
     SQL = io_lib:format("INSERT INTO map.~s(map_name, kind, x_position, y_position) "
-                        "VALUES ",
-                        [Name]),
-    Query = string:concat(SQL, list_to_binary(MapAttributes)),
-    Result = epgsql:squery(Connection, Query),
+                        "VALUES ~s ON CONFLICT (map_name, kind, x_position, y_position) "
+                        "DO NOTHING",
+                        [Name, list_to_binary(MapAttributes)]),
+    %Query = string:concat(SQL, list_to_binary(MapAttributes)),
+    Result = epgsql:squery(Connection, SQL),
     Fun = fun(_) -> ok end,
     database_utils:process_postgres_result(Result, insert, Fun).

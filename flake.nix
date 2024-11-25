@@ -107,6 +107,11 @@
                 "rebar.config"
               ];
               beamDeps = builtins.attrValues deps;
+              buildPhase = ''
+                runHook preBuild
+                HOME=. DEBUG=1 rebar3 as prod release --relname server
+                runHook postBuild
+              '';
             };
 
           # nix build .#dockerImage
@@ -276,10 +281,20 @@
                         ext.periods
                       ];
                       initdbArgs = ["--locale=C" "--encoding=UTF8"];
+                      settings = {
+                        shared_preload_libraries = "pg_stat_statements";
+                        # pg_stat_statements config, nested attr sets need to be
+                        # converted to strings, otherwise postgresql.conf fails
+                        # to be generated.
+                        compute_query_id = "on";
+                        "pg_stat_statements.max" = 10000;
+                        "pg_stat_statements.track" = "all";
+                      };
                       initialDatabases = [ { name = "mmo"; } ];
                       port = 5432;
                       listen_addresses = "127.0.0.1";
                       initialScript = ''
+                        CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
                         CREATE USER admin SUPERUSER;
                         ALTER USER admin PASSWORD 'admin';
                         GRANT ALL PRIVILEGES ON DATABASE mmo to admin;

@@ -10,7 +10,7 @@
         sasl
     ]},
     {env, []},
-    {modules, [database, database_util]},
+    {modules, [database, database_migrations, database_util]},
     {licenses, ["Apache-2.0"]},
     {links, []}
  ]}.

@@ -102,9 +102,9 @@ db-reset: db-down db-up db-input
 # Releases
 # --------
 
-# Create a prod release of the server
+# Create a prod release of all apps
 release:
-    rebar3 as prod release
+    rebar3 as prod release -n server
 
 # Create a prod release (for nix) of the server
 release-nix:

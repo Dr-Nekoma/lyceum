@@ -5,7 +5,10 @@
     {mod, {server, []}},
     {applications, [
         kernel,
-        stdlib
+        stdlib,
+        sasl,
+        csv,
+        epgsql
     ]},
     {env, []},
     {modules, []},
