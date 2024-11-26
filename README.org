@@ -8,7 +8,7 @@
 * About
 
 This is Lyceum --- an MMO game with the server written in [[https://www.erlang.org/][Erlang]] and the client
-written in [[https://ziglang.org/][Zig]] (superchanged with [[https://github.com/raysan5/raylib][raylib]] and [[https://github.com/dont-rely-on-nulls/zerl][Zerl]]).
+written in [[https://ziglang.org/][Zig]] (supercharged with [[https://github.com/raysan5/raylib][raylib]] and [[https://github.com/dont-rely-on-nulls/zerl][Zerl]]).
 
 #+html: <p align="center"><img src="./menu.jpg" alt="The game menu"></p>
 #+html: <p align="center"><img src="./game.gif" alt="game"/></p>
