@@ -11,7 +11,7 @@
         erlando		    
     ]},
     {env, []},
-    {modules, [database, database_migrations, database_util]},
+    {modules, [database, database_migrations, database_utils, postgres_m]},
     {licenses, ["Apache-2.0"]},
     {links, []}
  ]}.
