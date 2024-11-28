@@ -83,7 +83,7 @@ pub fn main() anyerror!void {
                 try mainMenu.spawn(&gameState);
             },
             .mahjong => {
-                try mahjong.drawPlayer(&gameState);
+                try mahjong.main(&gameState);
             },
         }
         // connectionMenu.status(&gameState);

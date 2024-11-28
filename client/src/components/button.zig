@@ -226,6 +226,19 @@ pub const Selectable = struct {
     }
 };
 
+pub const ClickableGroup = struct {
+    disabled: bool = false,
+    instances: [config.maximumCharacters]Clickable,
+
+    pub fn init(font: *rl.Font, sound: *rl.Sound) @This() {
+        return .{ .instances = .{Clickable{
+            .font = font,
+            .sound = sound,
+            .disabled = false,
+        }} ** config.maximumCharacters };
+    }
+};
+
 pub const SelectableGroup = struct {
     selected: ?usize = null,
     instances: [config.maximumCharacters]Selectable,

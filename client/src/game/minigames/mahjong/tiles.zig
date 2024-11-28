@@ -45,15 +45,27 @@ pub const Tile = union(Suit) {
     dragon: Color,
 };
 
-pub const pile_size = blk: {
+pub const default_pile = blk: {
     var total = 0;
     const tile_info = @typeInfo(Tile).Union;
     for (tile_info.fields) |field| {
         total += @typeInfo(field.type).Enum.fields.len * 4;
     }
-    break :blk total;
+    var pile: [total]Tile = undefined;
+    var index: usize = 0;
+    for (tile_info.fields) |field| {
+        for (@typeInfo(field.type).Enum.fields) |field_enum| {
+            const tile = @unionInit(Tile, field.name, @enumFromInt(field_enum.value));
+            for (0..4) |_| {
+                pile[index] = tile;
+                index += 1;
+            }
+        }
+    }
+    break :blk pile;
 };
 
+pub const pile_size = default_pile.len;
 pub const Pile = [pile_size]Tile;
 
 pub const drawing = struct {

@@ -3,6 +3,7 @@ const chat = @import("../components/hud/Chat.zig");
 const config = @import("../config.zig");
 const errorC = @import("../components/error.zig");
 const hud = @import("../components/hud/main.zig");
+const mahjong = @import("./minigames/mahjong/main.zig");
 const mainMenu = @import("../menu/main.zig");
 const map = @import("../components/hud/map.zig");
 const messages = @import("../server/messages.zig");
@@ -107,6 +108,7 @@ music: struct {
     playing: bool = false,
     volume: f32 = 0.5,
 } = .{},
+mahjong: mahjong.MahjongState,
 
 pub fn send(state: *@This(), data: anytype) !void {
     try if (state.connection.handler) |*pid|
@@ -230,5 +232,6 @@ pub fn init(
             },
         },
         .errorElem = errorElem,
+        .mahjong = mahjong.MahjongState.init(menuAssets),
     };
 }
