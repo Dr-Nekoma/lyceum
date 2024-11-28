@@ -24,6 +24,16 @@ let
       };
       beamDeps = [ ];
     };
+    erlando = builder {
+      name = "erlando";
+      version = "3.1.1";
+      src = fetchHex {
+        pkg = "erlando";
+        version = "3.1.1";
+        sha256 = "sha256-ljPLSXjb14gn+nbqTDsL0kz71N2a9ICI6SLnEVSUo0Q=";
+      };
+      beamDeps = [ ];
+    };
     epgsql = builder {
       name = "epgsql";
       version = "4.7.1";

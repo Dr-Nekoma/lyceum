@@ -8,7 +8,8 @@
         stdlib,
         sasl,
         csv,
-        epgsql
+        epgsql,
+	erlando
     ]},
     {env, []},
     {modules, []},
