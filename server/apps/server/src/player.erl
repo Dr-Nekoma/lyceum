@@ -11,6 +11,7 @@
          code_change/3]).
 
 -include("types.hrl").
+-compile({parse_transform, do}).
 
 %%%===================================================================
 %%% API
@@ -161,15 +162,11 @@ joining_map(State, #{name := Name, map_name := MapName} = Request) ->
     case character:activate(Request, Connection) of
         ok ->
             io:format("[~p] Retriving ~p's updated info...", [?MODULE, Name]),
-            Result =
-                database_utils:psql_bind(
-                    character:player_character(Request, Connection),
-                    [fun(Character) ->
-                        io:format("Retriving ~p's map...", [MapName]),
-                        database_utils:psql_bind(
-                            map:get_map(MapName, Connection),
-                            [fun(Map) -> {ok, #{character => Character, map => Map}} end])
-                     end]),
+	    Result = do([error_m || 
+			    Character <- character:player_character(Request, Connection),
+			    Map <- map:get_map(MapName, Connection),
+			    io:format("Retriving ~p's map...", [MapName]),
+			    return(#{character => Character, map => Map})]),
             Pid ! Result;
         {error, Message} ->
             io:format("Failed to Join Map: ~p~n", [Message]),

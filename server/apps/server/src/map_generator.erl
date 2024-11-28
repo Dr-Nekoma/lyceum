@@ -1,6 +1,7 @@
 -module(map_generator).
 
 -export([create_map/3]).
+-compile({parse_transform, do}).
 
 create_map(Connection, MapPath, MapName) ->
     create_tiles(Connection, MapPath, MapName),
@@ -47,7 +48,6 @@ generate(Connection, MapName, {Name, Table}) ->
                         "VALUES ~s ON CONFLICT (map_name, kind, x_position, y_position) "
                         "DO NOTHING",
                         [Name, list_to_binary(MapAttributes)]),
-    %Query = string:concat(SQL, list_to_binary(MapAttributes)),
-    Result = epgsql:squery(Connection, SQL),
-    Fun = fun(_) -> ok end,
-    database_utils:process_postgres_result(Result, insert, Fun).
+    do([postgres_m || 
+	   _ <- {epgsql:squery(Connection, SQL), insert},
+	   ok]).
