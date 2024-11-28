@@ -7,7 +7,8 @@
         stdlib,
         pure_migrations,
         epgsql,
-        sasl
+        sasl,
+        erlando		    
     ]},
     {env, []},
     {modules, [database, database_migrations, database_util]},
