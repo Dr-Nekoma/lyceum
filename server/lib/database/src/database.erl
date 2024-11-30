@@ -14,6 +14,7 @@
 -define(PGPASSWORD, os:getenv("PGPASSWORD", "admin")).
 -define(PGDATABASE, os:getenv("PGDATABASE", "mmo")).
 
+-spec connect() -> {ok, epgsql:connection()} | {error, epgsql:connect_error()}.
 connect() ->
     io:format("Connecting to ~p at ~p~n", [?PGHOST, ?PGPORT]),
     Connection =

@@ -25,6 +25,7 @@
 %% @spec start_link() -> {ok, Pid} | ignore | {error, Error}
 %% @end
 %%--------------------------------------------------------------------
+-spec start_link() -> gen_server:start_ret().
 start_link() ->
     gen_server:start_link({global, ?SERVER}, ?MODULE, [], []).
 
@@ -43,6 +44,7 @@ start_link() ->
 %%                     {stop, Reason}
 %% @end
 %%--------------------------------------------------------------------
+-spec init(list()) -> {ok, server_state()}.
 init([]) ->
     % Setup a DB connection and bootstrap process state
     {ok, Connection} = database:connect(),
@@ -67,6 +69,14 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+-spec handle_call(term(), gen_server:from(), server_state()) -> Result when
+     Result :: 
+        {reply, term(), server_state()}
+        | {reply, term(), server_state(), timeout()}
+        | {noreply, server_state()}
+        | {noreply, server_state(), timeout()}
+        | {stop, term(), term(), server_state()} 
+        | {stop, term(), server_state()}.
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -81,6 +91,11 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+-spec handle_cast(term(), server_state()) -> Result when
+      Result :: 
+        {noreply, server_state()} 
+        | {noreply, server_state(), timeout()}
+        | {stop, term(), server_state()}.
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -94,6 +109,11 @@ handle_cast(_Msg, State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+-spec handle_info(term(), server_state()) -> Result when
+      Result :: 
+        {noreply, server_state()} 
+        | {noreply, server_state(), timeout()}
+        | {stop, term(), server_state()}.
 handle_info(Info, State) ->
     io:format("[~p] INFO: ~p~n", [?SERVER, Info]),
     {noreply, State}.
