@@ -8,7 +8,7 @@
         pure_migrations,
         epgsql,
         sasl,
-        erlando		    
+        erlandono
     ]},
     {env, []},
     {modules, [database, database_migrations, database_utils, postgres_m]},
