@@ -25,6 +25,7 @@
 %% @spec start_link() -> {ok, Pid} | ignore | {error, Error}
 %% @end
 %%--------------------------------------------------------------------
+-spec start_link() -> gen_server:start_ret().
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
@@ -43,6 +44,12 @@ start_link() ->
 %%                     {stop, Reason}
 %% @end
 %%--------------------------------------------------------------------
+-spec init(Args) -> Result when
+      Args :: list(),
+      Result :: {ok, server_state()}
+                | {ok, server_state(), timeout()} 
+                | ignore
+                | {stop, term()}.
 init([]) ->
     % Setup a DB connection and bootstrap process state
     {ok, Connection} = database:connect(),
@@ -70,6 +77,13 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+-spec handle_call(term(), gen_server:from(), server_state()) -> Result when
+      Result :: {reply, term(), server_state()}
+                | {reply, term(), server_state(), timeout()}
+                | {noreply, server_state()}
+                | {noreply, server_state(), timeout()}
+                | {stop, term(), term(), server_state()}
+                | {stop, term(), server_state()}.
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -84,6 +98,10 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+-spec handle_cast(term(), server_state()) -> Result when
+      Result :: {noreply, server_state()}
+                | {noreply, server_state(), timeout()}
+                | {stop, term(), server_state()}.
 handle_cast({logout, Email}, State) ->
     ets:delete(?MODULE, Email),
     {noreply, State};
@@ -100,6 +118,10 @@ handle_cast(_Msg, State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+-spec handle_info(term(), server_state()) -> Result when
+      Result :: {noreply, server_state()}
+                | {noreply, server_state(), timeout()}
+                | {stop, term(), server_state()}.
 handle_info({From, {login, Request}}, State) ->
     io:format("[~p] INFO: ~p~n", [?SERVER, From]),
     login(State, From, Request),
@@ -119,6 +141,7 @@ handle_info(Info, State) ->
 %% @spec terminate(Reason, State) -> void()
 %% @end
 %%--------------------------------------------------------------------
+-spec terminate(term(), server_state()) -> ok.
 terminate(_Reason, _State) ->
     ok.
 
@@ -130,12 +153,14 @@ terminate(_Reason, _State) ->
 %% @spec code_change(OldVsn, State, Extra) -> {ok, NewState}
 %% @end
 %%--------------------------------------------------------------------
+-spec code_change(term(), server_state(), term()) -> {ok, server_state()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+-spec login(server_state(), gen_server:from(), map()) -> ok.
 login(State, From, #{username := Username, password := _Password} = Request) ->
     io:format("[~p] User ~p is attempting to login from ~p~n", [?SERVER, Username, From]),
     case registry:check_user(Request, State#server_state.connection) of
@@ -152,6 +177,7 @@ login(State, From, #{username := Username, password := _Password} = Request) ->
             From ! {error, Message}
     end.
 
+-spec get_active_pid(term(), user_state()) -> {ok, pid()}.
 get_active_pid(Email, State) ->
     case ets:lookup(?MODULE, Email) of
         [{_, Pid}] ->
@@ -162,6 +188,7 @@ get_active_pid(Email, State) ->
             start(Email, State)
     end.
 
+-spec start(term(), user_state()) -> {ok, pid()}.
 start(Email, State) ->
     {ok, NewPid} = player_sup:start([{Email, State}]),
     ets:insert(?MODULE, {Email, NewPid}),
