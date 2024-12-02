@@ -52,7 +52,7 @@ init([]) ->
     MapsDir = filename:join([CurrDir, "maps"]),
     map_generator:create_map(Connection, MapsDir, "Pond"),
     io:format("Starting World Application...~n"),
-    State = #server_state{connection = Connection, pid = self()},
+    State = #server_state{connection = Connection, pid = self(), table = []},
     {ok, State}.
 
 %%--------------------------------------------------------------------
