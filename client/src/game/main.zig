@@ -47,6 +47,17 @@ fn controlInput(gameState: *GameState) !i16 {
         try server.character.exitMap(gameState);
         rl.enableCursor();
     }
+    const zoom = rl.getMouseWheelMove() * 2;
+    if (zoom != 0) {
+        const world = &gameState.world;
+        world.cameraDistance -= zoom;
+        world.map.size += zoom;
+        var img = rl.imageCopy(entity.inventory.hud.minimap.initial_map.?);
+        const width: f32 = @floatFromInt(world.map.instance.width);
+        const height: f32 = @floatFromInt(world.map.instance.height);
+        rl.imageResizeNN(&img, @intFromFloat(width * world.map.size), @intFromFloat(height * world.map.size));
+        entity.inventory.hud.minimap.map = img;
+    }
 
     return tempAngle;
 }
