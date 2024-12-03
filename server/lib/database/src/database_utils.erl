@@ -2,11 +2,13 @@
 
 -export([columns_and_rows/1, transform_character_map/1]).
 
+-spec column_names(list()) -> list().
 column_names(Columns) ->
     lists:map(fun({_, Name, Type, _, _, _, _, _, _}) -> {Type, erlang:binary_to_atom(Name)}
               end,
               Columns).
 
+-spec columns_and_rows({list(), list()}) -> list().
 columns_and_rows({_, []}) ->
     [];
 columns_and_rows({FullColumns, Rows}) ->
@@ -27,6 +29,7 @@ columns_and_rows({FullColumns, Rows}) ->
     Values = lists:map(F, Rows),
     lists:map(fun maps:from_list/1, Values).
 
+-spec transform_character_map(list()) -> list().
 transform_character_map(List) ->
     F = fun(Map) ->
            Map#{state_type :=

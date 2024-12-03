@@ -15,6 +15,7 @@
 %%% Application callbacks
 %%%===================================================================
 
+-spec start(term(), term()) -> gen_server:start_ret().
 start(_StartType, _StartArgs) ->
     io:format("Starting Server Application...~n"),
     server_sup:start_link().
@@ -28,6 +29,7 @@ start(_StartType, _StartArgs) ->
 %% @spec stop(State) -> void()
 %% @end
 %%--------------------------------------------------------------------
+-spec stop(term()) -> ok.
 stop(_State) ->
     ok.
 

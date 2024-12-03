@@ -22,12 +22,14 @@
 %% @doc
 %% Starts the supervisor
 %%--------------------------------------------------------------------
+-spec start_link() -> supervisor:startlink_ret().
 start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
 %%%===================================================================
 %%% Supervisor callbacks
 %%%===================================================================
+-spec init([]) -> {ok, term()}.
 init([]) ->
     SupFlags =
         #{strategy => one_for_one,
