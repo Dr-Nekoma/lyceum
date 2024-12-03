@@ -20,6 +20,13 @@ deploy_host := env_var_or_default("DEPLOY_HOST", "NONE")
 
 replace := if os() == "linux" { "sed -i" } else { "sed -i '' -e" }
 
+# Aliases
+alias d := dialyzer
+alias dbu := db-up
+alias dbd := db-down
+alias dbr := db-reset
+alias dbi := db-input
+
 # Lists all availiable targets
 default:
     just --list
@@ -74,6 +81,10 @@ build:
 deps:
     cd server && rebar3 get-deps
     cd server && rebar3 nix lock
+
+# Runs dializer on the erlang codebase
+dialyzer:
+    cd server && rebar3 dialyzer
 
 # Runs ther erlang server (inside the rebar shell)
 server: build
