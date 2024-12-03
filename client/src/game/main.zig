@@ -8,6 +8,7 @@ const rm = rl.math;
 const server = @import("../server/main.zig");
 const std = @import("std");
 const GameState = @import("state.zig");
+const map = @import("../components/hud/map.zig");
 
 fn drawPlayers(gameState: *GameState) void {
     const mainPlayer = &gameState.world.character;
@@ -52,10 +53,20 @@ fn controlInput(gameState: *GameState) !i16 {
         const world = &gameState.world;
         world.cameraDistance -= zoom;
         world.map.size += zoom;
-        var img = rl.imageCopy(entity.inventory.hud.minimap.initial_map.?);
+        const initial = entity.inventory.hud.minimap.initial_map.?;
+        const rect: rl.Rectangle = .{
+            .x = config.map.border_thickness,
+            .y = config.map.border_thickness,
+            .width = @as(f32, @floatFromInt(initial.width)) - config.map.border_thickness * 2,
+            .height = @as(f32, @floatFromInt(initial.height)) - config.map.border_thickness * 2,
+        };
+        var img = initial.copyRec(rect);
         const width: f32 = @floatFromInt(world.map.instance.width);
         const height: f32 = @floatFromInt(world.map.instance.height);
         rl.imageResizeNN(&img, @intFromFloat(width * world.map.size), @intFromFloat(height * world.map.size));
+        map.add_borders(&img);
+
+        rl.unloadImage(entity.inventory.hud.minimap.map.?);
         entity.inventory.hud.minimap.map = img;
     }
 
@@ -104,7 +115,14 @@ fn drawWorld(player: *const GameState.World.Character, world: *const GameState.W
             if (object != .empty) {
                 if (world.objects.get(object)) |objectData| {
                     const position = assetPosition(fx, fy, config.assets.object.defaultLevel);
-                    rl.drawModelEx(objectData.model.?, position, objectData.axis, objectData.angle, objectData.scale, config.ColorPalette.secondary);
+                    rl.drawModelEx(
+                        objectData.model.?,
+                        position,
+                        objectData.axis,
+                        objectData.angle,
+                        objectData.scale,
+                        config.ColorPalette.secondary,
+                    );
                 }
             }
         }
