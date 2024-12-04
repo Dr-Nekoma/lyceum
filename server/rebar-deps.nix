@@ -24,13 +24,13 @@ let
       };
       beamDeps = [ ];
     };
-    erlando = builder {
-      name = "erlando";
-      version = "3.1.1";
+    erlandono = builder {
+      name = "erlandono";
+      version = "3.1.2";
       src = fetchHex {
-        pkg = "erlando";
-        version = "3.1.1";
-        sha256 = "sha256-ljPLSXjb14gn+nbqTDsL0kz71N2a9ICI6SLnEVSUo0Q=";
+        pkg = "erlandono";
+        version = "3.1.2";
+        sha256 = "sha256-ED+m50Ky73TIeBmi6P06r2O2tvjixibrEEZIhWVj514=";
       };
       beamDeps = [ ];
     };
