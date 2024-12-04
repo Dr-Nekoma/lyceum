@@ -6,7 +6,7 @@ const std = @import("std");
 const GameState = @import("../../game/state.zig");
 
 pub fn init_map_texture() rl.Texture {
-    const side = config.map.border_thickness * 2;
+    const side = outerRadius * 2;
     const img = rl.genImageColor(side, side, rl.Color.black);
     defer img.unload();
     return img.toTexture();
@@ -58,17 +58,23 @@ pub fn getCenter(width: f32, height: f32) rl.Vector2 {
 }
 
 pub const coordinates = struct {
-    fn worldToMap(position: rl.Vector2, world: *const GameState.World.Map) struct { f32, f32 } {
-        const character_x: f32 = rm.clamp(position.x, 0, @floatFromInt(world.instance.width * config.map.mini_map_size));
-        const character_y: f32 = rm.clamp(position.y, 0, @floatFromInt(world.instance.height * config.map.mini_map_size));
-        return .{ character_x, character_y };
-    }
-    pub fn normalize(position: rl.Vector2, map_image: *const rl.Image, world: *const GameState.World.Map) struct { f32, f32 } {
-        const character_x, const character_y = worldToMap(position, world);
+    pub fn normalize(
+        position: rl.Vector2,
+        map_image: *const rl.Image,
+        world: *const GameState.World.Map,
+    ) struct { f32, f32 } {
+        const map_width = map_image.width - 2 * config.map.border_thickness;
+        const map_height = map_image.height - 2 * config.map.border_thickness;
+        const character_x = position.x;
+        const character_y = position.y;
         const fWidth: f32 = @floatFromInt(world.instance.width);
         const fHeight: f32 = @floatFromInt(world.instance.height);
-        const normalized_x = character_x * @as(f32, @as(f32, @floatFromInt(map_image.width - 2 * config.map.border_thickness)) / (config.assets.tile.size * fWidth));
-        const normalized_y = character_y * @as(f32, @as(f32, @floatFromInt(map_image.height - 2 * config.map.border_thickness)) / (config.assets.tile.size * fHeight));
+        const normalized_x = character_x *
+            @as(f32, @as(f32, @floatFromInt(map_width)) /
+            (config.assets.tile.size * fWidth));
+        const normalized_y = character_y *
+            @as(f32, @as(f32, @floatFromInt(map_height)) /
+            (config.assets.tile.size * fHeight));
         return .{ normalized_x, normalized_y };
     }
 };
@@ -103,29 +109,57 @@ fn drawMapName(center: rl.Vector2, name: [:0]const u8, font: *rl.Font) void {
     );
 }
 
-pub fn at(character: *const GameState.World.Character, world: *const GameState.World.Map, width: f32, height: f32, font: *rl.Font) !void {
+pub fn at(
+    character: *const GameState.World.Character,
+    world: *const GameState.World.Map,
+    width: f32,
+    height: f32,
+    font: *rl.Font,
+) !void {
     const position: rl.Vector2 = .{
         .x = character.stats.x_position,
         .y = character.stats.y_position,
     };
-    const normalized_x, const normalized_y = coordinates.normalize(position, &character.inventory.hud.minimap.map.?, world);
+    const map_image = character.inventory.hud.minimap.map.?;
+
+    const normalized_x, const normalized_y = coordinates.normalize(position, &map_image, world);
+    const displacement_x: f32 = config.map.border_thickness +
+        normalized_x -
+        @as(f32, @floatFromInt(@divFloor(map_image.width, 2)));
+    const displacement_y: f32 = config.map.border_thickness +
+        normalized_y -
+        @as(f32, @floatFromInt(@divFloor(map_image.height, 2)));
+
+    std.debug.print("{}, {}, {}\n", .{ position, normalized_x, normalized_y });
 
     const center: rl.Vector2 = getCenter(width, height);
-    const map_image = character.inventory.hud.minimap.map.?;
-    const map_x = center.x - outerRadius;
-    const map_y = center.y - outerRadius;
+
+    var canvas: rl.Image = rl.genImageColor(
+        @intFromFloat(2 * outerRadius),
+        @intFromFloat(2 * outerRadius),
+        rl.Color.black,
+    );
+    defer canvas.unload();
+
     const map_mask = rl.Rectangle{
-        .x = normalized_x,
-        .y = normalized_y,
-        .width = @floatFromInt(@min(outerRadius * 2, map_image.width)),
-        .height = @floatFromInt(@min(outerRadius * 2, map_image.height)),
+        .x = displacement_x,
+        .y = displacement_y,
+        .width = @floatFromInt(outerRadius * 2),
+        .height = @floatFromInt(outerRadius * 2),
     };
-    var map = rl.imageFromImage(map_image, map_mask);
-    defer map.unload();
+
+    const dest_mask: rl.Rectangle = comptime .{
+        .x = 0,
+        .y = 0,
+        .width = @floatFromInt(outerRadius * 2),
+        .height = @floatFromInt(outerRadius * 2),
+    };
+
+    canvas.drawImage(map_image, map_mask, dest_mask, rl.Color.white);
 
     var alpha_mask = rl.genImageColor(
-        @intFromFloat(map_mask.width),
-        @intFromFloat(map_mask.height),
+        @intFromFloat(outerRadius * 2),
+        @intFromFloat(outerRadius * 2),
         rl.Color.black,
     );
     defer alpha_mask.unload();
@@ -136,17 +170,20 @@ pub fn at(character: *const GameState.World.Character, world: *const GameState.W
         innerRadius,
         config.ColorPalette.secondary,
     );
-    map.alphaMask(alpha_mask);
 
-    const pixels = try rl.loadImageColors(map);
+    canvas.alphaMask(alpha_mask);
+
+    const pixels = try rl.loadImageColors(canvas);
+
     const texture = character.inventory.hud.minimap.texture.?;
     rl.updateTexture(texture, pixels.ptr);
 
-    texture.draw(@intFromFloat(map_x), @intFromFloat(map_y), config.ColorPalette.secondary);
+    const map_x = center.x - outerRadius;
+    const map_y = center.y - outerRadius;
+    texture.draw(@intFromFloat(map_x), @intFromFloat(map_y), rl.Color.white);
     rl.drawRing(center, innerRadius, outerRadius, 0, 360, 0, config.ColorPalette.primary);
     rl.drawCircleLinesV(center, innerRadius, config.ColorPalette.secondary);
     rl.drawCircleLinesV(center, innerRadius - 1, config.ColorPalette.secondary);
-
     player(character.stats.face_direction, center);
 
     drawMapName(center, character.stats.map_name, font);
