@@ -9,15 +9,17 @@
 -export([connect/0]).
 
 -define(PGHOST, os:getenv("PGHOST", "127.0.0.1")).
--define(PGPORT, os:getenv("PGPORT", 5432)).
+-define(PGPORT, list_to_integer(os:getenv("PGPORT", "5432"))).
 -define(PGUSER, os:getenv("PGUSER", "admin")).
 -define(PGPASSWORD, os:getenv("PGPASSWORD", "admin")).
 -define(PGDATABASE, os:getenv("PGDATABASE", "mmo")).
 
+-spec connect() -> {ok, epgsql:connection()} | {error, epgsql:connect_error()}.
 connect() ->
     io:format("Connecting to ~p at ~p~n", [?PGHOST, ?PGPORT]),
     Connection =
         #{host => ?PGHOST,
+          port => ?PGPORT,
           username => ?PGUSER,
           password => ?PGPASSWORD,
           database => ?PGDATABASE,
