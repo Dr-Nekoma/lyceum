@@ -70,9 +70,7 @@ jobs:
         run: |
           nix develop .#ci --impure -c just test
 
-      # Disable "continue-on-error" once we fix the current dializer issues
       - name: "[Server] Run Dialyzer"
-        continue-on-error: true
         run: |
           nix develop .#ci --impure -c just d
 
