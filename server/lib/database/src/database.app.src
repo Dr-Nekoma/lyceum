@@ -5,13 +5,12 @@
     {applications, [
         kernel,
         stdlib,
-        pure_migrations,
         epgsql,
         sasl,
         erlando		    
     ]},
     {env, []},
-    {modules, [database, database_migrations, database_utils, postgres_m]},
+    {modules, [database, database_utils, postgres_m]},
     {licenses, ["Apache-2.0"]},
     {links, []}
  ]}.

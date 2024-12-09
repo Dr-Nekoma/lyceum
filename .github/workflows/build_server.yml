@@ -70,10 +70,15 @@ jobs:
         run: |
           nix develop .#ci --impure -c just test
 
+      - name: "[Server] Run Dialyzer"
+        run: |
+          nix develop .#ci --impure -c just d
+
       - name: "[Database] Check Migrations"
         run: |
-          nix develop .#ci --impure -c just db-up
+          nix develop .#ci --impure -c just dbu
 
       - name: "[Database] Check Input Generation"
         run: |
-          nix develop .#ci --impure -c just db-input
+          nix develop .#ci --impure -c just dbi
+
