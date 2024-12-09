@@ -3,12 +3,15 @@
 -export([get_map/2]).
 -compile({parse_transform, do}).
 
+-spec transform_tile(map()) -> atom().
 transform_tile(Map) ->
     list_to_atom(string:lowercase(binary_to_list(maps:get(kind, Map)))).
 
+-spec transform_object(map()) -> atom().
 transform_object(Map) ->
     list_to_atom(string:lowercase(binary_to_list(maps:get(kind, Map)))).
 
+-spec check_dimensions(map()) -> any().
 check_dimensions(UnprocessedMap) ->
     do([error_m ||	   
 	   case database_utils:columns_and_rows(UnprocessedMap) of
@@ -20,6 +23,7 @@ check_dimensions(UnprocessedMap) ->
 		    exit(2)
 	   end]).
 
+-spec get_map(epgsql:bind_param(), epgsql:connection()) -> any().
 get_map(MapName, Connection) ->
     Dimensions =
         epgsql:equery(Connection,

@@ -28,6 +28,7 @@ fetch_file(CsvPath) ->
      end,
      Content}.
 
+-spec generate(epgsql:connection(), epgsql:bind_param(), {epgsql:bind_param(), list()}) -> any().
 generate(Connection, MapName, {Name, Table}) ->
     MapAttributes =
         lists:join(",",

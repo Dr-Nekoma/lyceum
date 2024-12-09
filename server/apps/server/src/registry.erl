@@ -3,6 +3,7 @@
 -export([insert_user/2, check_user/2]).
 -compile({parse_transform, do}).
 
+-spec check_user(map(), epgsql:connection()) -> any().
 check_user(#{username := Username, password := Password}, Connection) ->
     Query =
         "SELECT * FROM player.record WHERE username = $1::VARCHAR(32) "
@@ -14,6 +15,7 @@ check_user(#{username := Username, password := Password}, Connection) ->
 	       [UserData | _] -> return(maps:get(e_mail, UserData))
 	   end]).
 
+-spec insert_user(map(), epgsql:connection()) -> any().
 insert_user(#{username := Username,
               email := Email,
               password := Password},
