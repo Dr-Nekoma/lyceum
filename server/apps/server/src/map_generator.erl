@@ -3,19 +3,15 @@
 -export([create_map/3]).
 -compile({parse_transform, do}).
 
+create_assets(Connection, MapPath, MapName, FileName) ->
+    AssetPath = filename:join([MapPath, MapName, FileName]),
+    Assets = fetch_file(AssetPath),
+    generate(Connection, MapName, Assets).
+
 create_map(Connection, MapPath, MapName) ->
-    create_tiles(Connection, MapPath, MapName),
-    create_objects(Connection, MapPath, MapName).
-
-create_tiles(Connection, MapPath, MapName) ->
-    TilePath = filename:join([MapPath, MapName, "tile.csv"]),
-    Tiles = fetch_file(TilePath),
-    generate(Connection, MapName, Tiles).
-
-create_objects(Connection, MapPath, MapName) ->
-    ObjectsPath = filename:join([MapPath, MapName, "object.csv"]),
-    Objects = fetch_file(ObjectsPath),
-    generate(Connection, MapName, Objects).
+    create_assets(Connection, MapPath, MapName, "tile.csv"),
+    create_assets(Connection, MapPath, MapName, "object.csv"),
+    create_assets(Connection, MapPath, MapName, "resource.csv").
 
 fetch_file(CsvPath) ->
     {ok, Bin} = file:read_file(CsvPath),
@@ -24,7 +20,9 @@ fetch_file(CsvPath) ->
          "tile.csv" ->
              "tile";
          "object.csv" ->
-             "object"
+             "object";
+	 "resource.csv" ->
+	     "resource"
      end,
      Content}.
 

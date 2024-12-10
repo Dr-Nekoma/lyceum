@@ -21,6 +21,15 @@ DO $$ BEGIN
         );
     END IF;
 
+    -- RESOURCE_TYPE
+    IF to_regtype('map.RESOURCE_TYPE') IS NULL THEN
+        CREATE TYPE map.RESOURCE_TYPE AS ENUM(
+	    'EMPTY',	      
+            'STONE',
+            'WOOD'
+        );
+    END IF;
+
     -- These records are used as function arguments
     IF to_regtype('map.input') IS NULL THEN
         CREATE TYPE map.input AS (
@@ -54,6 +63,20 @@ CREATE TABLE IF NOT EXISTS map.object(
        -- TODO: Add constraint depending on the same kind and position of the tile.
        -- Some objects should only be able to put on top of if they are on a specific kind of tile
        kind map.OBJECT_TYPE NOT NULL,
+       x_position REAL NOT NULL,
+       y_position REAL NOT NULL,
+       -- TODO: Some items have face direction for us to care, e.g., like chest
+       -- face_direction SMALLINT NOT NULL CHECK (face_direction >= 0 AND face_direction < 360) DEFAULT 270,		
+       PRIMARY KEY(map_name, kind, x_position, y_position),
+       FOREIGN KEY (map_name) REFERENCES map.instance(name)
+);
+
+CREATE TABLE IF NOT EXISTS map.resource(
+       map_name VARCHAR(16) NOT NULL,
+       -- TODO: Add constraint depending on the same kind and position of the tile.
+       -- Some objects should only be able to put on top of if they are on a specific kind of tile
+       kind map.RESOURCE_TYPE NOT NULL,
+       quantity INTEGER NOT NULL DEFAULT 50 CHECK (quantity >= 0),
        x_position REAL NOT NULL,
        y_position REAL NOT NULL,
        -- TODO: Some items have face direction for us to care, e.g., like chest
