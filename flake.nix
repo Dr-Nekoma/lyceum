@@ -237,14 +237,9 @@
             ];
 
             buildInputs =
-              with pkgs;
-              [
-                raylib
-                zigLatest
-                erlangLatest
-              ]
-              ++ lib.optionals stdenv.isLinux (linuxPkgs)
-              ++ lib.optionals stdenv.isDarwin darwinPkgs;
+              with pkgs; [ raylib zigLatest erlangLatest ]
+                ++ lib.optionals stdenv.isLinux (linuxPkgs)
+                ++ lib.optionals stdenv.isDarwin darwinPkgs;
 
             postPatch = ''
               ln -s ${pkgs.callPackage ./client/zon-deps.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
@@ -284,14 +279,6 @@
               rsync
               zigLatest
               raylib
-            ];
-          };
-
-          # `nix develop .#server`
-          server = pkgs.mkShell {
-            buildInputs = with pkgs; [
-              erlangLatest
-              rebar3
             ];
           };
 
