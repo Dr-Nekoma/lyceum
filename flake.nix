@@ -49,6 +49,23 @@
             };
           };
 
+        # Environment-specific packages
+        linuxPkgs = with pkgs; [
+          inotify-tools
+          xorg.libX11
+          xorg.libX11.dev
+          xorg.libXrandr
+          xorg.libXinerama
+          xorg.libXcursor
+          xorg.libXi
+          libGL
+          libpulseaudio
+        ];
+        darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
+          CoreFoundation
+          CoreServices
+        ];
+
         # Erlang
         erlangLatest = pkgs.erlang_27;
         erlangLibs = getErlangLibs erlangLatest;
@@ -63,11 +80,18 @@
             pkgs.pkg-config
             erlangLibs
             raylib
-          ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux (with pkgs; [libpulseaudio]);
+          ] 
+            ++ pkgs.lib.optionals pkgs.stdenv.isLinux linuxPkgs
+            ++ pkgs.lib.optionals pkgs.stdenv.isLinux darwinPkgs;
           customRuntimeDeps = [
             erlangLibs
             raylib
-          ];
+          ]
+            ++ pkgs.lib.optionals pkgs.stdenv.isLinux linuxPkgs
+            ++ pkgs.lib.optionals pkgs.stdenv.isLinux darwinPkgs;
+          enableOpenGL = true;
+          enableWayland = true;
+          enableX11 = true;
         };
         system-triple = env.lib.zigTripleFromString system;
 
@@ -155,23 +179,30 @@
           # TODO: Finish this, it's incomplete
           # Leverages nix to build the zig-based client
           # nix build .#client
-          client = pkgs.stdenv.mkDerivation {
-            pname = "lyceum-client";
-            version = "0.0.1";
-            src = env.pkgs.lib.cleanSource ./client;
+          packages.target = env.pkgs.lib.genAttrs env.lib.allTargetTriples (target:
+            env.packageForTarget target ({
+                src = env.pkgs.lib.cleanSource ./client;
 
-            nativeBuildInputs = [
-              pkgs.makeBinaryWrapper
-              zigLatest.hook
-            ];
-            buildInputs = [
-              raylib
-              erlangLatest
-            ];
+                nativeBuildInputs = with env.pkgs; [
+                  raylib
+                ];
+                buildInputs = with env.pkgsForTarget target; [];
 
-            postPatch = ''
-              ln -s ${pkgs.callPackage ./client/zon-deps.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
-            '';
+                # Smaller binaries and avoids shipping glibc.
+                zigPreferMusl = true;
+
+                # This disables LD_LIBRARY_PATH mangling, binary patching etc...
+                # The package won't be usable inside nix.
+                zigDisableWrap = true;
+              } // env.lib.optionalAttrs (!env.lib.pathExists ./client/build.zig.zon) {
+                pname = "lyceum-client";
+                version = "0.0.1";
+              }));
+
+          packages.client = packages.target.${system-triple}.override {
+            # Prefer nix friendly settings.
+            zigPreferMusl = false;
+            zigDisableWrap = false;
           };
         };
 
@@ -191,23 +222,6 @@
         };
 
         devShells =
-          let
-            linuxPkgs = with pkgs; [
-              inotify-tools
-              xorg.libX11
-              xorg.libXrandr
-              xorg.libXinerama
-              xorg.libXcursor
-              xorg.libXi
-              xorg.libXi
-              libGL
-              libpulseaudio
-            ];
-            darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
-              CoreFoundation
-              CoreServices
-            ];
-          in
           {
             # `nix develop .#ci`
             # reduce the number of packages to the bare minimum needed for CI
