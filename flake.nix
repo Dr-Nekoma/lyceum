@@ -11,25 +11,32 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    treefmt-nix.url = "github:numtide/treefmt-nix";
+
     zig2nix.url = "github:Cloudef/zig2nix";
   };
 
   outputs =
-    {
-      self,
-      nixpkgs,
-      devenv,
-      flake-utils,
-      zig2nix,
-      ...
+    { self
+    , nixpkgs
+    , devenv
+    , flake-utils
+    , zig2nix
+    , treefmt-nix
+    , ...
     }@inputs:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
         pkgs = import nixpkgs {
           inherit system;
-          config.allowUnfree = true;
+          config = {
+            allowUnfree = true;
+          };
         };
+
+        treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
+
         getErlangLibs =
           erlangPkg:
           let
@@ -52,6 +59,10 @@
         # Environment-specific packages
         linuxPkgs = with pkgs; [
           inotify-tools
+          glfw
+          libei
+          libGLU
+          xorg.libXft
           xorg.libX11
           xorg.libX11.dev
           xorg.libXrandr
@@ -80,15 +91,15 @@
             pkgs.pkg-config
             erlangLibs
             raylib
-          ] 
-            ++ pkgs.lib.optionals pkgs.stdenv.isLinux linuxPkgs
-            ++ pkgs.lib.optionals pkgs.stdenv.isLinux darwinPkgs;
+          ]
+          ++ pkgs.lib.optionals pkgs.stdenv.isLinux linuxPkgs
+          ++ pkgs.lib.optionals pkgs.stdenv.isLinux darwinPkgs;
           customRuntimeDeps = [
             erlangLibs
             raylib
           ]
-            ++ pkgs.lib.optionals pkgs.stdenv.isLinux linuxPkgs
-            ++ pkgs.lib.optionals pkgs.stdenv.isLinux darwinPkgs;
+          ++ pkgs.lib.optionals pkgs.stdenv.isLinux linuxPkgs
+          ++ pkgs.lib.optionals pkgs.stdenv.isLinux darwinPkgs;
           enableOpenGL = true;
           enableWayland = true;
           enableX11 = true;
@@ -115,7 +126,7 @@
           # nix build .#server
           server =
             let
-              deps = import ./server/rebar-deps.nix { 
+              deps = import ./server/rebar-deps.nix {
                 inherit (pkgs) fetchHex fetchFromGitHub fetchgit;
                 builder = pkgs.beamPackages.buildRebar3;
               };
@@ -153,9 +164,9 @@
             ];
             config = {
               Volumes = {
-                "/opt/${erl_app}/etc" = {};
-                "/opt/${erl_app}/data" = {};
-                "/opt/${erl_app}/log" = {};
+                "/opt/${erl_app}/etc" = { };
+                "/opt/${erl_app}/data" = { };
+                "/opt/${erl_app}/log" = { };
               };
               WorkingDir = "/opt/${erl_app}";
               Cmd = [
@@ -168,42 +179,40 @@
                 "NODE_NAME=${erl_app}"
               ];
               ExposedPorts = {
-                "4369/tcp" = {};
-                "4369/ucp" = {};
-                "8080/tcp" = {};
-                "8080/udp" = {};
+                "4369/tcp" = { };
+                "4369/ucp" = { };
+                "8080/tcp" = { };
+                "8080/udp" = { };
               };
             };
           };
 
-          # TODO: Finish this, it's incomplete
-          # Leverages nix to build the zig-based client
+          # TODO: Still can't make this crapola build with zig2nix
           # nix build .#client
-          packages.target = env.pkgs.lib.genAttrs env.lib.allTargetTriples (target:
-            env.packageForTarget target ({
-                src = env.pkgs.lib.cleanSource ./client;
+          client = pkgs.stdenv.mkDerivation {
+            pname = "lyceum-client";
+            version = "0.0.1";
+            src = pkgs.lib.cleanSource ./client;
 
-                nativeBuildInputs = with env.pkgs; [
-                  raylib
-                ];
-                buildInputs = with env.pkgsForTarget target; [];
+            zigBuildFlags = [
+              "-fsys=raylib"
+              "--release=fast"
+            ];
 
-                # Smaller binaries and avoids shipping glibc.
-                zigPreferMusl = true;
+            nativeBuildInputs = [
+              zigLatest.hook
+            ];
 
-                # This disables LD_LIBRARY_PATH mangling, binary patching etc...
-                # The package won't be usable inside nix.
-                zigDisableWrap = true;
-              } // env.lib.optionalAttrs (!env.lib.pathExists ./client/build.zig.zon) {
-                pname = "lyceum-client";
-                version = "0.0.1";
-              }));
+            buildInputs =
+              [ raylib zigLatest erlangLatest ]
+              ++ pkgs.lib.optionals pkgs.stdenv.isLinux (linuxPkgs)
+              ++ pkgs.lib.optionals pkgs.stdenv.isDarwin darwinPkgs;
 
-          packages.client = packages.target.${system-triple}.override {
-            # Prefer nix friendly settings.
-            zigPreferMusl = false;
-            zigDisableWrap = false;
+            postPatch = ''
+              ln -s ${pkgs.callPackage ./client/zon-deps.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
+            '';
           };
+
         };
 
         # nix run
@@ -294,7 +303,7 @@
                       extensions = ext: [
                         ext.periods
                       ];
-                      initdbArgs = ["--locale=C" "--encoding=UTF8"];
+                      initdbArgs = [ "--locale=C" "--encoding=UTF8" ];
                       settings = {
                         shared_preload_libraries = "pg_stat_statements";
                         # pg_stat_statements config, nested attr sets need to be
@@ -304,7 +313,7 @@
                         "pg_stat_statements.max" = 10000;
                         "pg_stat_statements.track" = "all";
                       };
-                      initialDatabases = [ { name = "mmo"; } ];
+                      initialDatabases = [{ name = "mmo"; }];
                       port = 5432;
                       listen_addresses = "127.0.0.1";
                       initialScript = ''
@@ -321,7 +330,12 @@
           };
 
         # nix fmt
-        formatter = pkgs.nixfmt-rfc-style;
+        formatter = treefmtEval.config.build.wrapper;
+
+        # nix flake check
+        checks = {
+          formatting = treefmtEval.config.build.check self;
+        };
       }
     );
 }
