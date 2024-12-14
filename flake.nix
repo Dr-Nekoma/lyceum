@@ -204,12 +204,16 @@
             ];
 
             buildInputs =
-              [ raylib zigLatest erlangLatest ]
-              ++ pkgs.lib.optionals pkgs.stdenv.isLinux (linuxPkgs)
-              ++ pkgs.lib.optionals pkgs.stdenv.isDarwin darwinPkgs;
+              with pkgs; [ raylib zigLatest erlangLatest ]
+                ++ lib.optionals stdenv.isLinux (linuxPkgs)
+                ++ lib.optionals stdenv.isDarwin darwinPkgs;
 
             postPatch = ''
               ln -s ${pkgs.callPackage ./client/zon-deps.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
+            '';
+
+            postInstall = ''
+              cp -r assets $out/bin
             '';
           };
 
