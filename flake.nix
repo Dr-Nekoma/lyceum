@@ -221,7 +221,7 @@
 
             nativeBuildInputs = [
               zigLatest.hook
-              #pkgs.makeWrapper
+              pkgs.makeWrapper
             ];
 
             buildInputs =
@@ -234,10 +234,11 @@
             '';
 
             postInstall =
-              pkgs.lib.strings.intersperse "\n" (
-                pkgs.lib.optionals pkgs.stdenv.isLinux [
+              with pkgs;
+              lib.strings.intersperse "\n" (
+                lib.optionals stdenv.isLinux [
                   ''
-                    patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" --set-rpath ${linuxLibs} $out/bin/${zig_app}
+                    wrapProgram "$out/bin/${zig_app}" --set LD_LIBRARY_PATH "${linuxLibs}"
                   ''
                 ]
               );
