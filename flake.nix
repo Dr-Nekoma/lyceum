@@ -76,6 +76,7 @@
         linuxLibs = with pkgs; lib.makeLibraryPath [
           libGL
           libxkbcommon
+          raylib
           wayland
           xorg.libxcb
           xorg.libXft
@@ -220,6 +221,7 @@
 
             nativeBuildInputs = [
               zigLatest.hook
+              #pkgs.makeWrapper
             ];
 
             buildInputs =
@@ -227,16 +229,19 @@
                 ++ lib.optionals stdenv.isLinux (linuxPkgs)
                 ++ lib.optionals stdenv.isDarwin darwinPkgs;
 
-            #LD_LIBRARY_PATH = linuxLibs;
-
             postPatch = ''
               ln -s ${pkgs.callPackage ./client/zon-deps.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
             '';
 
-            postInstall = ''
-              cp -r assets $out
-              #wrapProgram "$out/bin/${zig_app}" --prefix LD_LIBRARY_PATH : "${linuxLibs}"
-            '';
+            postInstall =
+              pkgs.lib.strings.intersperse "\n" (
+                [ "cp -r assets $out" ]
+                ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+                  ''
+                    patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" --set-rpath ${linuxLibs} $out/bin/${zig_app}
+                  ''
+                ]
+              );
           };
 
         };
