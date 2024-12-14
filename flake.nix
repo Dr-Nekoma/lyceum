@@ -235,8 +235,7 @@
 
             postInstall =
               pkgs.lib.strings.intersperse "\n" (
-                [ "cp -r assets $out" ]
-                ++ pkgs.lib.optionals pkgs.stdenv.isLinux [
+                pkgs.lib.optionals pkgs.stdenv.isLinux [
                   ''
                     patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" --set-rpath ${linuxLibs} $out/bin/${zig_app}
                   ''

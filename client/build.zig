@@ -44,6 +44,14 @@ pub fn build(b: *std.Build) !void {
         exe.root_module.addImport("zerl", zerl.module("zerl"));
     }
 
+    const assets = b.addInstallDirectory(.{
+        .source_dir = b.path("assets"),
+        .install_dir = .prefix,
+        .install_subdir = "assets",
+    });
+
+    exe.step.dependOn(&assets.step);
+
     if (b.lazyImport(@This(), "zerl")) |zerl_build| {
         if (std.posix.getenv("LIBRARY_PATH")) |lib_path| {
             try zerl_build.add_erlang_paths(b, lib_path);
