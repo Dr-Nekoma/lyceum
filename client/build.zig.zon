@@ -1,7 +1,7 @@
 .{
     // the name of your project
     .name = "lyceum-client",
-    .version = "0.0.1",
+    .version = "0.1.0",
     .dependencies = .{
         .@"raylib-zig" = .{
             .url = "https://github.com/Not-Nik/raylib-zig/archive/58df62807f62bef1db79538d04b37b9f79909d0a.tar.gz",

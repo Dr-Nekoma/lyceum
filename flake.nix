@@ -60,8 +60,11 @@
         linuxPkgs = with pkgs; [
           inotify-tools
           glfw
-          libei
-          libGLU
+          libGL
+          libpulseaudio
+          libxkbcommon
+          wayland
+          xorg.libxcb
           xorg.libXft
           xorg.libX11
           xorg.libX11.dev
@@ -69,20 +72,34 @@
           xorg.libXinerama
           xorg.libXcursor
           xorg.libXi
+        ];
+        linuxLibs = with pkgs; lib.makeLibraryPath [
           libGL
-          libpulseaudio
+          libxkbcommon
+          wayland
+          xorg.libxcb
+          xorg.libXft
+          xorg.libX11
+          xorg.libX11.dev
+          xorg.libXrandr
+          xorg.libXinerama
+          xorg.libXcursor
+          xorg.libXi
         ];
         darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
           CoreFoundation
           CoreServices
         ];
 
+        # App config
+        app_version = "0.1.0";
         # Erlang
         erlangLatest = pkgs.erlang_27;
         erlangLibs = getErlangLibs erlangLatest;
         erl_app = "server";
 
         # Zig shit (Incomplete)
+        zig_app = "lyceum-client";
         zigLatest = pkgs.zig;
         raylib = pkgs.raylib;
         env = zig2nix.outputs.zig-env.${system} {
@@ -112,6 +129,8 @@
           # https://www.erlang.org/doc/man/kernel_app.html
           ERL_AFLAGS = "-kernel shell_history enabled";
           ERL_INCLUDE_PATH = "${erlangLatest}/lib/erlang/usr/include";
+          # Setup path for non-NixOS users
+          #LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${linuxLibs}";
           # Devenv sets this to something else
           # https://www.postgresql.org/docs/7.0/libpq-envars.htm
           PGHOST = "127.0.0.1";
@@ -133,7 +152,7 @@
             in
             pkgs.beamPackages.rebar3Relx {
               pname = erl_app;
-              version = "0.1.0";
+              version = app_version;
               root = ./server;
               src = pkgs.lib.cleanSource ./server;
               releaseType = "release";
@@ -190,8 +209,8 @@
           # TODO: Still can't make this crapola build with zig2nix
           # nix build .#client
           client = pkgs.stdenv.mkDerivation {
-            pname = "lyceum-client";
-            version = "0.0.1";
+            pname = zig_app;
+            version = app_version;
             src = pkgs.lib.cleanSource ./client;
 
             zigBuildFlags = [
@@ -208,12 +227,15 @@
                 ++ lib.optionals stdenv.isLinux (linuxPkgs)
                 ++ lib.optionals stdenv.isDarwin darwinPkgs;
 
+            #LD_LIBRARY_PATH = linuxLibs;
+
             postPatch = ''
               ln -s ${pkgs.callPackage ./client/zon-deps.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
             '';
 
             postInstall = ''
-              cp -r assets $out/bin
+              cp -r assets $out
+              #wrapProgram "$out/bin/${zig_app}" --prefix LD_LIBRARY_PATH : "${linuxLibs}"
             '';
           };
 
