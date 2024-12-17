@@ -11,9 +11,10 @@ transform_tile(Map) ->
 transform_object(Map) ->
     list_to_atom(string:lowercase(binary_to_list(maps:get(kind, Map)))).
 
--spec transform_resource(map()) -> atom().
+-spec transform_resource(map()) -> tuple().
 transform_resource(Map) ->
-    {list_to_atom(string:lowercase(binary_to_list(maps:get(kind, Map)))), (maps:get(quantity, Map))}.
+    Position = {maps:get(x_position, Map), maps:get(y_position, Map)},
+    {Position, maps:without([x_position, y_position], Map)}.
 
 -spec check_dimensions(map()) -> any().
 check_dimensions(UnprocessedMap) ->
@@ -45,8 +46,7 @@ get_map(MapName, Connection) ->
                       [MapName]),
     Resources =
         epgsql:equery(Connection,
-                      "SELECT quantity, kind FROM map.resource WHERE map_name = $1::TEXT ORDER "
-                      "BY x_position, y_position",
+                      "SELECT x_position, y_position, quantity, kind, capacity, base_extraction_amount, base_extraction_time FROM map.resource_view WHERE map_name = $1::TEXT",
                       [MapName]),
     do([postgres_m || 
 	   UnprocessedMap <- {Dimensions, select},
