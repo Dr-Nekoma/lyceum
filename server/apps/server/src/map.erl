@@ -11,6 +11,11 @@ transform_tile(Map) ->
 transform_object(Map) ->
     list_to_atom(string:lowercase(binary_to_list(maps:get(kind, Map)))).
 
+-spec transform_resource(map()) -> tuple().
+transform_resource(Map) ->
+    Position = {maps:get(x_position, Map), maps:get(y_position, Map)},
+    {Position, maps:without([x_position, y_position], Map)}.
+
 -spec check_dimensions(map()) -> any().
 check_dimensions(UnprocessedMap) ->
     do([error_m ||	   
@@ -39,6 +44,10 @@ get_map(MapName, Connection) ->
                       "SELECT kind FROM map.object WHERE map_name = $1::TEXT ORDER "
                       "BY x_position, y_position",
                       [MapName]),
+    Resources =
+        epgsql:equery(Connection,
+                      "SELECT x_position, y_position, quantity, kind, capacity, base_extraction_amount, base_extraction_time FROM map.resource_view WHERE map_name = $1::TEXT",
+                      [MapName]),
     do([postgres_m || 
 	   UnprocessedMap <- {Dimensions, select},
 	   {ok, {Width, Height}} = check_dimensions(UnprocessedMap), %% I miss you ErrorT
@@ -46,10 +55,13 @@ get_map(MapName, Connection) ->
 	   ProcessedTiles = lists:map(fun transform_tile/1, database_utils:columns_and_rows(UnprocessedTiles)),
 	   UnprocessedObjects <- {Objects, select},
 	   ProcessedObjects = lists:map(fun transform_object/1, database_utils:columns_and_rows(UnprocessedObjects)),
+	   UnprocessedResources <- {Resources, select},
+	   ProcessedResources = lists:map(fun transform_resource/1, database_utils:columns_and_rows(UnprocessedResources)),
 	   Quantity = Width * Height,
-	   if (length(ProcessedTiles) == Quantity) and (length(ProcessedObjects) == Quantity) ->
+	   if (length(ProcessedTiles) == Quantity) and (length(ProcessedObjects) == Quantity) and (length(ProcessedResources) == Quantity) ->
 		   return(#{tiles => ProcessedTiles,
 			    objects => ProcessedObjects,
+			    resources => ProcessedResources,
 			    width => Width,
 			    height => Height});
 	      (length(ProcessedTiles) == 0) or (length(ProcessedObjects) == 0) ->

@@ -7,6 +7,7 @@ const mainMenu = @import("../menu/main.zig");
 const map = @import("../components/hud/map.zig");
 const messages = @import("../server/messages.zig");
 const physics = @import("physics.zig");
+const resource = @import("/items/resource.zig");
 const rl = @import("raylib");
 const std = @import("std");
 const zerl = @import("zerl");
@@ -27,6 +28,7 @@ pub const Scene = enum {
 pub const Character_Table = std.StringHashMap(World.Character);
 pub const Tile_Table = std.EnumMap(messages.Tile, struct { ?rl.Model, ?rl.Image });
 pub const Object_Table = std.EnumMap(messages.Object, assets.Object);
+pub const Resource_Table = std.EnumMap(messages.Resource, assets.Resource);
 
 pub const World = struct {
     pub const Chat = struct {
@@ -40,46 +42,8 @@ pub const World = struct {
         instance: messages.Map = .{},
         tiles: Tile_Table,
         objects: Object_Table,
-    };
-    pub const Character = struct {
-        pub const Animation = struct {
-            pub const State = enum {
-                walking,
-                idle,
-            };
-            frameCounter: i32 = 0,
-            frames: []rl.ModelAnimation = &.{},
-        };
-        animation: Animation = .{},
-        stats: messages.Character_Info = .{},
-        model: ?rl.Model = null,
-        // TODO: Remove this position and use spatial info from stats
-        position: rl.Vector3 = .{
-            .x = 0.0,
-            .y = physics.character.floorLevel,
-            .z = 0.0,
-        },
-        preview: ?rl.Texture2D = null,
-        velocity: rl.Vector3 = .{
-            .x = 0,
-            .y = 0,
-            .z = 0,
-        },
-        // TODO: These things should come from the server
-        inventory: struct {
-            items: []const [:0]const u8 = &.{},
-            spells: []const [:0]const u8 = &.{},
-            hud: struct {
-                spells: []const [:0]const u8 = &.{},
-                consumables: []const [:0]const u8 = &.{},
-                minimap: struct {
-                    map: ?rl.Image = null,
-                    texture: ?rl.Texture = null,
-                } = .{},
-                chat: Chat = .{},
-            } = .{},
-        } = .{},
-    };
+        resources: Resource_Table,
+    };    
     character: Character = .{},
     other_players: Character_Table,
     camera: rl.Camera = undefined,

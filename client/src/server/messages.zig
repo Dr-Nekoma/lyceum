@@ -123,11 +123,22 @@ pub const Object = enum {
     chest,
 };
 
+pub const Resource = struct {
+    pub const Kind = enum {
+        stone,
+        wood,
+        empty,
+    };
+    quantity: u32 = 50,
+    kind : Kind = empty,
+}
+
 pub const Map = struct {
     width: u32 = 10,
     height: u32 = 10,
     tiles: []const Tile = &.{},
     objects: []const Object = &.{},
+    resources: []const Resource = &.{},
 };
 
 pub const Character_Join_Info = struct {
