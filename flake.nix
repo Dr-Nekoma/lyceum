@@ -63,7 +63,7 @@
           libGL
           libpulseaudio
           libxkbcommon
-          wayland
+          pkg-config
           xorg.libxcb
           xorg.libXft
           xorg.libX11
@@ -72,12 +72,15 @@
           xorg.libXinerama
           xorg.libXcursor
           xorg.libXi
+          # Wayland stuff
+          glfw-wayland
+          wayland
+          wayland-protocols
         ];
         linuxLibs = with pkgs; lib.makeLibraryPath [
           libGL
           libxkbcommon
           raylib
-          wayland
           xorg.libxcb
           xorg.libXft
           xorg.libX11
@@ -86,6 +89,10 @@
           xorg.libXinerama
           xorg.libXcursor
           xorg.libXi
+          # Wayland stuff
+          glfw-wayland
+          wayland
+          wayland-protocols
         ];
         darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
           CoreFoundation
@@ -233,15 +240,9 @@
               ln -s ${pkgs.callPackage ./client/zon-deps.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
             '';
 
-            postInstall =
-              with pkgs;
-              lib.strings.intersperse "\n" (
-                lib.optionals stdenv.isLinux [
-                  ''
-                    wrapProgram "$out/bin/${zig_app}" --set LD_LIBRARY_PATH "${linuxLibs}"
-                  ''
-                ]
-              );
+            postInstall = ''
+              wrapProgram "$out/bin/${zig_app}" --prefix LD_LIBRARY_PATH ":" "${linuxLibs}"
+            '';
           };
 
         };
