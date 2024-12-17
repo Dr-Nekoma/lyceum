@@ -55,4 +55,5 @@ let
       beamDeps = [ pc ];
     };
   };
-in self
+in
+self
