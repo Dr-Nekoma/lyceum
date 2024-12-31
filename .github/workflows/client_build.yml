@@ -1,0 +1,49 @@
+name: "[Client] Build"
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - .github/workflows/**
+      - client/**
+      - flake.nix
+      - flake.lock
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - .github/workflows/**
+      - client/**
+      - flake.nix
+      - flake.lock
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v26
+        with:
+          # Mostly to avoid GitHub rate limiting
+          extra_nix_config: |
+            access-tokens = github.com=${{ github.token }}
+
+      - name: Install Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: "[Client] Build"
+        run: |
+          nix develop .#ci --impure -c just client-build-ci
+
+      - name: "[Client] Tests"
+        run: |
+          nix develop .#ci --impure -c just client-test-ci

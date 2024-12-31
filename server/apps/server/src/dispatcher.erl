@@ -14,6 +14,8 @@
 
 -include("types.hrl").
 
+-dialyzer({nowarn_function, [login/3, start/2, get_active_pid/2]}).
+
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -44,12 +46,15 @@ start_link() ->
 %%                     {stop, Reason}
 %% @end
 %%--------------------------------------------------------------------
--spec init(Args) -> Result when
-      Args :: list(),
-      Result :: {ok, server_state()}
-                | {ok, server_state(), timeout()} 
-                | ignore
-                | {stop, term()}.
+-spec init(Args) -> Result
+    when Args :: list(),
+         State ::
+             #server_state{connection :: pid(),
+                           pid :: pid(),
+                           table :: atom() | ets:tid()},
+         Success :: {ok, State},
+         SuccessWithTimeout :: {ok, State, Timeout :: timeout()},
+         Result :: Success | SuccessWithTimeout.
 init([]) ->
     % Setup a DB connection and bootstrap process state
     {ok, Connection} = database:connect(),
@@ -77,13 +82,14 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_call(term(), gen_server:from(), server_state()) -> Result when
-      Result :: {reply, term(), server_state()}
-                | {reply, term(), server_state(), timeout()}
-                | {noreply, server_state()}
-                | {noreply, server_state(), timeout()}
-                | {stop, term(), term(), server_state()}
-                | {stop, term(), server_state()}.
+-spec handle_call(term(), gen_server:from(), server_state()) -> Result
+    when Result ::
+             {reply, term(), server_state()} |
+             {reply, term(), server_state(), timeout()} |
+             {noreply, server_state()} |
+             {noreply, server_state(), timeout()} |
+             {stop, term(), term(), server_state()} |
+             {stop, term(), server_state()}.
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -98,10 +104,11 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_cast(term(), server_state()) -> Result when
-      Result :: {noreply, server_state()}
-                | {noreply, server_state(), timeout()}
-                | {stop, term(), server_state()}.
+-spec handle_cast(term(), server_state()) -> Result
+    when Result ::
+             {noreply, server_state()} |
+             {noreply, server_state(), timeout()} |
+             {stop, term(), server_state()}.
 handle_cast({logout, Email}, State) ->
     ets:delete(?MODULE, Email),
     {noreply, State};
@@ -118,10 +125,11 @@ handle_cast(_Msg, State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_info(term(), server_state()) -> Result when
-      Result :: {noreply, server_state()}
-                | {noreply, server_state(), timeout()}
-                | {stop, term(), server_state()}.
+-spec handle_info(term(), server_state()) -> Result
+    when Result ::
+             {noreply, server_state()} |
+             {noreply, server_state(), timeout()} |
+             {stop, term(), server_state()}.
 handle_info({From, {login, Request}}, State) ->
     io:format("[~p] INFO: ~p~n", [?SERVER, From]),
     login(State, From, Request),
@@ -175,7 +183,8 @@ login(State, From, #{username := Username, password := _Password} = Request) ->
         {error, Message} ->
             io:format("Failed to login: ~p~n", [Message]),
             From ! {error, Message}
-    end.
+    end,
+    ok.
 
 -spec get_active_pid(term(), user_state()) -> {ok, pid()}.
 get_active_pid(Email, State) ->
