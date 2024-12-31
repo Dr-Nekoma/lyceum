@@ -1,4 +1,4 @@
-name: "[Server] Dyalizer"
+name: "[Server] Dialyzer"
 
 on:
   push:
@@ -20,8 +20,8 @@ permissions:
   contents: read
 
 jobs:
-  dializer:
-    name: Dyalizer
+  dialyzer:
+    name: Dialyzer
     runs-on: ubuntu-latest
 
     steps:
@@ -40,6 +40,6 @@ jobs:
       - name: Install Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - name: "[Server] Check Dyalizer"
+      - name: "[Server] Check Dialyzer"
         run: |
           nix develop .#ci --impure -c just d
