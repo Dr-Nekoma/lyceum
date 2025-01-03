@@ -229,6 +229,7 @@
             zigBuildFlags = [
               "-fsys=raylib"
               "--release=fast"
+              "-Dassets=${builtins.toString ./client}/assets"
             ];
 
             nativeBuildInputs = [
