@@ -20,22 +20,14 @@ There are several ways to run this project, but they all leverage [[https://nixo
 single [[https://devenv.sh/][devenv]] configured, that has all the tooling required to run this project,
 it also includes postgres.
 
-** Testing the Game (DEMO)
-
-1. ~nix develop --impure~
-2. ~devenv up~ to launch a local ~postgres~
-3. ~just db-reset~ or ~db-reset~, to initialize ~postgres~ for local development
-5. ~server~ (or ~./result/bin/server foreground~ if you want to run the pure nix build)
-6. followed by ~client-release~
-7. Once you get the client to launch, connect to ~localhost~ and you can try
-   playing with any of the local credentials [[https://github.com/Dr-Nekoma/lyceum/blob/master/server/database/main.input.sql#L3][here]].
-
 ** Development Shell
+
+To enter a development shell we assume you have at least [[https://nixos.org/][Nix]] installed:
 
 #+BEGIN_SRC shell
   # To enter the developmet shell
   nix develop --impure
-  # To spawn postgres
+  # To spawn postgres (for instance)
   devenv up -d
 #+END_SRC
 
@@ -53,16 +45,59 @@ to migrate the local dababase, you can use ~just db-up~ or ~db-up~.
 You can also build the server and related OCI images with Nix.
 
 #+BEGIN_SRC shell
-    nix build .#server
-#+END_SRC
-if you prefer running a container for the server:
-#+BEGIN_SRC shell
-    nix build .#buildImage
-    docker load < ./result
-    docker container run --network=host lyceum:latest
+  nix build .#server
 #+END_SRC
 
+if you prefer running a container for the server:
+
+#+BEGIN_SRC shell
+  nix build .#buildImage
+  docker load < ./result
+  docker container run --network=host lyceum:latest
+#+END_SRC
+
+or if you want to build the ~zig~ client, run ~nix build .#client~.
+
+** Testing the Game
+
+To run our DEMO you need to follow the steps in this particular order:
+
+1. ~nix develop --impure~ (to enter a development shell)
+2. ~devenv up~ to launch a local ~postgres~
+3. ~just db-reset~ or ~db-reset~, to initialize ~postgres~ for local development
+4. Run the ~erlang~ backend in a separate shell with either:
+
+    #+begin_src shell
+      server
+      # or
+      just server
+      # or if you want a pure build
+      nix build .#server
+      ./result/bin/server foreground
+    #+end_src
+
+5. Followed by running the ~zig~ client in a third shell with either:
+
+    #+begin_src shell
+      client-release
+      # or
+      just client-release
+      # or if you prefer a pure build
+      nix build .#client
+      ./result/bin/lyceum-client
+    #+end_src
+
+    *Addendum*: We got [[https://github.com/Dr-Nekoma/lyceum/pull/83#issuecomment-2550476288][reports]] that (sometimes) non-NixOS users will have to rely on[[https://github.com/nix-community/nixGL][ nixGL]].
+
+    #+begin_src shell
+      nix run --impure github:nix-community/nixGL -- ./result/bin/lyceum-client
+    #+end_src
+
+6. Once you get the client to launch, connect to ~localhost~ and you can try
+   playing with any of the local credentials [[https://github.com/Dr-Nekoma/lyceum/blob/master/server/database/main.input.sql#L3][here]].
+
 ** Deployment
+
 This game is deployed in our [[https://github.com/Dr-Nekoma/trashcan][NixOS server]].
 
 * Assets
