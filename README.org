@@ -87,7 +87,7 @@ To run our DEMO you need to follow the steps in this particular order:
       ./result/bin/lyceum-client
     #+end_src
 
-*Addendum*: We got [[https://github.com/Dr-Nekoma/lyceum/pull/83#issuecomment-2550476288][reports]] that (sometimes) non-NixOS users will have to rely on[[https://github.com/nix-community/nixGL][ nixGL]].
+    *Addendum*: We got [[https://github.com/Dr-Nekoma/lyceum/pull/83#issuecomment-2550476288][reports]] that (sometimes) non-NixOS users will have to rely on[[https://github.com/nix-community/nixGL][ nixGL]].
 
     #+begin_src shell
       nix run --impure github:nix-community/nixGL -- ./result/bin/lyceum-client
