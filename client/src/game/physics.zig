@@ -3,6 +3,7 @@ const rl = @import("raylib");
 const rm = rl.math;
 const std = @import("std");
 const GameState = @import("../game/state.zig");
+const GameCharacter = @import("../game/character.zig");
 
 pub const heightAxis: rl.Vector3 = .{
     .x = 0,
@@ -51,7 +52,7 @@ pub const character = struct {
         return walkableTile and !hasObject;
     }
 
-    pub fn draw(entity: *GameState.World.Character, map: *const GameState.World.Map, tempAngle: i16) void {
+    pub fn draw(entity: *GameCharacter, map: *const GameState.World.Map, tempAngle: i16) void {
         const velocity = &entity.velocity;
         const state = &entity.stats.state_type;
         const deltaTime = rl.getFrameTime();

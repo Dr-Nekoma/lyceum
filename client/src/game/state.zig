@@ -28,22 +28,28 @@ pub const Scene = enum {
 pub const Character_Table = std.StringHashMap(World.Character);
 pub const Tile_Table = std.EnumMap(messages.Tile, struct { ?rl.Model, ?rl.Image });
 pub const Object_Table = std.EnumMap(messages.Object, assets.Object);
-pub const Resource_Table = std.EnumMap(messages.Resource, assets.Resource);
+pub const Resource_Table = std.HashMap(
+    messages.Position,
+    messages.Resource,
+    struct {
+        pub fn hash(_: anytype, val: messages.Position) u64 {
+            return @bitCast(val);
+        }
+        pub fn eql(_: anytype, a: messages.Position, b: messages.Position) bool {
+            return a[0] == b[0] and a[1] == b[1];
+        }
+    },
+    std.hash_map.default_max_load_percentage,
+);
 
 pub const World = struct {
-    pub const Chat = struct {
-        pub const bufferSize = 50;
-        content: [bufferSize:0]u8 = .{0} ** bufferSize,
-        messages: std.ArrayList(chat.Message) = std.ArrayList(chat.Message).init(std.heap.c_allocator),
-        position: usize = 0,
-        mode: chat.Mode = .idle,
-    };
+    pub const Character = @import("character.zig"); // TODO: stop cheating
     pub const Map = struct {
         instance: messages.Map = .{},
         tiles: Tile_Table,
         objects: Object_Table,
         resources: Resource_Table,
-    };    
+    };
     character: Character = .{},
     other_players: Character_Table,
     camera: rl.Camera = undefined,
@@ -134,6 +140,7 @@ pub fn init(
                 },
             },
             .map = .{
+                .resources = Resource_Table.init(allocator),
                 .tiles = try assets.tilesTable(),
                 .objects = try assets.objectsTable(),
             },

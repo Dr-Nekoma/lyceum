@@ -3,7 +3,7 @@ const chat = @import("../components/hud/Chat.zig");
 const config = @import("../config.zig");
 const errorC = @import("../components/error.zig");
 const hud = @import("../components/hud/main.zig");
-const items = @import("../items/main.zig");
+const items = @import("items/main.zig");
 const mainMenu = @import("../menu/main.zig");
 const map = @import("../components/hud/map.zig");
 const messages = @import("../server/messages.zig");
@@ -12,6 +12,14 @@ const rl = @import("raylib");
 const std = @import("std");
 const zerl = @import("zerl");
 const Button = @import("../components/button.zig");
+
+    pub const Chat = struct {
+        pub const bufferSize = 50;
+        content: [bufferSize:0]u8 = .{0} ** bufferSize,
+        messages: std.ArrayList(chat.Message) = std.ArrayList(chat.Message).init(std.heap.c_allocator),
+        position: usize = 0,
+        mode: chat.Mode = .idle,
+    };
 
 pub const Animation = struct {
     pub const State = enum {

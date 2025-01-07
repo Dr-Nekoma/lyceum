@@ -5,6 +5,7 @@ const server = @import("../server/main.zig");
 const std = @import("std");
 const Button = @import("../components/button.zig");
 const GameState = @import("../game/state.zig");
+const GameCharacter = @import("../game/character.zig");
 
 pub const Menu = struct {
     pub const Connect = struct {
@@ -59,7 +60,7 @@ pub const Menu = struct {
             name: [:0]u8,
         };
         pub const Selection = struct {
-            list: []const GameState.World.Character = &.{},
+            list: []const GameCharacter = &.{},
             buttons: Button.SelectableGroup,
             join_world_button: Button.Clickable,
         };
