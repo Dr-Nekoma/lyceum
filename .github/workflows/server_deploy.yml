@@ -1,4 +1,4 @@
-name: "[Deploy] Server"
+name: "[Server] Deploy"
 
 on:
   push:

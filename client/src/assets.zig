@@ -5,8 +5,9 @@ const rl = @import("raylib");
 const rm = rl.math;
 const std = @import("std");
 const GameState = @import("game/state.zig");
+const build_options = @import("build_options");
 
-const base_filepath = "./assets/";
+const base_filepath = build_options.assets;
 
 fn load(
     comptime T: type,

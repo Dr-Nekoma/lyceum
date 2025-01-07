@@ -11,7 +11,10 @@
          code_change/3]).
 
 -include("types.hrl").
+
 -compile({parse_transform, do}).
+
+-dialyzer({nowarn_function, [exit_map/1, logout/1, joining_map/2, update/2]}).
 
 %%%===================================================================
 %%% API
@@ -64,13 +67,14 @@ init(State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_call(term(), gen_server:from(), user_state()) -> Return when
-      Return :: {reply, term(), user_state()} 
-                | {reply, term(), user_state(), timeout()}
-                | {noreply, user_state()}
-                | {noreply, user_state(), timeout()}
-                | {stop, term(), term(), user_state()}
-                | {stop, term(), user_state()}.
+-spec handle_call(term(), gen_server:from(), user_state()) -> Return
+    when Return ::
+             {reply, term(), user_state()} |
+             {reply, term(), user_state(), timeout()} |
+             {noreply, user_state()} |
+             {noreply, user_state(), timeout()} |
+             {stop, term(), term(), user_state()} |
+             {stop, term(), user_state()}.
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -85,10 +89,11 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_cast(term(), user_state()) -> Return when
-      Return :: {noreply, user_state()} 
-                | {noreply, user_state(), timeout()}
-                | {stop, term(), user_state()}.
+-spec handle_cast(term(), user_state()) -> Return
+    when Return ::
+             {noreply, user_state()} |
+             {noreply, user_state(), timeout()} |
+             {stop, term(), user_state()}.
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -102,10 +107,9 @@ handle_cast(_Msg, State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_info(term(), user_state()) -> Return when
-      Return :: {noreply, user_state()}
-                | {noreply, user_state()}
-                | {stop, term(), user_state()}.
+-spec handle_info(term(), user_state()) -> Return
+    when Return ::
+             {noreply, user_state()} | {noreply, user_state()} | {stop, term(), user_state()}.
 handle_info({list_characters, Request}, State) ->
     list_characters(State, Request),
     {noreply, State};
@@ -115,7 +119,7 @@ handle_info({joining_map,
                name := Name} =
                  Request},
             OldState) ->
-    joining_map(OldState, Request),
+    ok = joining_map(OldState, Request),
     NewState =
         #user_state{pid = OldState#user_state.pid,
                     connection = OldState#user_state.connection,
@@ -163,9 +167,8 @@ terminate(Reason, _State) ->
 %% @spec code_change(OldVsn, State, Extra) -> {ok, NewState}
 %% @end
 %%--------------------------------------------------------------------
--spec code_change(term(), user_state(), term()) -> Return when
-      Return :: {ok, user_state()}
-                | {error, term()}.
+-spec code_change(term(), user_state(), term()) -> Return
+    when Return :: {ok, user_state()} | {error, term()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
@@ -179,23 +182,25 @@ list_characters(State, #{email := _Email, username := Username} = Request) ->
     io:format("[~p] Characters: ~p~n", [?MODULE, Reply]),
     State#user_state.pid ! Reply.
 
--spec joining_map(user_state(), map()) -> term().
+-spec joining_map(user_state(), map()) -> ok.
 joining_map(State, #{name := Name, map_name := MapName} = Request) ->
     Pid = State#user_state.pid,
     Connection = State#user_state.connection,
     case character:activate(Request, Connection) of
         ok ->
             io:format("[~p] Retriving ~p's updated info...", [?MODULE, Name]),
-	    Result = do([error_m || 
-			    Character <- character:player_character(Request, Connection),
-			    Map <- map:get_map(MapName, Connection),
-			    io:format("Retriving ~p's map...", [MapName]),
-			    return(#{character => Character, map => Map})]),
+            Result =
+                do([error_m
+                    || Character <- character:player_character(Request, Connection),
+                       Map <- map:get_map(MapName, Connection),
+                       io:format("Retriving ~p's map...", [MapName]),
+                       return(#{character => Character, map => Map})]),
             Pid ! Result;
         {error, Message} ->
             io:format("Failed to Join Map: ~p~n", [Message]),
             Pid ! {error, "Could not join map"}
-    end.
+    end,
+    ok.
 
 -spec update(user_state(), map()) -> term().
 update(State, CharacterMap) ->

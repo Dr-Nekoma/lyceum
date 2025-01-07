@@ -37,4 +37,3 @@ transform_character_map(List) ->
                         maps:get(state_type, Map))}
         end,
     lists:map(F, List).
-
