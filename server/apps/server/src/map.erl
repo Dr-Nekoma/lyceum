@@ -58,7 +58,7 @@ get_map(MapName, Connection) ->
 	   UnprocessedResources <- {Resources, select},
 	   ProcessedResources = lists:map(fun transform_resource/1, database_utils:columns_and_rows(UnprocessedResources)),
 	   Quantity = Width * Height,
-	   if (length(ProcessedTiles) == Quantity) and (length(ProcessedObjects) == Quantity) and (length(ProcessedResources) == Quantity) ->
+	   if (length(ProcessedTiles) == Quantity) and (length(ProcessedObjects) == Quantity) ->
 		   return(#{tiles => ProcessedTiles,
 			    objects => ProcessedObjects,
 			    resources => ProcessedResources,
