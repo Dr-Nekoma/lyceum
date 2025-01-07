@@ -33,10 +33,13 @@ pub const Resource_Table = std.HashMap(
     messages.Resource,
     struct {
         pub fn hash(_: anytype, val: messages.Position) u64 {
-            return @bitCast(val);
+            const x, const y = val;
+            return @bitCast([_]f32{ x, y });
         }
         pub fn eql(_: anytype, a: messages.Position, b: messages.Position) bool {
-            return a[0] == b[0] and a[1] == b[1];
+            const a_x, const a_y = a;
+            const b_x, const b_y = b;
+            return a_x == b_x and a_y == b_y;
         }
     },
     std.hash_map.default_max_load_percentage,

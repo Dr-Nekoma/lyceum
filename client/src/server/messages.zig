@@ -125,7 +125,7 @@ pub const Object = enum {
     rock,
 };
 
-pub const Position = [2]f32;
+pub const Position = struct { f32, f32 };
 
 pub const Resource =
     struct {
