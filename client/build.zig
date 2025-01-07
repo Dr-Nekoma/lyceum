@@ -44,6 +44,20 @@ pub fn build(b: *std.Build) !void {
         exe.root_module.addImport("zerl", zerl.module("zerl"));
     }
 
+    const assets = b.addInstallDirectory(.{
+        .source_dir = b.path("assets"),
+        .install_dir = .prefix,
+        .install_subdir = "assets",
+    });
+
+    exe.step.dependOn(&assets.step);
+
+    // https://ziglang.org/learn/build-system/#conditional-compilation
+    const assets_opt = b.option([]const u8, "assets", "custom path for the assets directory") orelse "./assets";
+    const options = b.addOptions();
+    options.addOption([]const u8, "assets", assets_opt);
+    exe.root_module.addOptions("build_options", options);
+
     if (b.lazyImport(@This(), "zerl")) |zerl_build| {
         if (std.posix.getenv("LIBRARY_PATH")) |lib_path| {
             try zerl_build.add_erlang_paths(b, lib_path);
