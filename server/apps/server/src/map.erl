@@ -3,18 +3,20 @@
 -export([get_map/2]).
 -compile({parse_transform, do}).
 
+-spec atomize(binary()) -> atom().
+atomize(Binary) -> list_to_atom(string:lowercase(binary_to_list(Binary))).
+
 -spec transform_tile(map()) -> atom().
-transform_tile(Map) ->
-    list_to_atom(string:lowercase(binary_to_list(maps:get(kind, Map)))).
+transform_tile(Map) -> atomize(maps:get(kind, Map)).
 
 -spec transform_object(map()) -> atom().
-transform_object(Map) ->
-    list_to_atom(string:lowercase(binary_to_list(maps:get(kind, Map)))).
+transform_object(Map) -> atomize(maps:get(kind, Map)).
 
 -spec transform_resource(map()) -> tuple().
 transform_resource(Map) ->
     Position = {maps:get(x_position, Map), maps:get(y_position, Map)},
-    {Position, maps:without([x_position, y_position], Map)}.
+    NewMap = maps:update_with(kind, fun atomize/1, Map),
+    {Position, maps:without([x_position, y_position], NewMap)}.
 
 -spec check_dimensions(map()) -> any().
 check_dimensions(UnprocessedMap) ->
