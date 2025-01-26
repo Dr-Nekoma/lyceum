@@ -173,10 +173,10 @@ fn loadObject(kind: messages.Object) !Object {
         },
         .rock => .{
             // TODO: distinguish rocks from bushes
-            .model = try model(config.assets.paths.game.world.objects.bush.model),
-            .scale = config.assets.object.bush.scale,
-            .axis = config.assets.object.bush.axis,
-            .angle = config.assets.object.bush.angle,
+            .model = try model(config.assets.paths.game.world.objects.rock.model),
+            .scale = config.assets.object.rock.scale,
+            .axis = config.assets.object.rock.axis,
+            .angle = config.assets.object.rock.angle,
         },
         .empty => unreachable,
     };

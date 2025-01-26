@@ -1,4 +1,3 @@
-
 pub const Kind = enum {
     health,
     mana,

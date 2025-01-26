@@ -1,5 +1,3 @@
-
-
 pub const Kind = enum {
     head,
     top,
