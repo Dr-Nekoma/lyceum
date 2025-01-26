@@ -39,12 +39,12 @@ get_map(MapName, Connection) ->
     Tiles =
         epgsql:equery(Connection,
                       "SELECT kind FROM map.tile WHERE map_name = $1::TEXT ORDER BY "
-                      "x_position , y_position",
+                      "y_position , x_position",
                       [MapName]),
     Objects =
         epgsql:equery(Connection,
                       "SELECT kind FROM map.object WHERE map_name = $1::TEXT ORDER "
-                      "BY x_position, y_position",
+                      "BY y_position, x_position",
                       [MapName]),
     Resources =
         epgsql:equery(Connection,

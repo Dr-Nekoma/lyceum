@@ -50,8 +50,8 @@ generate(Connection, MapName, {Name, Table}) ->
                                                    deresourcificate([MapName, Elem, I, J], Insertificatanator))
                              end,
                              lists:flatten(
-                                 lists:map(fun({I, Out}) ->
-                                              lists:map(fun({J, In}) -> {I, J, In} end,
+                                 lists:map(fun({J, Out}) ->
+                                              lists:map(fun({I, In}) -> {I, J, In} end,
                                                         lists:enumerate(0, Out))
                                            end,
                                            lists:enumerate(0, Table))))),
