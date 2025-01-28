@@ -6,15 +6,15 @@
 
 -dialyzer({nowarn_function, '>>='/2}).
 
-%-type monad(_A) ::
-%    {{ok, any(), any()}, select} |
-%    {{ok, any()}, delete} |
-%    {{ok, any()}, insert} |
-%    {{ok, any(), any(), any()}, insert} |
-%    {{ok, any()}, update} |
-%    {{error, any()}, any()}.
+-type monad(_A) ::
+    {{ok, any(), any()}, select} |
+    {{ok, any()}, delete} |
+    {{ok, any()}, insert} |
+    {{ok, any(), any(), any()}, insert} |
+    {{ok, any()}, update} |
+    {{error, any()}, any()}.
 
-%-include_lib("erlando/include/monad_specs.hrl").
+-include_lib("erlandono/include/monad_specs.hrl").
 
 return(X) ->
     {ok, X}.
