@@ -4,7 +4,7 @@
 
 -export(['>>='/2, return/1, fail/1]).
 
--dialyzer({nowarn_function, '>>='/2}).
+-dialyzer({nowarn_function, ['>>='/2, return/1, fail/1]}).
 
 -type monad(_A) ::
     {{ok, any(), any()}, select} |

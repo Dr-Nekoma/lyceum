@@ -62,7 +62,7 @@ let
         version = "3.0.3";
         sha256 = "sha256-dB0aVaq62qPg/hMFEFAQGnPpDEVwuflAOpOdlUaBNSE=";
       };
-      beamDeps = [ ];
+      beamDeps = [ pc ];
     };
   };
 in self
