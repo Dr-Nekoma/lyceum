@@ -1,8 +1,9 @@
 const rl = @import("raylib");
 const GameState = @import("../game/state.zig");
+const GameCharacter = @import("../game/character.zig");
 
 pub const character = struct {
-    pub fn update(entity: *GameState.World.Character) void {
+    pub fn update(entity: *GameCharacter) void {
         const anims = entity.animation.frames;
         if (anims.len >= 0) {
             switch (entity.stats.state_type) {

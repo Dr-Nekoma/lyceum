@@ -9,6 +9,7 @@ pub const angleCameraVector: rl.Vector3 = .{
 pub const map = struct {
     pub const border_thickness = 140;
     pub const mini_map_size = 50;
+    pub const resource_proximity = 3;
 };
 
 pub const assets = struct {
@@ -60,6 +61,19 @@ pub const assets = struct {
                 .z = 2.0,
             };
             pub const angle = defaultAngle;
+            pub const axis: rl.Vector3 = .{
+                .x = 0,
+                .y = 1,
+                .z = 0,
+            };
+        };
+        pub const rock = struct {
+            pub const scale: rl.Vector3 = .{
+                .x = 0.3,
+                .y = 0.3,
+                .z = 0.3,
+            };
+            pub const angle = 90;
             pub const axis: rl.Vector3 = .{
                 .x = 0,
                 .y = 1,
@@ -127,6 +141,9 @@ pub const assets = struct {
                     pub const bush = struct {
                         pub const model = "game/world/objects/bush/bush.obj";
                     };
+                    pub const rock = struct {
+                        pub const model = "game/world/objects/rock/rock.obj";
+                    };
                 };
             };
         };
@@ -138,6 +155,7 @@ pub const defaultCameraDistance = 35;
 pub const buttonFontSize = 27;
 pub const titleFontSize = 25;
 pub const textFontSize = 20;
+pub const resourceActionFontSize = 30;
 pub const textSpacing = 2.5;
 pub const hubFontSize = 13;
 pub const menuButtonsPadding = 16;

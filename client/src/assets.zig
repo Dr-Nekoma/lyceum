@@ -171,6 +171,13 @@ fn loadObject(kind: messages.Object) !Object {
             .axis = config.assets.object.bush.axis,
             .angle = config.assets.object.bush.angle,
         },
+        .rock => .{
+            // TODO: distinguish rocks from bushes
+            .model = try model(config.assets.paths.game.world.objects.rock.model),
+            .scale = config.assets.object.rock.scale,
+            .axis = config.assets.object.rock.axis,
+            .angle = config.assets.object.rock.angle,
+        },
         .empty => unreachable,
     };
 }

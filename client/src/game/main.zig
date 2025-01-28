@@ -8,6 +8,7 @@ const rm = rl.math;
 const server = @import("../server/main.zig");
 const std = @import("std");
 const GameState = @import("state.zig");
+const GameCharacter = @import("character.zig");
 
 fn drawPlayers(gameState: *GameState) void {
     const mainPlayer = &gameState.world.character;
@@ -59,7 +60,7 @@ fn assetPosition(x: f32, y: f32, floor: f32) rl.Vector3 {
     };
 }
 
-fn drawWorld(player: *const GameState.World.Character, world: *const GameState.World.Map) !void {
+fn drawWorld(player: *const GameCharacter, world: *const GameState.World.Map) !void {
     const height: i32 = @intCast(world.instance.height);
     const width: i32 = @intCast(world.instance.width);
     const tiles = world.instance.tiles;

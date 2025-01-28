@@ -112,6 +112,7 @@ References for assets used in this project:
 - [[https://free3d.com/3d-model/treasure-chest-v1--156264.html][chest_model]]
 - [[https://opengameart.org/content/fern][bush_model]]
 - [[https://opengameart.org/content/tree-24][tree_model]]
+- [[https://free3d.com/3d-model/rock-v2-lp-63239.html][rock_model]]  
 - [[https://www.dafont.com/eari.font?text=Lyceum][logo_font]]
 - [[https://www.dafont.com/kelmscott.font?text=Connect][text_font]]
 - [[https://tholgrimar.bandcamp.com/track/linear-b][background_music]]
