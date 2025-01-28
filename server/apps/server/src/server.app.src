@@ -9,7 +9,7 @@
         sasl,
         csv,
         epgsql,
-	erlando
+	    erlandono
     ]},
     {env, []},
     {modules, []},
