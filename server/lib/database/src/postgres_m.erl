@@ -1,9 +1,12 @@
 -module(postgres_m).
 
+%% TODO: Create our own behaviour that has better epgsql types
+%% to feed it into return, fail and >>=.
 -behaviour(monad).
 
 -export(['>>='/2, return/1, fail/1]).
 
+%% TODO: fix these types
 -dialyzer({nowarn_function, ['>>='/2, return/1, fail/1]}).
 
 -type monad(_A) ::
