@@ -8,8 +8,6 @@ pub fn update(gameState: *GameState) void {
 
     const cameraAngle = rm.vector3Normalize(config.angleCameraVector);
 
-    gameState.world.cameraDistance -= rl.getMouseWheelMove() * 2;
-
     gameState.world.camera.position = rm.vector3Add(rm.vector3Scale(cameraAngle, gameState.world.cameraDistance), gameState.world.character.position);
     rl.updateCamera(&gameState.world.camera, rl.CameraMode.camera_custom);
 }
