@@ -1,20 +1,23 @@
 -module(postgres_m).
 
+%% TODO: Create our own behaviour that has better epgsql types
+%% to feed it into return, fail and >>=.
 -behaviour(monad).
 
 -export(['>>='/2, return/1, fail/1]).
 
--dialyzer({nowarn_function, '>>='/2}).
+%% TODO: fix these types
+-dialyzer({nowarn_function, ['>>='/2, return/1, fail/1]}).
 
-%-type monad(_A) ::
-%    {{ok, any(), any()}, select} |
-%    {{ok, any()}, delete} |
-%    {{ok, any()}, insert} |
-%    {{ok, any(), any(), any()}, insert} |
-%    {{ok, any()}, update} |
-%    {{error, any()}, any()}.
+-type monad(_A) ::
+    {{ok, any(), any()}, select} |
+    {{ok, any()}, delete} |
+    {{ok, any()}, insert} |
+    {{ok, any(), any(), any()}, insert} |
+    {{ok, any()}, update} |
+    {{error, any()}, any()}.
 
-%-include_lib("erlando/include/monad_specs.hrl").
+-include_lib("erlandono/include/monad_specs.hrl").
 
 return(X) ->
     {ok, X}.

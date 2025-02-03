@@ -7,7 +7,7 @@
         stdlib,
         epgsql,
         sasl,
-        erlando		    
+        erlandono
     ]},
     {env, []},
     {modules, [database, database_utils, postgres_m]},

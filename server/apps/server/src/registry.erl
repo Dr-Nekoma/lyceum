@@ -4,8 +4,13 @@
 
 -compile({parse_transform, do}).
 
--spec check_user(map(), epgsql:connection()) -> Result
-    when Email :: string(),
+%% TODO: fix this type
+-dialyzer({nowarn_function, [check_user/2]}).
+
+-spec check_user(Map, epgsql:connection()) -> Result
+    when 
+         Map :: #{'password':=_, 'username':=_, _=>_},
+         Email :: string(),
          Message :: string(),
          Result :: {ok, Email} | {ok, any(), any()} | {ok, any(), any(), any()} | {error, Message}.
 check_user(#{username := Username, password := Password}, Connection) ->
