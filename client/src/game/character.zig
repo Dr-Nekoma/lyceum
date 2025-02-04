@@ -20,18 +20,27 @@ pub const Chat = struct {
     position: usize = 0,
     mode: chat.Mode = .idle,
 };
-
-pub const State = enum {
-    walking,
-    idle,
-    collecting_resource,
-};
+pub const State = std.meta.Tag(@TypeOf(@as(@This(), undefined).action));
 
 pub const Animation = struct {
     frameCounter: i32 = 0,
     frames: []rl.ModelAnimation = &.{},
 };
 
+pub fn setAction(self: *@This(), action: Action) void {
+    // TODO: remove redundant representation of reality
+    self.action_updated = rl.getTime();
+    self.action = action;
+    self.stats.state_type = action;
+}
+
+const Action = union(enum) {
+    idle: void,
+    walking: void,
+    collecting_resource: messages.Position,
+};
+
+action_updated: f64 = std.math.floatMin(f64),
 animation: Animation = .{},
 stats: messages.Character_Info = .{},
 model: ?rl.Model = null,
@@ -47,6 +56,9 @@ velocity: rl.Vector3 = .{
     .y = 0,
     .z = 0,
 },
+
+action: Action = .idle,
+
 // TODO: These things should come from the server
 inventory: struct {
     items: []const items.Entity = &.{},
