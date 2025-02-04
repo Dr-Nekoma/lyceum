@@ -21,11 +21,13 @@ pub const Chat = struct {
     mode: chat.Mode = .idle,
 };
 
+pub const State = enum {
+    walking,
+    idle,
+    collecting_resource,
+};
+
 pub const Animation = struct {
-    pub const State = enum {
-        walking,
-        idle,
-    };
     frameCounter: i32 = 0,
     frames: []rl.ModelAnimation = &.{},
 };

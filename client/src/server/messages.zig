@@ -92,7 +92,7 @@ pub const Character_Info = struct {
     y_velocity: f32 = 0,
     face_direction: i16 = 270,
     map_name: [:0]const u8 = "",
-    state_type: GameCharacter.Animation.State = .idle,
+    state_type: GameCharacter.State = .idle,
 };
 
 pub const Characters_Request = struct {
@@ -165,7 +165,7 @@ pub const Character_Update = struct {
     username: []const u8,
     face_direction: i16,
     email: []const u8,
-    state_type: GameCharacter.Animation.State,
+    state_type: GameCharacter.State,
 };
 
 // Central place to send game's data

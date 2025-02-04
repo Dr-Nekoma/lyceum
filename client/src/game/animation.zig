@@ -15,7 +15,7 @@ pub const character = struct {
                     const frameCount: i32 = @intCast(anims[1].frameCount);
                     if (animFrameCounter.* >= frameCount) animFrameCounter.* = 0;
                 },
-                .idle => {
+                .idle, .collecting_resource => {
                     if (entity.model) |model| rl.updateModelAnimation(model, anims[0], 0);
                 },
             }
