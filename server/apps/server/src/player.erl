@@ -14,7 +14,8 @@
 
 -compile({parse_transform, do}).
 
--dialyzer({nowarn_function, [exit_map/1, logout/1, joining_map/2, update/2]}).
+-dialyzer({nowarn_function,
+           [exit_map/1, logout/1, joining_map/2, update/2, update_inventory/2]}).
 
 %%%===================================================================
 %%% API
