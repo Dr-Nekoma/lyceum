@@ -19,7 +19,7 @@ CREATE TYPE equipment.USE AS ENUM(
 );
 
 CREATE TABLE equipment.instance(
-       name VARCHAR(32) NOT NULL,
+       name TEXT NOT NULL,
        description TEXT NOT NULL,
        kind equipment.KIND NOT NULL,
        PRIMARY KEY(name, kind)
@@ -37,11 +37,11 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TABLE equipment.character(
-       name VARCHAR(18) NOT NULL,
+       name TEXT NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
-       username VARCHAR(32) NOT NULL,
+       username TEXT NOT NULL,
        is_equiped BOOL NOT NULL,
-       equipment_name VARCHAR(32) NOT NULL,
+       equipment_name TEXT NOT NULL,
        use equipment.USE NOT NULL,
        kind equipment.KIND NOT NULL,
        CHECK (equipment.check_equipment_position_compatibility(use, kind)),

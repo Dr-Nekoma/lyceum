@@ -134,6 +134,7 @@ pub const Resource =
     capacity: u32 = 50,
     base_extraction_amount: u32 = 1,
     base_extraction_time: u32 = 1,
+    item_pk: [:0]const u8 = "",
 };
 
 pub const ResourceLocation = struct { Position, Resource };

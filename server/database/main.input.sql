@@ -10,9 +10,14 @@ VALUES ('mmagueta', 'password123', 'mmagueta@example.com'),
 INSERT INTO map.instance (name, width, height)
 VALUES ('Pond', 6, 6);
 
-INSERT INTO map.object_is_resource (kind, capacity, base_extraction_amount, base_extraction_time, name, description)
-VALUES ('ROCK'::map.OBJECT_TYPE, 50, 1, 1600, 'Fluorite', 'It is blue and pretty.'),
-       ('TREE'::map.OBJECT_TYPE, 50, 1, 1600, 'Willow', 'Likes water.');
+INSERT INTO character.item (name, description, weight)
+VALUES ('Dolomite', 'In this world, dolomite is used as a valuable currency by the empires of the East.', 42),
+       ('Great Bardook Branch', 'A tree that has been planted by the goddess Caithee.', 5),
+       ('Sussman''s Lispy Fez', 'The magical headgear from a once great wizard.', 1);
+
+INSERT INTO map.object_is_resource (kind, capacity, base_extraction_amount, base_extraction_time, name, description, item_pk)
+VALUES ('ROCK'::map.OBJECT_TYPE, 50, 1, 1600, 'Fluorite', 'It is blue and pretty.', 'Dolomite'),
+       ('TREE'::map.OBJECT_TYPE, 50, 1, 1600, 'Willow', 'Likes water.', 'Great Bardook Branch');
 
 -- Insert into lyceum.character and related tables
 INSERT INTO character.instance (name, e_mail, username)

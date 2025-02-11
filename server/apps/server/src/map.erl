@@ -48,7 +48,7 @@ get_map(MapName, Connection) ->
                       [MapName]),
     Resources =
         epgsql:equery(Connection,
-                      "SELECT x_position, y_position, quantity, kind, capacity, base_extraction_amount, base_extraction_time FROM map.resource_view WHERE map_name = $1::TEXT",
+                      "SELECT x_position, y_position, quantity, kind, capacity, base_extraction_amount, base_extraction_time, item_pk FROM map.resource_view WHERE map_name = $1::TEXT",
                       [MapName]),
     do([postgres_m || 
 	   UnprocessedMap <- {Dimensions, select},

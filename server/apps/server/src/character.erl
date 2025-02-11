@@ -1,6 +1,6 @@
 -module(character).
 
--export([create/2, player_characters/2, player_character/2, update/2, retrieve_near_players/2, activate/2, deactivate/4]).
+-export([create/2, player_characters/2, player_character/2, update/2, retrieve_near_players/2, activate/2, deactivate/4, update_inventory/2]).
 -compile({parse_transform, do}).
 
 create(#{name := Name, 
@@ -13,7 +13,7 @@ create(#{name := Name,
 	 intelligence := Intelligence,
 	 faith := Faith}, Connection) ->
     Query = "INSERT INTO character.view (name,  e_mail, username, constitution, wisdom, strength, endurance, intelligence, faith) \
-             VALUES ($1::VARCHAR(18), $2::TEXT, $3::VARCHAR(32), $4::SMALLINT, $5::SMALLINT, $6::SMALLINT, $7::SMALLINT, $8::SMALLINT, $9::SMALLINT)",
+             VALUES ($1::TEXT, $2::TEXT, $3::TEXT, $4::SMALLINT, $5::SMALLINT, $6::SMALLINT, $7::SMALLINT, $8::SMALLINT, $9::SMALLINT)",
     Result = epgsql:equery(Connection, Query, [Name, Username, Email, Constitution, Wisdom, Strength, Endurance, Intelligence, Faith]),
     do([postgres_m || 
 	   _ <- {Result, insert},
@@ -25,7 +25,7 @@ activate(#{name := Name,
 	   email := Email},
 	   Connection) ->
     Query = "INSERT INTO character.active (name,  e_mail, username) \
-             VALUES ($1::VARCHAR(18), $2::TEXT, $3::VARCHAR(32))",
+             VALUES ($1::TEXT, $2::TEXT, $3::TEXT)",
     do([postgres_m || 
 	   _ <- {epgsql:equery(Connection, Query, [Name, Email, Username]), insert},
 	   ok]).
@@ -33,7 +33,7 @@ activate(#{name := Name,
 %% TODO: Add a Select first in order to check already being deactivated
 deactivate(Name, Email, Username, Connection) ->
     Query = "DELETE FROM character.active \ 
-             WHERE name = $1::VARCHAR(18) AND e_mail = $2::TEXT AND username = $3::VARCHAR(32)",
+             WHERE name = $1::TEXT AND e_mail = $2::TEXT AND username = $3::TEXT",
     do([postgres_m || 
 	   _ <- {epgsql:equery(Connection, Query, [Name, Email, Username]), delete},
 	   ok]).
@@ -54,7 +54,7 @@ update(#{name := Name,
     Query = "UPDATE character.view SET x_position = $1::REAL, y_position = $2::REAL, \
              x_velocity = $3::REAL, y_velocity = $4::REAL, level = $5::SMALLINT, health = $6::SMALLINT, mana = $7::SMALLINT, \
              face_direction = $8::SMALLINT, state_type = $9::\"character\".STATE_TYPE \ 
-             WHERE name = $10::VARCHAR(18) AND e_mail = $11::TEXT AND username = $12::VARCHAR(32) AND map_name = $13::VARCHAR(64)",
+             WHERE name = $10::TEXT AND e_mail = $11::TEXT AND username = $12::TEXT AND map_name = $13::TEXT",
     Result = epgsql:with_transaction(Connection, 
 				      fun (Conn) -> 
 					      epgsql:equery(Conn, Query, 
@@ -87,7 +87,7 @@ retrieve_near_players(#{map_name := MapName, name := Name}, Connection) ->
                     character.view.state_type \
              FROM character.view \
              NATURAL JOIN character.active \
-             WHERE map_name = $1::VARCHAR(64) AND name <> $2::VARCHAR(18)",
+             WHERE map_name = $1::TEXT AND name <> $2::TEXT",
     do([postgres_m || 
 	   UnprocessedPlayers <- {epgsql:equery(Connection, Query, [MapName, Name]), select},
 	   ProcessedPlayers = database_utils:transform_character_map(database_utils:columns_and_rows(UnprocessedPlayers)),
@@ -114,7 +114,7 @@ player_characters(#{username := Username,
                     character.view.mana_max, \
                     character.view.mana, \
                     character.view.state_type \
-             FROM character.view WHERE username = $1::VARCHAR(32) AND e_mail = $2::TEXT",
+             FROM character.view WHERE username = $1::TEXT AND e_mail = $2::TEXT",
     do([postgres_m || 
 	   UnprocessedCharacters <- {epgsql:equery(Connection, Query, [Username, Email]), select},
 	   ProcessedCharacters = database_utils:transform_character_map(database_utils:columns_and_rows(UnprocessedCharacters)),
@@ -139,7 +139,7 @@ player_character(#{name := Name,
                     character.view.mana_max, \
                     character.view.mana, \
                     character.view.state_type \
-             FROM character.view WHERE username = $1::VARCHAR(32) AND e_mail = $2::TEXT AND name = $3::TEXT",
+             FROM character.view WHERE username = $1::TEXT AND e_mail = $2::TEXT AND name = $3::TEXT",
     do([postgres_m || 
 	   UnprocessedCharacter <- {epgsql:equery(Connection, Query, [Username, Email, Name]), select},
 	   case database_utils:transform_character_map(database_utils:columns_and_rows(UnprocessedCharacter)) of
@@ -147,3 +147,15 @@ player_character(#{name := Name,
 	       [] -> fail("Updated Character not found!");
 	       _ -> fail("Found more than one Character!")
 	   end]).
+
+update_inventory(#{name := Name, 
+		   username := Username, 
+		   email := Email,
+		   item_name := ItemName,
+		   quantity := Quantity},
+		 Connection) ->
+    Query = "INSERT INTO character.inventory (name,  e_mail, username, item_name, quantity) \
+             VALUES ($1::TEXT, $2::TEXT, $3::TEXT, $4::TEXT, $5::SMALLINT)",
+    do([postgres_m || 
+	   _ <- {epgsql:equery(Connection, Query, [Name, Email, Username, ItemName, Quantity]), insert},
+	   return(ok)]).
