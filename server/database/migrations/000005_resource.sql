@@ -31,7 +31,7 @@ NATURAL JOIN map.object_is_resource
 NATURAL JOIN map.object;
 
 CREATE OR REPLACE FUNCTION map.resource_management_view() RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN
+BEGIN -- FIXME
     IF NEW.quantity = 0
      THEN
        DELETE FROM map.resource
@@ -67,3 +67,28 @@ CREATE CONSTRAINT TRIGGER object_is_resource_trigger
   DEFERRABLE INITIALLY IMMEDIATE
   FOR EACH ROW
   EXECUTE PROCEDURE object_is_resource();
+
+
+CREATE OR REPLACE PROCEDURE map.harvest_resource
+   (target_map_name TEXT, target_kind map.OBJECT_TYPE, target_x_position REAL, target_y_position REAL, player_name TEXT, player_e_mail TEXT, player_username TEXT)
+   LANGUAGE plpgsql AS
+$$
+  DECLARE resource map.resource_view%rowtype;
+          delta INTEGER;
+  BEGIN
+  SELECT * INTO resource
+    FROM map.resource_view
+    WHERE map.resource_view.map_name = target_map_name
+    AND map.resource_view.kind = target_kind
+    AND map.resource_view.x_position = target_x_position
+    AND map.resource_view.y_position = target_y_position;
+  SELECT min(x) INTO delta FROM (values(resource.quantity),(resource.base_extraction_amount)) AS t(x);
+  UPDATE map.resource_view
+    SET quantity = resource.quantity - delta
+    WHERE map_name = target_map_name
+      AND kind = target_kind
+      AND x_position = target_x_position
+      AND y_position = target_y_position;
+  CALL character.update_inventory(player_name, player_e_mail, player_username, resource.item_pk, delta);
+END;
+$$;
