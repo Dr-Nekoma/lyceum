@@ -120,8 +120,35 @@ CREATE TABLE character.inventory(
        item_name TEXT NOT NULL,
        FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
        FOREIGN KEY (item_name) REFERENCES character.item(name),
-       PRIMARY KEY (name, username, e_mail, item_name, quantity)
+       PRIMARY KEY (name, username, e_mail, item_name)
 );
+
+CREATE OR REPLACE PROCEDURE character.update_inventory
+   (new_name TEXT, new_e_mail TEXT, new_username TEXT, new_item_name TEXT, new_quantity SMALLINT)
+   LANGUAGE plpgsql AS
+$$
+  DECLARE old_quantity SMALLINT;
+  BEGIN
+  old_quantity := NULL;
+  SELECT quantity INTO old_quantity FROM character.inventory
+    WHERE name = new_name
+    AND username = new_username
+    AND e_mail = new_e_mail
+    AND item_name = new_item_name;
+  IF old_quantity IS NOT NULL
+  THEN
+    UPDATE character.inventory
+    SET quantity = old_quantity + new_quantity
+    WHERE name = new_name
+    AND username = new_username
+    AND e_mail = new_e_mail
+    AND item_name = new_item_name;
+  ELSE
+    INSERT INTO character.inventory(name, e_mail, username, quantity, item_name)
+    VALUES (new_name, new_e_mail, new_username, new_quantity, new_item_name);
+  END IF;
+END;
+$$;
 
 CREATE OR REPLACE TRIGGER trigger_character_upsert
 INSTEAD OF INSERT ON character.view
