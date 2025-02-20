@@ -148,14 +148,13 @@ player_character(#{name := Name,
 	       _ -> fail("Found more than one Character!")
 	   end]).
 
-update_inventory(#{name := Name, 
-		   username := Username, 
+update_inventory(#{name := Name,
+		   username := Username,
 		   email := Email,
 		   item_name := ItemName,
 		   quantity := Quantity},
 		 Connection) ->
-    Query = "INSERT INTO character.inventory (name,  e_mail, username, item_name, quantity) \
-             VALUES ($1::TEXT, $2::TEXT, $3::TEXT, $4::TEXT, $5::SMALLINT)",
-    do([postgres_m || 
-	   _ <- {epgsql:equery(Connection, Query, [Name, Email, Username, ItemName, Quantity]), insert},
+    Query = "CALL character.update_inventory($1::TEXT, $2::TEXT, $3::TEXT, $4::TEXT, $5::SMALLINT);",
+    do([postgres_m ||
+	   _ <- {epgsql:equery(Connection, Query, [Name, Email, Username, ItemName, Quantity]), call},
 	   return(ok)]).
