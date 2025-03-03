@@ -131,8 +131,8 @@ handle_info({joining_map,
 handle_info({update_character, Request}, State) ->
     update(State, Request),
     {noreply, State};
-handle_info({update_inventory, Request}, State) ->
-    update_inventory(State, Request),
+handle_info({harvest_resource, Request}, State) ->
+    harvest_resource(State, Request),
     {noreply, State};
 handle_info(exit_map, State) ->
     exit_map(State),
@@ -206,15 +206,12 @@ joining_map(State, #{name := Name, map_name := MapName} = Request) ->
     end,
     ok.
 
--spec update_inventory(user_state(), map()) -> ok.
-update_inventory(State, Request) ->
+-spec harvest_resource(user_state(), map()) -> ok.
+harvest_resource(State, Request) ->
     Pid = State#user_state.pid,
     Connection = State#user_state.connection,
-    Result =
-        do([error_m
-            || _ <- character:update_inventory(Request, Connection),
-               _ <- resource:update(Request, Connection),
-               return(ok)]),
+    
+    Result = character:harvest_resource(Request, Connection),
     Pid ! Result.
 
 -spec update(user_state(), map()) -> term().

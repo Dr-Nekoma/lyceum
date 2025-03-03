@@ -1,6 +1,6 @@
 -module(character).
 
--export([create/2, player_characters/2, player_character/2, update/2, retrieve_near_players/2, activate/2, deactivate/4, update_inventory/2]).
+-export([create/2, player_characters/2, player_character/2, update/2, retrieve_near_players/2, activate/2, deactivate/4, harvest_resource/2]).
 -compile({parse_transform, do}).
 
 create(#{name := Name, 
@@ -148,13 +148,23 @@ player_character(#{name := Name,
 	       _ -> fail("Found more than one Character!")
 	   end]).
 
-update_inventory(#{name := Name,
+harvest_resource(#{name := Name,
 		   username := Username,
 		   email := Email,
-		   item_name := ItemName,
-		   quantity := Quantity},
+		   map_name := MapName,
+	 kind := Kind,
+	 x_position := XPosition,
+	 y_position := YPosition},
 		 Connection) ->
-    Query = "CALL character.update_inventory($1::TEXT, $2::TEXT, $3::TEXT, $4::TEXT, $5::SMALLINT);",
-    do([postgres_m ||
-	   _ <- {epgsql:equery(Connection, Query, [Name, Email, Username, ItemName, Quantity]), call},
-	   return(ok)]).
+    Harvest = "CALL map.harvest_resource($1::TEXT, $2::\"map\".OBJECT_TYPE, $3::REAL, $4::REAL, $5::TEXT, $6::TEXT, $7::TEXT);",
+    %% TODO
+    _Inventory = "SELECT item_name, quantity FROM character.inventory WHERE\
+                  name = $1::TEXT AND username = $2::TEXT AND e_mail",
+    _Resource = "",
+    epgsql:with_transaction(Connection,
+				      fun (Conn) ->
+                         do([postgres_m ||
+                             _ <- {epgsql:equery(Conn, Harvest, [MapName, Kind, XPosition, YPosition, Name, Email, Username]), call},
+                             return(ok)])
+				      end,
+				      #{ begin_opts => "ISOLATION LEVEL READ UNCOMMITTED"}). % Double-check this.
