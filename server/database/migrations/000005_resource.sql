@@ -30,24 +30,26 @@ SELECT * FROM map.resource
 NATURAL JOIN map.object_is_resource
 NATURAL JOIN map.object;
 
-CREATE OR REPLACE FUNCTION map.resource_management_view() RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN -- FIXME
-    IF NEW.quantity = 0
+CREATE OR REPLACE PROCEDURE map.update_resource_quantity
+   (target_map_name TEXT,
+    target_kind map.OBJECT_TYPE,
+    target_x_position REAL,
+    target_y_position REAL,
+    target_quantity SMALLINT)
+   LANGUAGE plpgsql AS
+$$
+    BEGIN
+    IF target_quantity = 0
      THEN
        DELETE FROM map.resource
-       WHERE map_name = NEW.map_name and kind = NEW.kind and x_position = NEW.x_position and y_position = NEW.y_position;
+       WHERE map_name = target_map_name and kind = target_kind and x_position = target_x_position and y_position = target_y_position;
      ELSE
        UPDATE map.resource
-       SET quantity = NEW.quantity
-       WHERE map_name = NEW.map_name and kind = NEW.kind and x_position = NEW.x_position and y_position = NEW.y_position;
+       SET quantity = target_quantity
+       WHERE map_name = target_map_name and kind = target_kind and x_position = target_x_position and y_position = target_y_position;
      END IF;
-END
+END;
 $$;
-
-CREATE TRIGGER resource_management_trigger
-  INSTEAD OF INSERT OR UPDATE ON map.resource_view
-  FOR EACH ROW
-  EXECUTE PROCEDURE map.resource_management_view();
 
 CREATE OR REPLACE FUNCTION object_is_resource() RETURNS TRIGGER
    LANGUAGE plpgsql AS
@@ -68,9 +70,14 @@ CREATE CONSTRAINT TRIGGER object_is_resource_trigger
   FOR EACH ROW
   EXECUTE PROCEDURE object_is_resource();
 
-
 CREATE OR REPLACE PROCEDURE map.harvest_resource
-   (target_map_name TEXT, target_kind map.OBJECT_TYPE, target_x_position REAL, target_y_position REAL, player_name TEXT, player_e_mail TEXT, player_username TEXT)
+   (target_map_name TEXT,
+    target_kind map.OBJECT_TYPE,
+    target_x_position REAL,
+    target_y_position REAL,
+    player_name TEXT,
+    player_e_mail TEXT,
+    player_username TEXT)
    LANGUAGE plpgsql AS
 $$
   DECLARE resource map.resource_view%rowtype;
@@ -83,12 +90,7 @@ $$
     AND map.resource_view.x_position = target_x_position
     AND map.resource_view.y_position = target_y_position;
   SELECT min(x) INTO delta FROM (values(resource.quantity),(resource.base_extraction_amount)) AS t(x);
-  UPDATE map.resource_view
-    SET quantity = resource.quantity - delta
-    WHERE map_name = target_map_name
-      AND kind = target_kind
-      AND x_position = target_x_position
-      AND y_position = target_y_position;
+  CALL map.update_resource_quantity(target_map_name , target_kind , target_x_position , target_y_position, resource.quantity - delta);
   CALL character.update_inventory(player_name, player_e_mail, player_username, resource.item_pk, delta);
 END;
 $$;
