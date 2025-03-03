@@ -11,6 +11,7 @@
 
 -type monad(_A) ::
     {{ok, any(), any()}, select} |
+    {{ok, any(), any()}, call} |
     {{ok, any()}, delete} |
     {{ok, any()}, insert} |
     {{ok, any(), any(), any()}, insert} |
@@ -26,6 +27,8 @@ fail(X) ->
     {error, X}.
 
 '>>='({{ok, FullColumns, Values}, select}, Fun) ->
+    Fun({FullColumns, Values});
+'>>='({{ok, FullColumns, Values}, call}, Fun) ->
     Fun({FullColumns, Values});
 '>>='({{ok, Count}, delete}, Fun) ->
     Fun(Count);

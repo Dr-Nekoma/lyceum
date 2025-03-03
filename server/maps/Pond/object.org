@@ -1,6 +1,6 @@
-|   | chest |   | bush |      |   |
-|   |       |   | bush |      |   |
-|   |       |   | bush |      |   |
-|   |       |   |      |      |   |
-|   |       |   |      |      |   |
-|   |       |   |      | tree |   |
+|   | chest         |   | bush          |      |   |
+|   |               |   | bush          |      |   |
+|   |               |   | bush          |      |   |
+|   |               |   |               |      |   |
+|   |               |   |               |      |   |
+|   | resource-rock |   | resource-tree | tree |   |
