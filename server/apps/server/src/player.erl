@@ -15,7 +15,7 @@
 -compile({parse_transform, do}).
 
 -dialyzer({nowarn_function,
-           [exit_map/1, logout/1, joining_map/2, update/2, update_inventory/2]}).
+           [exit_map/1, logout/1, joining_map/2, update/2, harvest_resource/2]}).
 
 %%%===================================================================
 %%% API
@@ -209,8 +209,7 @@ joining_map(State, #{name := Name, map_name := MapName} = Request) ->
 -spec harvest_resource(user_state(), map()) -> ok.
 harvest_resource(State, Request) ->
     Pid = State#user_state.pid,
-    Connection = State#user_state.connection,
-    
+    Connection = State#user_state.connection,   
     Result = character:harvest_resource(Request, Connection),
     Pid ! Result.
 

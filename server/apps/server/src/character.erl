@@ -152,19 +152,20 @@ harvest_resource(#{name := Name,
 		   username := Username,
 		   email := Email,
 		   map_name := MapName,
-	 kind := Kind,
-	 x_position := XPosition,
-	 y_position := YPosition},
+		   kind := Kind,
+		   x_position := XPosition,
+		   y_position := YPosition},
 		 Connection) ->
     Harvest = "CALL map.harvest_resource($1::TEXT, $2::\"map\".OBJECT_TYPE, $3::REAL, $4::REAL, $5::TEXT, $6::TEXT, $7::TEXT);",
-    %% TODO
-    _Inventory = "SELECT item_name, quantity FROM character.inventory WHERE\
-                  name = $1::TEXT AND username = $2::TEXT AND e_mail",
-    _Resource = "",
+    Inventory = "SELECT item_name, quantity FROM map.resource_item_view WHERE\
+                  name = $1::TEXT AND username = $2::TEXT AND e_mail = $2::TEXT",
+    Resource = "SELECT quantity FROM map.resource WHERE map_name = $1::TEXT AND x_position = $2::REAL AND y_position = $3::REAL AND kind = $4::\"map\".OBJECT_TYPE",
     epgsql:with_transaction(Connection,
 				      fun (Conn) ->
                          do([postgres_m ||
-                             _ <- {epgsql:equery(Conn, Harvest, [MapName, Kind, XPosition, YPosition, Name, Email, Username]), call},
-                             return(ok)])
+				_ <- {epgsql:equery(Conn, Harvest, [MapName, Kind, XPosition, YPosition, Name, Email, Username]), call},
+				DeltaInventory <- {epgsql:equery(Connection, Inventory, [Name, Username, Email]), select},
+				DeltaResource <- {epgsql:equery(Connection, Resource, [MapName, XPosition, YPosition, Kind]), select},
+				return(#{delta_inventory => DeltaInventory, delta_resource => DeltaResource})])
 				      end,
-				      #{ begin_opts => "ISOLATION LEVEL READ UNCOMMITTED"}). % Double-check this.
+			    #{ begin_opts => "ISOLATION LEVEL READ UNCOMMITTED"}). % Double-check this.

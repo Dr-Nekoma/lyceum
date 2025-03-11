@@ -10,6 +10,15 @@ CREATE TABLE IF NOT EXISTS map.object_is_resource(
        FOREIGN KEY (item_pk) REFERENCES character.item(name)
 );
 
+CREATE OR REPLACE VIEW map.resource_item_view AS
+SELECT i.name, inv.quantity FROM character.item i
+INNER JOIN map.object_is_resource oir
+ON i.name = oir.item_pk
+INNER JOIN character.inventory inv
+ON i.name = inv.name
+INNER JOIN character.instance ins
+ON ins.name = inv.name AND ins.username = inv.username AND ins.e_mail = inv.e_mail;
+
 CREATE TABLE IF NOT EXISTS map.resource(
        map_name TEXT NOT NULL,
        -- TODO: Add constraint depending on the same kind and position of the tile.
