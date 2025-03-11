@@ -26,17 +26,17 @@ pub const Scene = enum {
 };
 
 pub const Character_Table = std.StringHashMap(World.Character);
-pub const Tile_Table = std.EnumMap(messages.Tile, struct { ?rl.Model, ?rl.Image });
-pub const Object_Table = std.EnumMap(messages.Object, assets.Object);
+pub const Tile_Table = std.EnumMap(messages.World.Tile, struct { ?rl.Model, ?rl.Image });
+pub const Object_Table = std.EnumMap(messages.World.Object, assets.Object);
 pub const Resource_Table = std.HashMap(
-    messages.Position,
-    messages.Resource,
+    messages.World.Position,
+    messages.World.Resource,
     struct {
-        pub fn hash(_: anytype, val: messages.Position) u64 {
+        pub fn hash(_: anytype, val: messages.World.Position) u64 {
             const x, const y = val;
             return @bitCast([_]f32{ x, y });
         }
-        pub fn eql(_: anytype, a: messages.Position, b: messages.Position) bool {
+        pub fn eql(_: anytype, a: messages.World.Position, b: messages.World.Position) bool {
             const a_x, const a_y = a;
             const b_x, const b_y = b;
             return a_x == b_x and a_y == b_y;
@@ -48,7 +48,7 @@ pub const Resource_Table = std.HashMap(
 pub const World = struct {
     pub const Character = @import("character.zig"); // TODO: stop cheating
     pub const Map = struct {
-        instance: messages.Map = .{},
+        instance: messages.World.Map = .{},
         tiles: Tile_Table,
         objects: Object_Table,
         resources: Resource_Table,

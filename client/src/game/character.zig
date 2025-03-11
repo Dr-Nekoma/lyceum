@@ -37,12 +37,12 @@ pub fn setAction(self: *@This(), action: Action) void {
 const Action = union(enum) {
     idle: void,
     walking: void,
-    collecting_resource: messages.Position,
+    collecting_resource: messages.World.Position,
 };
 
 action_updated: f64 = std.math.floatMin(f64),
 animation: Animation = .{},
-stats: messages.Character_Info = .{},
+stats: messages.Character.Info = .{},
 model: ?rl.Model = null,
 // TODO: Remove this position and use spatial info from stats
 position: rl.Vector3 = .{

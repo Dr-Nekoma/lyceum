@@ -12,7 +12,7 @@ const ResourceInfo = struct {
     drawer: *const fn (width: f32, height: f32, font: *rl.Font) void,
 };
 
-pub fn drawProgressBar(gameState: *GameState, resource: messages.Resource) f64 {
+pub fn drawProgressBar(gameState: *GameState, resource: messages.World.Resource) f64 {
     const width = gameState.width;
     const height = gameState.height;
 

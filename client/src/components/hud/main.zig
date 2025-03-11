@@ -53,7 +53,7 @@ fn detectResource(gameState: *GameState, tx: i32, ty: i32, angle: i16) void {
 
     const x = std.math.clamp(tx, 0, iwidth);
     const y = std.math.clamp(ty, 0, iheight);
-    const position: messages.Position = .{ @floatFromInt(x), @floatFromInt(y) };
+    const position: messages.World.Position = .{ @floatFromInt(x), @floatFromInt(y) };
 
     const entity = &gameState.world.character;
     if (world.resources.get(position)) |resource| {
@@ -86,9 +86,9 @@ fn detectResources(gameState: *GameState) void {
 
 fn drawResourceProgressBar(
     gameState: *GameState,
-    position: messages.Position,
+    position: messages.World.Position,
 ) void {
-    const resource: messages.Resource = gameState.world.map.resources.get(position) orelse {
+    const resource: messages.World.Resource = gameState.world.map.resources.get(position) orelse {
         gameState.world.character.setAction(.idle);
         return;
     };

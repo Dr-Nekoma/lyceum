@@ -43,130 +43,165 @@ pub fn selectKeysFromStruct(data: anytype, comptime keys: []const [:0]const u8) 
 
 // Standard Response from Erlang Server
 
-fn Tuple_Response(comptime T: type) type {
+fn TupleResponse(comptime T: type) type {
     return union(enum) {
         ok: T,
         @"error": [:0]const u8,
     };
 }
 
-pub const Erlang_Response = Tuple_Response(void);
+pub const ErlangResponse = TupleResponse(void);
 
 // User's Login and Registration
 
-pub const Login_Request = struct {
-    username: []const u8,
-    password: []const u8,
+pub const User = struct {
+    pub const Login = struct {
+        pub const Request = struct {
+            username: []const u8,
+            password: []const u8,
+        };
+
+        const Info = std.meta.Tuple(&.{ zerl.ei.erlang_pid, [:0]const u8 });
+        pub const Response = TupleResponse(Info);
+    };
+
+    pub const Registry = struct {
+        pub const Request = struct {
+            username: [:0]const u8,
+            email: [:0]const u8,
+            password: [:0]const u8,
+        };
+
+        // TODO: Implement user registration via the client
+        pub const Response = TupleResponse(void);
+    };
 };
 
-const Login_Info = std.meta.Tuple(&.{ zerl.ei.erlang_pid, [:0]const u8 });
-pub const Login_Response = Tuple_Response(Login_Info);
+pub const World = struct {
+    // User's Characters
 
-pub const Registry_Request = struct {
-    username: [:0]const u8,
-    email: [:0]const u8,
-    password: [:0]const u8,
+    pub const Tile = enum {
+        empty,
+        water,
+        grass,
+        sand,
+        dirt,
+    };
+
+    pub const Object = enum {
+        empty,
+        bush,
+        tree,
+        chest,
+        rock,
+    };
+
+    pub const Position = struct { f32, f32 };
+
+    pub const Resource =
+        struct {
+        kind: Object = .empty,
+        quantity: u32 = 50,
+        capacity: u32 = 50,
+        base_extraction_amount: u32 = 1,
+        base_extraction_time: u32 = 1,
+        item_pk: [:0]const u8 = "",
+    };
+
+    pub const ResourceLocation = struct { Position, Resource };
+
+    pub const Map = struct {
+        width: u32 = 10,
+        height: u32 = 10,
+        tiles: []const Tile = &.{},
+        objects: []const Object = &.{},
+        resources: []const ResourceLocation = &.{},
+    };
 };
 
-// TODO: Implement user registration via the client
-pub const Registry_Response = Tuple_Response(void);
+pub const Character = struct {
+    pub const Harvest = struct {
+        pub const Request = struct {
+            name: [:0]const u8,
+            username: []const u8,
+            email: []const u8,
+            map_name: [:0]const u8,
+            kind: World.Object,
+            x_position: f32,
+            y_position: f32,
+        };
 
-// User's Characters
+        pub const Response = struct {
+            delta_inventory: struct {
+                item_name: [:0]const u8 = "",
+                quantity: u32 = 0,
+            },
+            delta_resource: u32 = 0,
+        };
+    };
 
-pub const Character_Info = struct {
-    level: u8 = 0,
-    health: u16 = 0,
-    health_max: u16 = 100,
-    mana: u16 = 0,
-    mana_max: u16 = 100,
-    name: [:0]const u8 = "",
-    constitution: u8 = 0,
-    wisdom: u8 = 0,
-    endurance: u8 = 0,
-    strength: u8 = 0,
-    intelligence: u8 = 0,
-    faith: u8 = 0,
-    x_position: f32 = 0,
-    y_position: f32 = 0,
-    x_velocity: f32 = 0,
-    y_velocity: f32 = 0,
-    face_direction: i16 = 270,
-    map_name: [:0]const u8 = "",
-    state_type: GameCharacter.State = .idle,
-};
+    pub const Join = struct {
+        const Info = struct {
+            character: Character.Info,
+            map: World.Map,
+        };
 
-pub const Characters_Request = struct {
-    username: []const u8,
-    email: []const u8,
-};
+        pub const Response = TupleResponse(Join.Info);
 
-pub const Characters_Response = Tuple_Response([]const Character_Info);
+        pub const Request = struct {
+            username: []const u8,
+            name: []const u8,
+            email: []const u8,
+            map_name: []const u8,
+        };
+    };
 
-pub const Character_Join = struct {
-    username: []const u8,
-    name: []const u8,
-    email: []const u8,
-    map_name: []const u8,
-};
+    pub const Update = struct {
+        level: u8,
+        health: u16,
+        mana: u16,
+        name: [:0]const u8,
+        x_position: f32,
+        y_position: f32,
+        x_velocity: f32,
+        y_velocity: f32,
+        map_name: [:0]const u8,
+        email: []const u8,
+        username: []const u8,
+        face_direction: i16,
+        state_type: GameCharacter.State,
+    };
 
-pub const Tile = enum {
-    empty,
-    water,
-    grass,
-    sand,
-    dirt,
-};
+    pub const Info = struct {
+        level: u8 = 0,
+        health: u16 = 0,
+        health_max: u16 = 100,
+        mana: u16 = 0,
+        mana_max: u16 = 100,
+        name: [:0]const u8 = "",
+        constitution: u8 = 0,
+        wisdom: u8 = 0,
+        endurance: u8 = 0,
+        strength: u8 = 0,
+        intelligence: u8 = 0,
+        faith: u8 = 0,
+        x_position: f32 = 0,
+        y_position: f32 = 0,
+        x_velocity: f32 = 0,
+        y_velocity: f32 = 0,
+        face_direction: i16 = 270,
+        map_name: [:0]const u8 = "",
+        state_type: GameCharacter.State = .idle,
+    };
 
-pub const Object = enum {
-    empty,
-    bush,
-    tree,
-    chest,
-    rock,
-};
+    pub const Many = struct {
+        pub const Request = struct {
+            username: []const u8,
+            email: []const u8,
+        };
 
-pub const Position = struct { f32, f32 };
-
-pub const Resource =
-    struct {
-    kind: Object = .empty,
-    quantity: u32 = 50,
-    capacity: u32 = 50,
-    base_extraction_amount: u32 = 1,
-    base_extraction_time: u32 = 1,
-    item_pk: [:0]const u8 = "",
-};
-
-pub const ResourceLocation = struct { Position, Resource };
-
-pub const Map = struct {
-    width: u32 = 10,
-    height: u32 = 10,
-    tiles: []const Tile = &.{},
-    objects: []const Object = &.{},
-    resources: []const ResourceLocation = &.{},
-};
-
-pub const Character_Join_Info = struct {
-    character: Character_Info,
-    map: Map,
-};
-pub const Character_Join_Response = Tuple_Response(Character_Join_Info);
-
-pub const Character_Update = struct {
-    level: u8,
-    health: u16,
-    mana: u16,
-    name: [:0]const u8,
-    x_position: f32,
-    y_position: f32,
-    x_velocity: f32,
-    y_velocity: f32,
-    map_name: [:0]const u8,
-    username: []const u8,
-    face_direction: i16,
-    email: []const u8,
-    state_type: GameCharacter.State,
+        pub const Response = TupleResponse([]const Info);
+    };
 };
 
 // Central place to send game's data
@@ -174,11 +209,12 @@ pub const Character_Update = struct {
 pub const Payload = union(enum) {
     debug: [:0]const u8,
     exit_map: void,
-    joining_map: Character_Join,
-    list_characters: Characters_Request,
-    login: Login_Request,
+    joining_map: Character.Join.Request,
+    list_characters: Character.Many.Request,
+    login: User.Login.Request,
     logout: void,
-    register: Registry_Request,
+    register: User.Registry.Request,
     // create_character:
-    update_character: Character_Update,
+    update_character: Character.Update,
+    harvest_resource: Character.Harvest.Request,
 };

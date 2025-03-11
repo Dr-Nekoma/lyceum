@@ -164,8 +164,8 @@ harvest_resource(#{name := Name,
 				      fun (Conn) ->
                          do([postgres_m ||
 				_ <- {epgsql:equery(Conn, Harvest, [MapName, Kind, XPosition, YPosition, Name, Email, Username]), call},
-				DeltaInventory <- {epgsql:equery(Connection, Inventory, [Name, Username, Email]), select},
-				DeltaResource <- {epgsql:equery(Connection, Resource, [MapName, XPosition, YPosition, Kind]), select},
+				DeltaInventory <- {epgsql:equery(Conn, Inventory, [Name, Username, Email]), select},
+				DeltaResource <- {epgsql:equery(Conn, Resource, [MapName, XPosition, YPosition, Kind]), select},
 				return(#{delta_inventory => DeltaInventory, delta_resource => DeltaResource})])
 				      end,
 			    #{ begin_opts => "ISOLATION LEVEL READ UNCOMMITTED"}). % Double-check this.

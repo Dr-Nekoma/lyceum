@@ -7,7 +7,7 @@ const GameState = @import("../game/state.zig");
 const GameCharacter = @import("../game/character.zig");
 
 pub const character = struct {
-    fn updatePhysicsStats(player: *GameCharacter, stats: messages.Character_Info) void {
+    fn updatePhysicsStats(player: *GameCharacter, stats: messages.Character.Info) void {
         player.position = .{
             .x = stats.x_position,
             .y = player.position.y,
@@ -20,7 +20,7 @@ pub const character = struct {
         };
     }
 
-    fn updateCharacterInfo(player: *GameCharacter, stats: messages.Character_Info) void {
+    fn updateCharacterInfo(player: *GameCharacter, stats: messages.Character.Info) void {
         player.stats.x_position = stats.x_position;
         player.stats.y_position = stats.y_position;
         player.stats.x_velocity = 0;
@@ -61,7 +61,7 @@ pub const character = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = node.receive(messages.Characters_Response, gameState.allocator) catch {
+        const server_response = node.receive(messages.Character.Many.Response, gameState.allocator) catch {
             gameState.errorElem.update(.update_character_receive);
             return;
         };
@@ -108,7 +108,7 @@ pub const character = struct {
             },
         }
     }
-    fn readMap(gameState: *GameState, map: *const messages.Map) !void {
+    fn readMap(gameState: *GameState, map: *const messages.World.Map) !void {
         defer gameState.allocator.free(map.resources);
         gameState.world.map.resources.clearRetainingCapacity();
         gameState.world.map.instance = map.*;
@@ -135,7 +135,7 @@ pub const character = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = node.receive(messages.Character_Join_Response, gameState.allocator) catch {
+        const server_response = node.receive(messages.Character.Join.Response, gameState.allocator) catch {
             gameState.errorElem.update(.joining_map_receive);
             return;
         };
@@ -161,7 +161,7 @@ pub const character = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = node.receive(messages.Erlang_Response, gameState.allocator) catch {
+        const server_response = node.receive(messages.ErlangResponse, gameState.allocator) catch {
             gameState.errorElem.update(.exit_receive);
             return;
         };
@@ -190,7 +190,8 @@ pub const user = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = node.receive(messages.Login_Response, gameState.allocator) catch {
+
+        const server_response = node.receive(messages.User.Login.Response, gameState.allocator) catch {
             gameState.errorElem.update(.login_receive);
             return;
         };
@@ -215,7 +216,7 @@ pub const user = struct {
                 return;
             };
             const node = gameState.connection.node;
-            const server_response = node.receive(messages.Erlang_Response, gameState.allocator) catch {
+            const server_response = node.receive(messages.ErlangResponse, gameState.allocator) catch {
                 gameState.errorElem.update(.logout_receive);
                 return;
             };
@@ -246,7 +247,7 @@ pub const user = struct {
         };
 
         const node = gameState.connection.node;
-        const maybe_characters = node.receive(messages.Characters_Response, gameState.allocator) catch {
+        const maybe_characters = node.receive(messages.Character.Many.Response, gameState.allocator) catch {
             gameState.errorElem.update(.get_characters_receive);
             return;
         };

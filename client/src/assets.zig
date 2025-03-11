@@ -110,7 +110,7 @@ fn resizeImage(imageFilePath: [:0]const u8) !rl.Image {
     return img;
 }
 
-fn loadTile(kind: messages.Tile) !struct { ?rl.Model, ?rl.Image } {
+fn loadTile(kind: messages.World.Tile) !struct { ?rl.Model, ?rl.Image } {
     return switch (kind) {
         .dirt => .{
             try model(config.assets.paths.game.world.tiles.dirt.model),
@@ -134,9 +134,9 @@ fn loadTile(kind: messages.Tile) !struct { ?rl.Model, ?rl.Image } {
 
 pub fn tilesTable() !GameState.Tile_Table {
     var initTable = GameState.Tile_Table.initFull(.{ null, null });
-    inline for (@typeInfo(messages.Tile).Enum.fields) |field| {
+    inline for (@typeInfo(messages.World.Tile).Enum.fields) |field| {
         if (!std.mem.eql(u8, field.name, "empty")) {
-            const key: messages.Tile = @enumFromInt(field.value);
+            const key: messages.World.Tile = @enumFromInt(field.value);
             const assets = try loadTile(key);
             initTable.put(key, assets);
         }
@@ -151,7 +151,7 @@ pub const Object = struct {
     angle: f32 = config.assets.object.defaultAngle,
 };
 
-fn loadObject(kind: messages.Object) !Object {
+fn loadObject(kind: messages.World.Object) !Object {
     return switch (kind) {
         .chest => .{
             .model = try model(config.assets.paths.game.world.objects.chest.model),
@@ -184,9 +184,9 @@ fn loadObject(kind: messages.Object) !Object {
 
 pub fn objectsTable() !GameState.Object_Table {
     var initTable = GameState.Object_Table.initFull(.{});
-    inline for (@typeInfo(messages.Object).Enum.fields) |field| {
+    inline for (@typeInfo(messages.World.Object).Enum.fields) |field| {
         if (!std.mem.eql(u8, field.name, "empty")) {
-            const key: messages.Object = @enumFromInt(field.value);
+            const key: messages.World.Object = @enumFromInt(field.value);
             const asset = try loadObject(key);
             initTable.put(key, asset);
         }
