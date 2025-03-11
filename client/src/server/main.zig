@@ -153,6 +153,41 @@ pub const character = struct {
         }
     }
 
+    pub fn harvestResource(gameState: *GameState, resource: messages.World.Resource, position: messages.World.Position) !void {
+        // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
+        // if we are not overwhelming the database
+        const x, const y = position;
+        gameState.send(messages.Payload{
+            .harvest_resource = .{
+                .name = gameState.world.character.stats.name,
+                .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
+                .email = gameState.menu.login.email,
+                .map_name = gameState.world.character.stats.map_name,
+                .kind = resource.kind,
+                .x_position = x,
+                .y_position = y,
+            },
+        }) catch {
+            gameState.errorElem.update(.harvest_resource_send);
+            return;
+        };
+        const node = gameState.connection.node;
+        const server_response = node.receive(messages.Character.Harvest.Response, gameState.allocator) catch {
+            gameState.errorElem.update(.harvest_resource_receive);
+            return;
+        };
+        switch (server_response) {
+            .ok => |_| {
+                std.debug.print("We should update the inventory and the rendered map", .{});
+            },
+            .@"error" => |msg| {
+                defer gameState.allocator.free(msg);
+                std.debug.print("[ERROR]: {s}\n", .{msg});
+                return error.harvest_resource;
+            },
+        }
+    }
+
     pub fn exitMap(gameState: *GameState) !void {
         // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
         // if we are not overwhelming the database

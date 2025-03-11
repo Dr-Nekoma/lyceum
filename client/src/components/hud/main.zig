@@ -9,6 +9,7 @@ const resources = @import("resources.zig");
 const messages = @import("../../server/messages.zig");
 const rl = @import("raylib");
 const rm = rl.math;
+const server = @import("../../server/main.zig");
 const std = @import("std");
 
 fn drawPlayers(gameState: *GameState) !void {
@@ -87,7 +88,7 @@ fn detectResources(gameState: *GameState) void {
 fn drawResourceProgressBar(
     gameState: *GameState,
     position: messages.World.Position,
-) void {
+) !void {
     const resource: messages.World.Resource = gameState.world.map.resources.get(position) orelse {
         gameState.world.character.setAction(.idle);
         return;
@@ -98,12 +99,8 @@ fn drawResourceProgressBar(
         return;
     }
     if (resources.drawProgressBar(gameState, resource) == 1.0) {
-        std.debug.print(
-            \\add {} to inventory
-            \\send updated inventory to database
-            \\reset collection time
-            \\
-        , .{resource.kind});
+        try server.character.harvestResource(gameState, resource, position);
+        gameState.world.character.action_updated = rl.getTime();
     }
 }
 
@@ -140,7 +137,7 @@ pub fn at(gameState: *GameState) !void {
         switch (character.action) {
             .collecting_resource => |position| {
                 if (rl.isKeyDown(resources.collect_key)) {
-                    drawResourceProgressBar(gameState, position);
+                    try drawResourceProgressBar(gameState, position);
                 } else {
                     character.setAction(.idle);
                 }

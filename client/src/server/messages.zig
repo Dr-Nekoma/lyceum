@@ -98,8 +98,7 @@ pub const World = struct {
 
     pub const Position = struct { f32, f32 };
 
-    pub const Resource =
-        struct {
+    pub const Resource = struct {
         kind: Object = .empty,
         quantity: u32 = 50,
         capacity: u32 = 50,
@@ -131,13 +130,15 @@ pub const Character = struct {
             y_position: f32,
         };
 
-        pub const Response = struct {
+        pub const Info = struct {
             delta_inventory: struct {
                 item_name: [:0]const u8 = "",
                 quantity: u32 = 0,
             },
             delta_resource: u32 = 0,
         };
+
+        pub const Response = TupleResponse(Harvest.Info);
     };
 
     pub const Join = struct {
