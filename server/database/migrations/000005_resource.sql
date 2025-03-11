@@ -11,11 +11,12 @@ CREATE TABLE IF NOT EXISTS map.object_is_resource(
 );
 
 CREATE OR REPLACE VIEW map.resource_item_view AS
-SELECT i.name, inv.quantity FROM character.item i
+SELECT i.name as item_name, inv.quantity as quantity, inv.name, inv.username, ins.e_mail
+FROM character.item i
 INNER JOIN map.object_is_resource oir
 ON i.name = oir.item_pk
 INNER JOIN character.inventory inv
-ON i.name = inv.name
+ON i.name = inv.item_name
 INNER JOIN character.instance ins
 ON ins.name = inv.name AND ins.username = inv.username AND ins.e_mail = inv.e_mail;
 
@@ -24,7 +25,7 @@ CREATE TABLE IF NOT EXISTS map.resource(
        -- TODO: Add constraint depending on the same kind and position of the tile.
        -- Some objects should only be able to put on top of if they are on a specific kind of tile
        kind map.OBJECT_TYPE NOT NULL,
-       quantity INTEGER NOT NULL DEFAULT 50 CHECK (0 <= quantity),
+       quantity SMALLINT NOT NULL DEFAULT 50 CHECK (0 <= quantity),
        x_position REAL NOT NULL,
        y_position REAL NOT NULL,
        -- TODO: Some items have face direction for us to care, e.g., like chest
@@ -84,13 +85,13 @@ CREATE OR REPLACE PROCEDURE map.harvest_resource
     target_kind map.OBJECT_TYPE,
     target_x_position REAL,
     target_y_position REAL,
-    player_name TEXT,
+    character_name TEXT,
     player_e_mail TEXT,
     player_username TEXT)
    LANGUAGE plpgsql AS
 $$
   DECLARE resource map.resource_view%rowtype;
-          delta INTEGER;
+          delta SMALLINT;
   BEGIN
   SELECT * INTO resource
     FROM map.resource_view
@@ -99,7 +100,7 @@ $$
     AND map.resource_view.x_position = target_x_position
     AND map.resource_view.y_position = target_y_position;
   SELECT min(x) INTO delta FROM (values(resource.quantity),(resource.base_extraction_amount)) AS t(x);
-  CALL map.update_resource_quantity(target_map_name , target_kind , target_x_position , target_y_position, resource.quantity - delta);
-  CALL character.update_inventory(player_name, player_e_mail, player_username, resource.item_pk, delta);
+  CALL map.update_resource_quantity(target_map_name , target_kind , target_x_position , target_y_position, (resource.quantity - delta)::SMALLINT);
+  CALL character.update_inventory(character_name, player_e_mail, player_username, resource.item_pk, delta);
 END;
 $$;

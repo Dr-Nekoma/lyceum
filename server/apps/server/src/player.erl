@@ -206,11 +206,14 @@ joining_map(State, #{name := Name, map_name := MapName} = Request) ->
     end,
     ok.
 
+atom_to_upperstring(Atom) -> string:uppercase(atom_to_list(Atom)).
+
 -spec harvest_resource(user_state(), map()) -> ok.
 harvest_resource(State, Request) ->
     Pid = State#user_state.pid,
     Connection = State#user_state.connection,   
-    Result = character:harvest_resource(Request, Connection),
+    Result = character:harvest_resource(maps:update_with(kind, fun atom_to_upperstring/1, Request), Connection),
+    io:format("Harvest Result: ~p\n", [Result]),
     Pid ! Result.
 
 -spec update(user_state(), map()) -> term().

@@ -119,7 +119,7 @@ CREATE TABLE character.inventory(
        quantity SMALLINT NOT NULL,
        item_name TEXT NOT NULL,
        FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
-       FOREIGN KEY (name) REFERENCES character.item(name),
+       FOREIGN KEY (item_name) REFERENCES character.item(name),       
        PRIMARY KEY (name, username, e_mail, item_name)
 );
 

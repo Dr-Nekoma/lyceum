@@ -156,16 +156,21 @@ harvest_resource(#{name := Name,
 		   x_position := XPosition,
 		   y_position := YPosition},
 		 Connection) ->
+    io:format("Name: ~p | UserName: ~p\n", [Name, Username]),
     Harvest = "CALL map.harvest_resource($1::TEXT, $2::\"map\".OBJECT_TYPE, $3::REAL, $4::REAL, $5::TEXT, $6::TEXT, $7::TEXT);",
+
     Inventory = "SELECT item_name, quantity FROM map.resource_item_view WHERE\
-                  name = $1::TEXT AND username = $2::TEXT AND e_mail = $2::TEXT",
-    Resource = "SELECT quantity FROM map.resource WHERE map_name = $1::TEXT AND x_position = $2::REAL AND y_position = $3::REAL AND kind = $4::\"map\".OBJECT_TYPE",
+                  name = $1::TEXT AND username = $2::TEXT AND e_mail = $3::TEXT\
+                 LIMIT 1",
+    Resource = "SELECT quantity FROM map.resource WHERE map_name = $1::TEXT AND x_position = $2::REAL AND y_position = $3::REAL AND kind = $4::\"map\".OBJECT_TYPE LIMIT 1",
     epgsql:with_transaction(Connection,
 				      fun (Conn) ->
                          do([postgres_m ||
 				_ <- {epgsql:equery(Conn, Harvest, [MapName, Kind, XPosition, YPosition, Name, Email, Username]), call},
-				DeltaInventory <- {epgsql:equery(Conn, Inventory, [Name, Username, Email]), select},
-				DeltaResource <- {epgsql:equery(Conn, Resource, [MapName, XPosition, YPosition, Kind]), select},
-				return(#{delta_inventory => DeltaInventory, delta_resource => DeltaResource})])
+				UnprocessedDeltaInventory <- {epgsql:equery(Conn, Inventory, [Name, Username, Email]), select},
+				UnprocessedDeltaResource <- {epgsql:equery(Conn, Resource, [MapName, XPosition, YPosition, Kind]), select},
+				DeltaInventory = hd(database_utils:columns_and_rows(UnprocessedDeltaInventory)),
+				DeltaResource = hd(database_utils:columns_and_rows(UnprocessedDeltaResource)),
+				return(#{delta_inventory => DeltaInventory, delta_resource => maps:get(quantity, DeltaResource)})])
 				      end,
-			    #{ begin_opts => "ISOLATION LEVEL READ UNCOMMITTED"}). % Double-check this.
+			    #{ begin_opts => "ISOLATION LEVEL READ UNCOMMITTED"}).
