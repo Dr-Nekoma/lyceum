@@ -53,6 +53,10 @@ $$
      THEN
        DELETE FROM map.resource
        WHERE map_name = target_map_name and kind = target_kind and x_position = target_x_position and y_position = target_y_position;
+       DELETE FROM map.object
+       WHERE map_name = target_map_name and kind = target_kind and x_position = target_x_position and y_position = target_y_position;
+       INSERT INTO map.object (map_name, kind, x_position, y_position)
+       VALUES (target_map_name, 'EMPTY'::map.OBJECT_TYPE, target_x_position, target_y_position);
      ELSE
        UPDATE map.resource
        SET quantity = target_quantity
