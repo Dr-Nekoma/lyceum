@@ -177,8 +177,24 @@ pub const character = struct {
             return;
         };
         switch (server_response) {
-            .ok => |_| {
-                std.debug.print("We should update the inventory and the rendered map", .{});
+            .ok => |harvest_response| {
+                const gpa = gameState.allocator;
+                const items = &gameState.world.character.inventory.items;
+                try items.put(gpa, harvest_response.delta_inventory.item_name, harvest_response.delta_inventory.quantity);
+
+                const resource_quantity = harvest_response.delta_resource;
+
+                if (resource_quantity == 0) {
+                    if (!gameState.world.map.resources.remove(position)) {
+                        std.log.warn("Failed to remove resource because it already does not exist.\n", .{});
+                    }
+                    const map_instance = &gameState.world.map.instance;
+                    const row_offset: usize = @as(u32, @intFromFloat(@floor(y))) * map_instance.width;
+                    map_instance.objects[row_offset + @as(u32, @intFromFloat(@floor(x)))] = .empty;
+                } else {
+                    const current_resource = gameState.world.map.resources.getEntry(position) orelse unreachable;
+                    current_resource.value_ptr.quantity = resource_quantity;
+                }
             },
             .@"error" => |msg| {
                 defer gameState.allocator.free(msg);

@@ -60,6 +60,20 @@ fn assetPosition(x: f32, y: f32, floor: f32) rl.Vector3 {
     };
 }
 
+fn scaleObject(
+    position: messages.World.Position,
+    default_scale: rl.Vector3,
+    world: *const GameState.World.Map,
+) rl.Vector3 {
+    if (world.resources.get(position)) |resource| {
+        const quantity: f32 = @floatFromInt(resource.quantity);
+        const capacity: f32 = @floatFromInt(resource.capacity);
+        return rl.Vector3.scale(default_scale, quantity / capacity);
+    } else {
+        return default_scale;
+    }
+}
+
 fn drawWorld(player: *const GameCharacter, world: *const GameState.World.Map) !void {
     const height: i32 = @intCast(world.instance.height);
     const width: i32 = @intCast(world.instance.width);
@@ -94,7 +108,14 @@ fn drawWorld(player: *const GameCharacter, world: *const GameState.World.Map) !v
             if (object != .empty) {
                 if (world.objects.get(object)) |objectData| {
                     const position = assetPosition(fx, fy, config.assets.object.defaultLevel);
-                    rl.drawModelEx(objectData.model.?, position, objectData.axis, objectData.angle, objectData.scale, config.ColorPalette.secondary);
+                    rl.drawModelEx(
+                        objectData.model.?,
+                        position,
+                        objectData.axis,
+                        objectData.angle,
+                        scaleObject(.{ fx, fy }, objectData.scale, world),
+                        config.ColorPalette.secondary,
+                    );
                 }
             }
         }

@@ -61,7 +61,7 @@ action: Action = .idle,
 
 // TODO: These things should come from the server
 inventory: struct {
-    items: []const items.Entity = &.{},
+    items: std.StringHashMapUnmanaged(u32) = std.StringHashMapUnmanaged(u32){},
     spells: []const [:0]const u8 = &.{},
     hud: struct {
         spells: []const [:0]const u8 = &.{},

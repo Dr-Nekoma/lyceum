@@ -113,7 +113,7 @@ pub const World = struct {
         width: u32 = 10,
         height: u32 = 10,
         tiles: []const Tile = &.{},
-        objects: []const Object = &.{},
+        objects: []Object = &.{},
         resources: []const ResourceLocation = &.{},
     };
 };
