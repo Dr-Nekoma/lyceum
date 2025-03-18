@@ -170,7 +170,10 @@ harvest_resource(#{name := Name,
 				UnprocessedDeltaInventory <- {epgsql:equery(Conn, Inventory, [Name, Username, Email]), select},
 				UnprocessedDeltaResource <- {epgsql:equery(Conn, Resource, [MapName, XPosition, YPosition, Kind]), select},
 				DeltaInventory = hd(database_utils:columns_and_rows(UnprocessedDeltaInventory)),
-				DeltaResource = hd(database_utils:columns_and_rows(UnprocessedDeltaResource)),
+				DeltaResource = case database_utils:columns_and_rows(UnprocessedDeltaResource) of
+                         [A] -> A;
+                         [] -> #{quantity => 0};
+                         _ -> fail("Logical contradiction.") end,
 				return(#{delta_inventory => DeltaInventory, delta_resource => maps:get(quantity, DeltaResource)})])
 				      end,
 			    #{ begin_opts => "ISOLATION LEVEL READ UNCOMMITTED"}).
