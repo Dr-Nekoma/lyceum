@@ -17,7 +17,7 @@ VALUES ('Dolomite', 'In this world, dolomite is used as a valuable currency by t
 
 -- Should insert into map.resource_view instead, but that's currently broken.
 INSERT INTO map.object_is_resource (kind, capacity, base_extraction_amount, base_extraction_time, name, description, item_pk)
-VALUES ('ROCK'::map.OBJECT_TYPE, 50, 1, 1600, 'Fluorite', 'It is blue and pretty.', 'Dolomite'),
+VALUES ('ROCK'::map.OBJECT_TYPE, 50, 10, 1600, 'Fluorite', 'It is blue and pretty.', 'Dolomite'),
        ('TREE'::map.OBJECT_TYPE, 50, 1, 1600, 'Willow', 'Likes water.', 'Great Bardook Branch');
 
 -- Insert into lyceum.character and related tables
