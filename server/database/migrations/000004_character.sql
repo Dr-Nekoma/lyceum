@@ -27,7 +27,7 @@ CREATE TABLE character.stats(
        health_max SMALLINT NOT NULL CHECK (health_max > 0 and health_max <= 1000) DEFAULT 100,
        health SMALLINT NOT NULL CHECK (health > 0 AND health <= health_max),
        mana_max SMALLINT NOT NULL CHECK (mana_max > 0 and mana_max <= 1000) DEFAULT 100,
-       mana SMALLINT NOT NULL CHECK (mana > 0 AND mana <= mana_max),       
+       mana SMALLINT NOT NULL CHECK (mana > 0 AND mana <= mana_max),
        FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
        PRIMARY KEY(name, username, e_mail)
 );
@@ -125,29 +125,16 @@ CREATE TABLE character.inventory(
 
 CREATE OR REPLACE PROCEDURE character.update_inventory
    (new_name TEXT, new_e_mail TEXT, new_username TEXT, new_item_name TEXT, new_quantity SMALLINT)
-   LANGUAGE plpgsql AS
+   LANGUAGE sql AS
 $$
-  DECLARE old_quantity SMALLINT;
-  BEGIN
-  old_quantity := NULL;
-  SELECT quantity INTO old_quantity FROM character.inventory
-    WHERE name = new_name
-    AND username = new_username
-    AND e_mail = new_e_mail
-    AND item_name = new_item_name;
-  IF old_quantity IS NOT NULL
-  THEN
-    UPDATE character.inventory
-    SET quantity = old_quantity + new_quantity
-    WHERE name = new_name
-    AND username = new_username
-    AND e_mail = new_e_mail
-    AND item_name = new_item_name;
-  ELSE
-    INSERT INTO character.inventory(name, e_mail, username, quantity, item_name)
-    VALUES (new_name, new_e_mail, new_username, new_quantity, new_item_name);
-  END IF;
-END;
+  INSERT INTO character.inventory(name, e_mail, username, quantity, item_name)
+  VALUES (new_name, new_e_mail, new_username, new_quantity, new_item_name)
+  ON CONFLICT (name, e_mail, username, item_name)
+  DO UPDATE SET
+    -- EXCLUDED is an alias to the row that is conflicting
+    -- https://www.postgresql.org/docs/17/sql-insert.html
+    -- so this line is basically the sum of old + new
+    quantity = EXCLUDED.quantity + character.inventory.quantity;
 $$;
 
 CREATE OR REPLACE TRIGGER trigger_character_upsert
