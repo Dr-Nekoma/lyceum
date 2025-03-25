@@ -6,6 +6,11 @@
 #+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_dialyzer.yml"> <img alt="[Server] Dialyzer" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_dialyzer.yml/badge.svg" /></a>
 #+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_deploy.yml"> <img alt="[Server] Deploy" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_deploy.yml/badge.svg" /></a>
 
+* Announcement
+
+Currently, Lyceum is in a paused state, i.e., this project may receive occasional commits and updates but major features' design and implementation are all
+*paused*. Feel free to make contributions/pull requests, one of our developers will eventually see it. We plan to return to this project at some point in the future.
+
 * About
 
 This is Lyceum --- an MMO game with the server written in [[https://www.erlang.org/][Erlang]] and the client
