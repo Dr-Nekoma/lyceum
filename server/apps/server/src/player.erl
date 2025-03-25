@@ -14,7 +14,8 @@
 
 -compile({parse_transform, do}).
 
--dialyzer({nowarn_function, [exit_map/1, logout/1, joining_map/2, update/2]}).
+-dialyzer({nowarn_function,
+           [exit_map/1, logout/1, joining_map/2, update/2, harvest_resource/2]}).
 
 %%%===================================================================
 %%% API
@@ -130,6 +131,9 @@ handle_info({joining_map,
 handle_info({update_character, Request}, State) ->
     update(State, Request),
     {noreply, State};
+handle_info({harvest_resource, Request}, State) ->
+    harvest_resource(State, Request),
+    {noreply, State};
 handle_info(exit_map, State) ->
     exit_map(State),
     {noreply, State};
@@ -201,6 +205,16 @@ joining_map(State, #{name := Name, map_name := MapName} = Request) ->
             Pid ! {error, "Could not join map"}
     end,
     ok.
+
+atom_to_upperstring(Atom) -> string:uppercase(atom_to_list(Atom)).
+
+-spec harvest_resource(user_state(), map()) -> ok.
+harvest_resource(State, Request) ->
+    Pid = State#user_state.pid,
+    Connection = State#user_state.connection,   
+    Result = character:harvest_resource(maps:update_with(kind, fun atom_to_upperstring/1, Request), Connection),
+    io:format("Harvest Result: ~p\n", [Result]),
+    Pid ! Result.
 
 -spec update(user_state(), map()) -> term().
 update(State, CharacterMap) ->

@@ -4,9 +4,10 @@ const messages = @import("messages.zig");
 const rl = @import("raylib");
 const std = @import("std");
 const GameState = @import("../game/state.zig");
+const GameCharacter = @import("../game/character.zig");
 
 pub const character = struct {
-    fn updatePhysicsStats(player: *GameState.World.Character, stats: messages.Character_Info) void {
+    fn updatePhysicsStats(player: *GameCharacter, stats: messages.Character.Info) void {
         player.position = .{
             .x = stats.x_position,
             .y = player.position.y,
@@ -19,7 +20,7 @@ pub const character = struct {
         };
     }
 
-    fn updateCharacterInfo(player: *GameState.World.Character, stats: messages.Character_Info) void {
+    fn updateCharacterInfo(player: *GameCharacter, stats: messages.Character.Info) void {
         player.stats.x_position = stats.x_position;
         player.stats.y_position = stats.y_position;
         player.stats.x_velocity = 0;
@@ -60,7 +61,7 @@ pub const character = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = node.receive(messages.Characters_Response, gameState.allocator) catch {
+        const server_response = node.receive(messages.Character.Many.Response, gameState.allocator) catch {
             gameState.errorElem.update(.update_character_receive);
             return;
         };
@@ -74,7 +75,7 @@ pub const character = struct {
                         updatePhysicsStats(&next_player, player);
                         other_players.putAssumeCapacity(player.name, next_player);
                     } else {
-                        var new_character = GameState.World.Character{
+                        var new_character = GameCharacter{
                             .stats = player,
                             .model = try assets.model(config.assets.paths.game.character.walker),
                             .animation = .{
@@ -107,6 +108,17 @@ pub const character = struct {
             },
         }
     }
+    fn readMap(gameState: *GameState, map: *const messages.World.Map) !void {
+        defer gameState.allocator.free(map.resources);
+        gameState.world.map.resources.clearRetainingCapacity();
+        gameState.world.map.instance = map.*;
+        gameState.world.map.instance.resources = &.{};
+        for (map.resources) |resource| {
+            const position, const payload = resource;
+            try gameState.world.map.resources.put(position, payload);
+        }
+        gameState.world.character.inventory.hud.minimap.map = try assets.createMapImage(&gameState.world.map);
+    }
 
     pub fn joinMap(gameState: *GameState) !void {
         // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
@@ -123,21 +135,71 @@ pub const character = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = node.receive(messages.Character_Join_Response, gameState.allocator) catch {
+        const server_response = node.receive(messages.Character.Join.Response, gameState.allocator) catch {
             gameState.errorElem.update(.joining_map_receive);
             return;
         };
         switch (server_response) {
             .ok => |info| {
                 updateCharacterInfo(&gameState.world.character, info.character);
-                gameState.world.map.instance = info.map;
-                gameState.world.character.inventory.hud.minimap.map = try assets.createMapImage(&gameState.world.map);
+                try readMap(gameState, &info.map);
                 gameState.scene = .spawn;
             },
             .@"error" => |msg| {
                 defer gameState.allocator.free(msg);
                 std.debug.print("[ERROR]: {s}\n", .{msg});
                 return error.joining_map;
+            },
+        }
+    }
+
+    pub fn harvestResource(gameState: *GameState, resource: messages.World.Resource, position: messages.World.Position) !void {
+        // TODO: We should a time out functionality (Zerl should provide one) to correctly assess
+        // if we are not overwhelming the database
+        const x, const y = position;
+        gameState.send(messages.Payload{
+            .harvest_resource = .{
+                .name = gameState.world.character.stats.name,
+                .username = gameState.menu.login.username[0..gameState.menu.login.usernamePosition],
+                .email = gameState.menu.login.email,
+                .map_name = gameState.world.character.stats.map_name,
+                .kind = resource.kind,
+                .x_position = x,
+                .y_position = y,
+            },
+        }) catch {
+            gameState.errorElem.update(.harvest_resource_send);
+            return;
+        };
+        const node = gameState.connection.node;
+        const server_response = node.receive(messages.Character.Harvest.Response, gameState.allocator) catch {
+            gameState.errorElem.update(.harvest_resource_receive);
+            return;
+        };
+        switch (server_response) {
+            .ok => |harvest_response| {
+                const gpa = gameState.allocator;
+                const items = &gameState.world.character.inventory.items;
+                try items.put(gpa, harvest_response.delta_inventory.item_name, harvest_response.delta_inventory.quantity);
+
+                const resource_quantity = harvest_response.delta_resource;
+
+                if (resource_quantity == 0) {
+                    if (!gameState.world.map.resources.remove(position)) {
+                        std.log.warn("Failed to remove resource because it already does not exist.\n", .{});
+                    }
+                    const map_instance = &gameState.world.map.instance;
+                    const row_offset: usize = @as(u32, @intFromFloat(@floor(y))) * map_instance.width;
+                    map_instance.objects[row_offset + @as(u32, @intFromFloat(@floor(x)))] = .empty;
+                } else {
+                    const current_resource = gameState.world.map.resources.getEntry(position) orelse unreachable;
+                    current_resource.value_ptr.quantity = resource_quantity;
+                }
+            },
+            .@"error" => |msg| {
+                defer gameState.allocator.free(msg);
+                std.debug.print("[ERROR]: {s}\n", .{msg});
+                return error.harvest_resource;
             },
         }
     }
@@ -150,7 +212,7 @@ pub const character = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = node.receive(messages.Erlang_Response, gameState.allocator) catch {
+        const server_response = node.receive(messages.ErlangResponse, gameState.allocator) catch {
             gameState.errorElem.update(.exit_receive);
             return;
         };
@@ -179,7 +241,8 @@ pub const user = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = node.receive(messages.Login_Response, gameState.allocator) catch {
+
+        const server_response = node.receive(messages.User.Login.Response, gameState.allocator) catch {
             gameState.errorElem.update(.login_receive);
             return;
         };
@@ -204,7 +267,7 @@ pub const user = struct {
                 return;
             };
             const node = gameState.connection.node;
-            const server_response = node.receive(messages.Erlang_Response, gameState.allocator) catch {
+            const server_response = node.receive(messages.ErlangResponse, gameState.allocator) catch {
                 gameState.errorElem.update(.logout_receive);
                 return;
             };
@@ -235,7 +298,7 @@ pub const user = struct {
         };
 
         const node = gameState.connection.node;
-        const maybe_characters = node.receive(messages.Characters_Response, gameState.allocator) catch {
+        const maybe_characters = node.receive(messages.Character.Many.Response, gameState.allocator) catch {
             gameState.errorElem.update(.get_characters_receive);
             return;
         };
@@ -243,7 +306,7 @@ pub const user = struct {
             .ok => |erlang_characters| {
                 const placeholder = try assets.texture(config.assets.paths.menu.character.placeholder);
 
-                var characters = std.ArrayList(GameState.World.Character).init(gameState.allocator);
+                var characters = std.ArrayList(GameCharacter).init(gameState.allocator);
                 for (erlang_characters) |stats| {
                     try characters.append(.{
                         .stats = stats,

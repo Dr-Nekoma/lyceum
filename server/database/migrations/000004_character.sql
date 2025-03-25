@@ -1,21 +1,22 @@
 DROP TYPE IF EXISTS "character.STATE_TYPE";
 CREATE TYPE character.STATE_TYPE AS ENUM(
     'idle',
-    'walking'
+    'walking',
+    'collecting_resource'
 );
 
 CREATE TABLE character.instance(
-       name VARCHAR(18) NOT NULL,
+       name TEXT NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
-       username VARCHAR(32) NOT NULL,
+       username TEXT NOT NULL,
        FOREIGN KEY (e_mail, username) REFERENCES player.record(e_mail, username),
        PRIMARY KEY(name, username, e_mail)
 );
 
 CREATE TABLE character.stats(
-       name VARCHAR(18) NOT NULL,
+       name TEXT NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
-       username VARCHAR(32) NOT NULL,
+       username TEXT NOT NULL,
        constitution SMALLINT NOT NULL CHECK (constitution > 0 AND constitution <= 150),
        wisdom SMALLINT NOT NULL CHECK (wisdom > 0 AND wisdom <= 150),
        strength SMALLINT NOT NULL CHECK (strength > 0 AND strength <= 150),
@@ -26,15 +27,15 @@ CREATE TABLE character.stats(
        health_max SMALLINT NOT NULL CHECK (health_max > 0 and health_max <= 1000) DEFAULT 100,
        health SMALLINT NOT NULL CHECK (health > 0 AND health <= health_max),
        mana_max SMALLINT NOT NULL CHECK (mana_max > 0 and mana_max <= 1000) DEFAULT 100,
-       mana SMALLINT NOT NULL CHECK (mana > 0 AND mana <= mana_max),       
+       mana SMALLINT NOT NULL CHECK (mana > 0 AND mana <= mana_max),
        FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
        PRIMARY KEY(name, username, e_mail)
 );
 
 CREATE TABLE character.position(
-       name VARCHAR(18) NOT NULL,
+       name TEXT NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
-       username VARCHAR(32) NOT NULL,
+       username TEXT NOT NULL,
        x_position REAL NOT NULL,
        -- TODO: Turn this back into integers when the time comes
        y_position REAL NOT NULL,
@@ -43,16 +44,16 @@ CREATE TABLE character.position(
        -- TODO: Wtf is happening. Why can't this be namespaced? Look in equipment schema file bro xD
        state_type "character".STATE_TYPE NOT NULL DEFAULT 'idle', 
        face_direction SMALLINT NOT NULL CHECK (face_direction >= 0 AND face_direction < 360),	
-       map_name VARCHAR(64) NOT NULL,
+       map_name TEXT NOT NULL,
        FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
        FOREIGN KEY (map_name) REFERENCES map.instance(name),
        PRIMARY KEY(name, username, e_mail)
 );
 
 CREATE TABLE character.active(
-       name VARCHAR(18) NOT NULL,
+       name TEXT NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
-       username VARCHAR(32) NOT NULL,
+       username TEXT NOT NULL,
        FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
        PRIMARY KEY(name, username, e_mail)      
 );
@@ -105,21 +106,36 @@ END
 $$;
 
 CREATE TABLE character.item(
-       name VARCHAR(32) NOT NULL,
+       name TEXT NOT NULL,
        description TEXT NOT NULL,
+       weight SMALLINT NOT NULL,
        PRIMARY KEY(name)
 );
 
 CREATE TABLE character.inventory(
-       name VARCHAR(18) NOT NULL,
+       name TEXT NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
-       username VARCHAR(32) NOT NULL,
+       username TEXT NOT NULL,
        quantity SMALLINT NOT NULL,
-       item_name VARCHAR(32) NOT NULL,
+       item_name TEXT NOT NULL,
        FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
-       FOREIGN KEY (item_name) REFERENCES character.item(name),
-       PRIMARY KEY(name, username, e_mail, item_name, quantity)
+       FOREIGN KEY (item_name) REFERENCES character.item(name),       
+       PRIMARY KEY (name, username, e_mail, item_name)
 );
+
+CREATE OR REPLACE PROCEDURE character.update_inventory
+   (new_name TEXT, new_e_mail TEXT, new_username TEXT, new_item_name TEXT, new_quantity SMALLINT)
+   LANGUAGE sql AS
+$$
+  INSERT INTO character.inventory(name, e_mail, username, quantity, item_name)
+  VALUES (new_name, new_e_mail, new_username, new_quantity, new_item_name)
+  ON CONFLICT (name, e_mail, username, item_name)
+  DO UPDATE SET
+    -- EXCLUDED is an alias to the row that is conflicting
+    -- https://www.postgresql.org/docs/17/sql-insert.html
+    -- so this line is basically the sum of old + new
+    quantity = EXCLUDED.quantity + character.inventory.quantity;
+$$;
 
 CREATE OR REPLACE TRIGGER trigger_character_upsert
 INSTEAD OF INSERT ON character.view

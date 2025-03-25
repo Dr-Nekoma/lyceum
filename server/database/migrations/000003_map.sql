@@ -17,14 +17,15 @@ DO $$ BEGIN
             'EMPTY',
             'BUSH',
             'TREE',
-            'CHEST'
+            'CHEST',
+            'ROCK'
         );
     END IF;
 
     -- These records are used as function arguments
     IF to_regtype('map.input') IS NULL THEN
         CREATE TYPE map.input AS (
-            map_name VARCHAR(18),
+            map_name TEXT,
             kind map.TILE_TYPE,
             x_position REAL,
             y_position REAL
@@ -34,14 +35,14 @@ END $$;
 
 -- TABLES
 CREATE TABLE IF NOT EXISTS map.instance(
-       name VARCHAR(16) NOT NULL,
+       name TEXT NOT NULL,
        width INTEGER NOT NULL,
        height INTEGER NOT NULL,
        PRIMARY KEY(name)
 );
 
 CREATE TABLE IF NOT EXISTS map.tile(
-       map_name VARCHAR(16) NOT NULL, 
+       map_name TEXT NOT NULL, 
        kind map.TILE_TYPE NOT NULL,
        x_position REAL NOT NULL,
        y_position REAL NOT NULL,
@@ -50,7 +51,7 @@ CREATE TABLE IF NOT EXISTS map.tile(
 );
 
 CREATE TABLE IF NOT EXISTS map.object(
-       map_name VARCHAR(16) NOT NULL,
+       map_name TEXT NOT NULL,
        -- TODO: Add constraint depending on the same kind and position of the tile.
        -- Some objects should only be able to put on top of if they are on a specific kind of tile
        kind map.OBJECT_TYPE NOT NULL,
