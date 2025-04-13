@@ -12,8 +12,6 @@
     };
 
     treefmt-nix.url = "github:numtide/treefmt-nix";
-
-    zig2nix.url = "github:Cloudef/zig2nix";
   };
 
   outputs =
@@ -22,7 +20,6 @@
       nixpkgs,
       devenv,
       flake-utils,
-      zig2nix,
       treefmt-nix,
       ...
     }@inputs:
@@ -102,48 +99,36 @@
           CoreServices
         ];
 
+        devPackages = 
+          with pkgs;
+          [
+            just
+            raylib
+            sqls
+          ]
+          ++ lib.optionals stdenv.isLinux linuxPkgs
+          ++ lib.optionals stdenv.isDarwin darwinPkgs;
+
         # App config
+        app_name = "lyceum";
         app_version = "0.1.0";
+
         # Erlang
-        erlangLatest = pkgs.erlang_27;
-        erlangLibs = getErlangLibs erlangLatest;
+        erlangVersion = pkgs.erlang;
+        erlangLibs = getErlangLibs erlangVersion;
         erl_app = "server";
 
-        # Zig shit (Incomplete)
+        # Zig
         zig_app = "lyceum-client";
-        zigLatest = pkgs.zig;
+        zigVersion = pkgs.zig_0_13;
         raylib = pkgs.raylib;
-        env = zig2nix.outputs.zig-env.${system} {
-          #zig = zig2nix.outputs.packages.${system}.zig.master.bin;
-          customRuntimeLibs =
-            [
-              pkgs.pkg-config
-              erlangLibs
-              raylib
-            ]
-            ++ pkgs.lib.optionals pkgs.stdenv.isLinux linuxPkgs
-            ++ pkgs.lib.optionals pkgs.stdenv.isLinux darwinPkgs;
-          customRuntimeDeps =
-            [
-              erlangLibs
-              raylib
-            ]
-            ++ pkgs.lib.optionals pkgs.stdenv.isLinux linuxPkgs
-            ++ pkgs.lib.optionals pkgs.stdenv.isLinux darwinPkgs;
-          enableOpenGL = true;
-          enableWayland = true;
-          enableX11 = true;
-        };
-        system-triple = env.lib.zigTripleFromString system;
 
-        mkEnvVars = pkgs: erlangLatest: erlangLibs: raylib: {
+        mkEnvVars = pkgs: erl: raylib: {
           LOCALE_ARCHIVE = pkgs.lib.optionalString pkgs.stdenv.isLinux "${pkgs.glibcLocales}/lib/locale/locale-archive";
           LANG = "en_US.UTF-8";
           # https://www.erlang.org/doc/man/kernel_app.html
           ERL_AFLAGS = "-kernel shell_history enabled";
-          ERL_INCLUDE_PATH = "${erlangLatest}/lib/erlang/usr/include";
-          # Setup path for non-NixOS users
-          #LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${linuxLibs}";
+          ERL_INCLUDE_PATH = "${erl}/lib/erlang/usr/include";
           # Devenv sets this to something else
           # https://www.postgresql.org/docs/7.0/libpq-envars.htm
           PGHOST = "127.0.0.1";
@@ -219,7 +204,6 @@
             };
           };
 
-          # TODO: Still can't make this crapola build with zig2nix
           # nix build .#client
           client = pkgs.stdenv.mkDerivation {
             pname = zig_app;
@@ -233,12 +217,12 @@
             ];
 
             nativeBuildInputs = [
-              zigLatest.hook
+              zigVersion.hook
               pkgs.makeWrapper
             ];
 
             buildInputs =
-              with pkgs; [ raylib zigLatest erlangLatest ]
+              with pkgs; [ raylib zigVersion erlangVersion ]
                 ++ lib.optionals stdenv.isLinux (linuxPkgs)
                 ++ lib.optionals stdenv.isDarwin darwinPkgs;
 
@@ -255,108 +239,31 @@
 
         # nix run
         apps = {
-          packages.default = env.lib.packages.target.${system-triple}.override {
-            # Prefer nix friendly settings.
-            zigPreferMusl = false;
-            zigDisableWrap = false;
-          };
-
-          # nix run .#build
-          apps.build = env.app [ ] "zig build -- \"$@\"";
-
-          # nix run .#test
-          apps.test = env.app [ ] "zig build test -- \"$@\"";
         };
 
         devShells = {
           # `nix develop .#ci`
           # reduce the number of packages to the bare minimum needed for CI
           ci = pkgs.mkShell {
-            env = mkEnvVars pkgs erlangLatest erlangLibs raylib;
+            env = mkEnvVars pkgs erlangVersion raylib;
             buildInputs = with pkgs; [
-              erlangLatest
+              erlangVersion
               just
               rebar3
               rsync
-              zigLatest
+              zigVersion
               raylib
             ];
           };
 
-          # `nix develop`
+          # `nix develop --impure`
           default = devenv.lib.mkShell {
             inherit inputs pkgs;
             modules = [
-              (
-                { pkgs, lib, ... }:
-                {
-                  packages =
-                    with pkgs;
-                    [
-                      just
-                      raylib
-                      sqls
-                    ]
-                    ++ lib.optionals stdenv.isLinux (linuxPkgs)
-                    ++ lib.optionals stdenv.isDarwin darwinPkgs;
-
-                  languages.erlang = {
-                    enable = true;
-                    package = erlangLatest;
-                  };
-
-                  languages.zig = {
-                    enable = true;
-                    package = zigLatest;
-                  };
-
-                  env = mkEnvVars pkgs erlangLatest erlangLibs raylib;
-
-                  scripts = {
-                    build.exec = "just build";
-                    server.exec = "just server";
-                    client.exec = "just client";
-                    client-release.exec = "just client-release";
-                    db-up.exec = "just db-up";
-                    db-down.exec = "just db-down";
-                    db-reset.exec = "just db-reset";
-                  };
-
-                  enterShell = ''
-                    echo "Starting Development Environment..."
-                  '';
-
-                  services.postgres = {
-                    enable = true;
-                    package = pkgs.postgresql_17;
-                    extensions = ext: [
-                      ext.periods
-                    ];
-                    initdbArgs = [
-                      "--locale=C"
-                      "--encoding=UTF8"
-                    ];
-                    settings = {
-                      shared_preload_libraries = "pg_stat_statements";
-                      # pg_stat_statements config, nested attr sets need to be
-                      # converted to strings, otherwise postgresql.conf fails
-                      # to be generated.
-                      compute_query_id = "on";
-                      "pg_stat_statements.max" = 10000;
-                      "pg_stat_statements.track" = "all";
-                    };
-                    initialDatabases = [ { name = "mmo"; } ];
-                    port = 5432;
-                    listen_addresses = "127.0.0.1";
-                    initialScript = ''
-                      CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
-                      CREATE USER admin SUPERUSER;
-                      ALTER USER admin PASSWORD 'admin';
-                      GRANT ALL PRIVILEGES ON DATABASE mmo to admin;
-                    '';
-                  };
-                }
-              )
+              (import ./devshell.nix {
+                inherit pkgs mkEnvVars erlangVersion zigVersion raylib app_name;
+                packages = devPackages;
+              })
             ];
           };
         };
