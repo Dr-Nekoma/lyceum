@@ -245,7 +245,7 @@
           # `nix develop .#ci`
           # reduce the number of packages to the bare minimum needed for CI
           ci = pkgs.mkShell {
-            env = mkEnvVars pkgs erlangVersion erlangLibs raylib;
+            env = mkEnvVars pkgs erlangVersion raylib;
             buildInputs = with pkgs; [
               erlangVersion
               just
