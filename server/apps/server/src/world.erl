@@ -11,8 +11,9 @@
          code_change/3]).
 
 -define(SERVER, ?MODULE).
+-define(MAIN_MODULE_NAME, server).
 
--include("types.hrl").
+-include("server_state.hrl").
 
 %%%===================================================================
 %%% API
@@ -36,20 +37,25 @@ start_link() ->
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
-%% Initializes the server
-%%
-%% @spec init(Args) -> {ok, State} |
-%%                     {ok, State, Timeout} |
-%%                     ignore |
-%%                     {stop, Reason}
+%% Initializes the world, runs migrations and setup the main maps
 %% @end
 %%--------------------------------------------------------------------
 -spec init(list()) -> {ok, server_state()}.
 init([]) ->
     % Setup a DB connection and bootstrap process state
     {ok, Connection} = database:connect(),
-    CurrDir = os:getenv("PWD"),
-    MapsDir = filename:join([CurrDir, "maps"]),
+    LibDir = code:lib_dir(?MAIN_MODULE_NAME),
+    Dir = filename:dirname(filename:dirname(LibDir)),
+    % Main migrations
+    MainSuffix = ["migrations", "main"],
+    MainPath = filename:join([Dir | MainSuffix]),
+    ok = migraterl:migrate(Connection, MainPath, #{repeatable => false}),
+    % Views, Functions, etc
+    RepeatableSuffix = ["migrations", "repeatable"],
+    RepeatablePath = filename:join([Dir | RepeatableSuffix]),
+    ok = migraterl:migrate(Connection, RepeatablePath, #{repeatable => true}),
+    % Map Directory
+    MapsDir = filename:join([Dir, "maps"]),
     map_generator:create_map(Connection, MapsDir, "Pond"),
     io:format("Starting World Application...~n"),
     State = #server_state{connection = Connection, pid = self(), table = []},

@@ -16,7 +16,7 @@
 
 -spec connect() -> {ok, epgsql:connection()} | {error, epgsql:connect_error()}.
 connect() ->
-    io:format("Connecting to ~p at ~p~n", [?PGHOST, ?PGPORT]),
+    logger:info("Connecting to ~p at ~p~n", [?PGHOST, ?PGPORT]),
     Connection =
         #{host => ?PGHOST,
           port => ?PGPORT,
@@ -26,9 +26,9 @@ connect() ->
           timeout => 4000},
     case epgsql:connect(Connection) of
         {ok, Conn} ->
-            io:format("Successfully connected to ~p~n", [?PGHOST]),
+            logger:info("Successfully connected to ~p~n", [?PGHOST]),
             {ok, Conn};
         {error, Reason} ->
-            io:format("Failed to connect to ~p: ~p~n", [?PGHOST, Reason]),
+            logger:error("Failed to connect to ~p: ~p~n", [?PGHOST, Reason]),
             {error, Reason}
     end.

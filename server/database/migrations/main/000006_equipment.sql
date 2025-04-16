@@ -1,30 +1,41 @@
-CREATE TYPE equipment.KIND AS ENUM(
-       'HEAD',
-       'TOP',
-       'BOTTOM',
-       'FEET',
-       'ARMS',
-       'FINGER'
-);
+-- TYPES
+DO $$ BEGIN
+    -- EQUIP_KIND
+    IF to_regtype('equipment.KIND') IS NULL THEN
+        CREATE TYPE equipment.KIND AS ENUM(
+            'HEAD',
+            'TOP',
+            'BOTTOM',
+            'FEET',
+            'ARMS',
+            'FINGER'
+        );
+    END IF;
 
-CREATE TYPE equipment.USE AS ENUM(
-       'HEAD',
-       'TOP',
-       'BOTTOM',
-       'FEET',
-       'ARMS',
-       'LEFT_ARM',
-       'RIGHT_ARM',
-       'FINGER'
-);
+    -- EQUIP_USE
+    IF to_regtype('equipment.USE') IS NULL THEN
+        CREATE TYPE equipment.USE AS ENUM(
+            'HEAD',
+            'TOP',
+            'BOTTOM',
+            'FEET',
+            'ARMS',
+            'LEFT_ARM',
+            'RIGHT_ARM',
+            'FINGER'
+        );
+    END IF;
+END $$;
 
-CREATE TABLE equipment.instance(
+-- TABLES
+CREATE TABLE IF NOT EXISTS equipment.instance(
        name TEXT NOT NULL,
        description TEXT NOT NULL,
        kind equipment.KIND NOT NULL,
        PRIMARY KEY(name, kind)
 );
 
+-- This is going to be used in the next table, as a constraint
 CREATE OR REPLACE FUNCTION equipment.check_equipment_position_compatibility(use equipment.USE, kind equipment.KIND) RETURNS BOOL AS $$
 BEGIN
     RETURN CASE 
@@ -36,7 +47,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TABLE equipment.character(
+CREATE TABLE IF NOT EXISTS equipment.character(
        name TEXT NOT NULL,
        e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
        username TEXT NOT NULL,
