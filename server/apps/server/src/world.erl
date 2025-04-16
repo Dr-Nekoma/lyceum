@@ -57,7 +57,8 @@ init([]) ->
     % Map Directory
     MapsDir = filename:join([Dir, "maps"]),
     map_generator:create_map(Connection, MapsDir, "Pond"),
-    io:format("Starting World Application...~n"),
+    % Start Worlds
+    logger:info("Starting World Application...~n"),
     State = #server_state{connection = Connection, pid = self(), table = []},
     {ok, State}.
 
@@ -65,14 +66,6 @@ init([]) ->
 %% @private
 %% @doc
 %% Handling call messages
-%%
-%% @spec handle_call(Request, From, State) ->
-%%                                   {reply, Reply, State} |
-%%                                   {reply, Reply, State, Timeout} |
-%%                                   {noreply, State} |
-%%                                   {noreply, State, Timeout} |
-%%                                   {stop, Reason, Reply, State} |
-%%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
 -spec handle_call(term(), gen_server:from(), server_state()) -> Result when
@@ -91,17 +84,15 @@ handle_call(_Request, _From, State) ->
 %% @private
 %% @doc
 %% Handling cast messages
-%%
-%% @spec handle_cast(Msg, State) -> {noreply, State} |
-%%                                  {noreply, State, Timeout} |
-%%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_cast(term(), server_state()) -> Result when
-      Result :: 
-        {noreply, server_state()} 
-        | {noreply, server_state(), timeout()}
-        | {stop, term(), server_state()}.
+-spec handle_cast(Msg, State) -> Result when
+      Msg :: term(),
+      State :: server_state(),
+      NoReply :: {noreply, server_state()},
+      NoReplyWithTimeOut :: {noreply, server_state(), timeout()},
+      Stop :: {stop, term(), server_state()},
+      Result :: NoReply | NoReplyWithTimeOut | Stop.
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -109,19 +100,17 @@ handle_cast(_Msg, State) ->
 %% @private
 %% @doc
 %% Handling all non call/cast messages
-%%
-%% @spec handle_info(Info, State) -> {noreply, State} |
-%%                                   {noreply, State, Timeout} |
-%%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_info(term(), server_state()) -> Result when
-      Result :: 
-        {noreply, server_state()} 
-        | {noreply, server_state(), timeout()}
-        | {stop, term(), server_state()}.
+-spec handle_info(Info, State) -> Result when
+      Info :: term(),
+      State :: server_state(),
+      NoReply :: {noreply, server_state()},
+      NoReplyWithTimeOut :: {noreply, server_state(), timeout()},
+      Stop :: {stop, term(), server_state()},
+      Result :: NoReply | NoReplyWithTimeOut | Stop.
 handle_info(Info, State) ->
-    io:format("[~p] INFO: ~p~n", [?SERVER, Info]),
+    logger:info("[~p] INFO: ~p~n", [?SERVER, Info]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
