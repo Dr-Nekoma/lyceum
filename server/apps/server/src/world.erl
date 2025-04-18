@@ -49,11 +49,11 @@ init([]) ->
     % Main migrations
     MainSuffix = ["migrations", "main"],
     MainPath = filename:join([Dir | MainSuffix]),
-    ok = migraterl:migrate(Connection, MainPath, #{repeatable => false}),
+    {ok, _} = migraterl:migrate(Connection, MainPath, #{repeatable => false}),
     % Views, Functions, etc
     RepeatableSuffix = ["migrations", "repeatable"],
     RepeatablePath = filename:join([Dir | RepeatableSuffix]),
-    ok = migraterl:migrate(Connection, RepeatablePath, #{repeatable => true}),
+    {ok, _} = migraterl:migrate(Connection, RepeatablePath, #{repeatable => true}),
     % Map Directory
     MapsDir = filename:join([Dir, "maps"]),
     map_generator:create_map(Connection, MapsDir, "Pond"),

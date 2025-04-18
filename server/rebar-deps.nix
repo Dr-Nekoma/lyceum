@@ -16,11 +16,11 @@ let
     };
     migraterl = builder {
       name = "migraterl";
-      version = "0.1.0";
+      version = "0.1.2";
       src = fetchHex {
         pkg = "migraterl";
-        version = "0.1.0";
-        sha256 = "sha256-XoA42crAux0VyHtT8Ubdx5Pat72/GLFlHb98PCaBuwM=";
+        version = "0.1.2";
+        sha256 = "sha256-EZusb9EPON9fudmnxsdnRWK9COA0QWUAH18mYDv42ME=";
       };
       beamDeps = [ epgsql erlandono ];
     };

@@ -1,3 +1,5 @@
+DROP SCHEMA IF EXISTS migraterl CASCADE;
+
 DROP SCHEMA IF EXISTS player CASCADE;
 DROP SCHEMA IF EXISTS map CASCADE;
 DROP SCHEMA IF EXISTS character CASCADE;
@@ -50,4 +52,3 @@ BEGIN
         EXECUTE sql_command.truncation_command;
     END LOOP;
 END $$;
-DROP TABLE IF EXISTS database_migrations_history;

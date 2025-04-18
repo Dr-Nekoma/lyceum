@@ -80,6 +80,9 @@ END;
 $$;
 
 -- TRIGGERS
+-- Currently, the OR REPLACE option is not supported for constraint triggers.
+-- https://www.postgresql.org/docs/17/sql-createtrigger.html
+DROP TRIGGER IF EXISTS object_is_resource_trigger ON map.resource;
 CREATE CONSTRAINT TRIGGER object_is_resource_trigger
   AFTER INSERT OR UPDATE ON map.resource
   DEFERRABLE INITIALLY IMMEDIATE
