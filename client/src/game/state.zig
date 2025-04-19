@@ -115,7 +115,7 @@ pub fn init(
         .target = .{ .x = 0.0, .y = 10.0, .z = 0.0 },
         .up = .{ .x = 0.0, .y = 1.0, .z = 0.0 },
         .fovy = 45.0,
-        .projection = .camera_perspective,
+        .projection = .perspective,
     };
     if (width < 0) return error.negative_width;
     if (height < 0) return error.negative_height;
@@ -137,7 +137,7 @@ pub fn init(
                         // TODO: use actual consumables
                         .consumables = &.{ "item6", "item7" },
                         .minimap = .{
-                            .texture = map.init_map_texture(),
+                            .texture = try map.init_map_texture(),
                         },
                     },
                 },

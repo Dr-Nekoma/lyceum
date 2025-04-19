@@ -3,8 +3,8 @@ const config = @import("../../config.zig");
 const rl = @import("raylib");
 
 const availableKeysAndLabels = [_]common.Slot{
-    .{ .key = .key_q, .label = "Q" },
-    .{ .key = .key_e, .label = "E" },
+    .{ .key = .q, .label = "Q" },
+    .{ .key = .e, .label = "E" },
 };
 
 pub fn at(slots: []const [:0]const u8, height: f32, font: *rl.Font) !void {

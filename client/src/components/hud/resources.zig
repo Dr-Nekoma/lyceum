@@ -4,7 +4,7 @@ const messages = @import("../../server/messages.zig");
 const rl = @import("raylib");
 const std = @import("std");
 
-pub const collect_key: rl.KeyboardKey = .key_r;
+pub const collect_key: rl.KeyboardKey = .r;
 pub const collect_key_label = "R";
 
 const ResourceInfo = struct {
@@ -55,20 +55,22 @@ pub fn drawProgressBar(gameState: *GameState, resource: messages.World.Resource)
     return bar_percentage;
 }
 
-pub const info = std.StaticStringMap(ResourceInfo).initComptime(.{
-    .{ @tagName(.rock), .{
-        .action = "Mine",
-        .drawer = rock,
-    } },
-    .{ @tagName(.tree), .{
-        .action = "Chop",
-        .drawer = tree,
-    } },
-    .{ @tagName(.bush), .{
-        .action = "Harvest",
-        .drawer = bush,
-    } },
-});
+pub const info = std.StaticStringMap(ResourceInfo).initComptime(
+    [_]struct { []const u8, ResourceInfo }{
+        .{ @tagName(.rock), .{
+            .action = "Mine",
+            .drawer = rock,
+        } },
+        .{ @tagName(.tree), .{
+            .action = "Chop",
+            .drawer = tree,
+        } },
+        .{ @tagName(.bush), .{
+            .action = "Harvest",
+            .drawer = bush,
+        } },
+    },
+);
 
 fn generic(key: [:0]const u8, width: f32, height: f32, font: *rl.Font) void {
     const value = info.get(key).?;

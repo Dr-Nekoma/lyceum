@@ -5,7 +5,7 @@ const rm = rl.math;
 const std = @import("std");
 const GameState = @import("../../game/state.zig");
 
-pub fn init_map_texture() rl.Texture {
+pub fn init_map_texture() !rl.Texture {
     const side = config.map.border_thickness * 2;
     const img = rl.genImageColor(side, side, rl.Color.black);
     defer img.unload();
@@ -35,7 +35,7 @@ pub fn add_borders(image: *rl.Image) void {
 
 pub fn player(world_face_direction: i16, center: rl.Vector2) void {
     const face_direction: f32 = @floatFromInt(@mod(180 - world_face_direction, 360));
-    const origin = .{ .x = 0, .y = 0 };
+    const origin: rl.Vector2 = .{ .x = 0, .y = 0 };
     const triangle_top = rotate_point(.{ .y = -8, .x = 0 }, origin, face_direction);
     const triangle_left = rotate_point(.{ .y = 4, .x = -4 }, origin, face_direction);
     const triangle_right = rotate_point(.{ .y = 4, .x = 4 }, origin, face_direction);

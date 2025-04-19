@@ -27,12 +27,12 @@ pub fn at(
         .y = 10 + statusLabelLength.y,
     };
 
-    const position = .{
+    const position: rl.Vector2 = .{
         .x = 0,
         .y = height - size.y,
     };
 
-    const iconPosition = .{
+    const iconPosition: rl.Vector2 = .{
         .x = 1,
         .y = height - size.y,
     };
