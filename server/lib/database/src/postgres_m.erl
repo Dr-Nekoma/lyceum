@@ -39,5 +39,5 @@ fail(X) ->
 '>>='({{ok, Count}, update}, Fun) ->
     Fun(Count);
 '>>='({{error, Error}, Tag}, _) ->
-    io:format("Tag: ~p\nError: ~p\n", [Error, Tag]),
+    logger:error("Tag: ~p\nError: ~p\n", [Error, Tag]),
     fail("Unexpected error (operation or PSQL) on Server side").
