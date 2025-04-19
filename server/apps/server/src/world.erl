@@ -1,5 +1,6 @@
 %%%-------------------------------------------------------------------
-%% @doc World Server
+%% @doc World Server, takes care of boostrapping and maintaing items,
+%%      resources and players around a given map.
 %% @end
 %%%-------------------------------------------------------------------
 -module(world).
@@ -39,6 +40,7 @@ start_link() ->
 %% @private
 %% @doc
 %% Initializes the world, runs migrations and setup the main maps
+%% @todo Conditionally remove test data if the rlx profile is "prod"
 %% @end
 %%--------------------------------------------------------------------
 -spec init(Args) -> Result when
@@ -53,6 +55,7 @@ init([]) ->
     {ok, _} = init_db(Conn, Dir, main),
     {ok, _} = init_db(Conn, Dir, repeatable),
     {ok, _} = init_db(Conn, Dir, init_data),
+    {ok, _} = init_db(Conn, Dir, test),
     % Start Worlds
     logger:info("Starting World Application...~n"),
     State = #server_state{connection = Conn, pid = self(), table = []},
@@ -145,16 +148,6 @@ code_change(_OldVsn, State, _Extra) ->
       Ok :: {ok, term()},
       Error :: {error, Reason},
       Result :: Ok | Error.
-init_db(Conn, Dir, main) ->
-    Suffix = ["migrations", "main"],
-    Path = filename:join([Dir | Suffix]),
-    Options = #{repeatable => false},
-    migraterl:migrate(Conn, Path, Options);
-init_db(Conn, Dir, repeatable) ->
-    Suffix = ["migrations", "repeatable"],
-    Path = filename:join([Dir | Suffix]),
-    Options = #{repeatable => true},
-    migraterl:migrate(Conn, Path, Options);
 init_db(Conn, Dir, init_data) ->
     Suffix = ["migrations", "init"],
     Path = filename:join([Dir | Suffix]),
@@ -163,4 +156,18 @@ init_db(Conn, Dir, init_data) ->
     % Now populate the game's maps...
     MapPath = filename:join([Dir, "maps"]),
     ok = map_generator:create_map(Conn, MapPath, "Pond"),
-    {ok, []}.
+    {ok, []};
+init_db(Conn, Dir, Type) ->
+    Suffix = 
+        case Type of
+            main -> ["migrations", "main"];
+            repeatable -> ["migrations", "repeatable"];
+            test -> ["migrations", "test"]
+        end,
+    Path = filename:join([Dir | Suffix]),
+    Options = 
+        case Type of
+            main -> #{repeatable => false};
+            _ -> #{repeatable => true}
+        end,
+    migraterl:migrate(Conn, Path, Options).

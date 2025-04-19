@@ -2,15 +2,18 @@
 INSERT INTO map.instance(name, width, height)
 VALUES ('Pond', 6, 6)
 ON CONFLICT (name)
-DO NOTHING;
+DO UPDATE SET
+    width = EXCLUDED.width,
+    height = EXCLUDED.height;
 
 -- Add Items
 INSERT INTO character.item (name, description, weight)
 VALUES ('Dolomite', 'In this world, dolomite is used as a valuable currency by the empires of the East.', 42),
-       ('Great Bardook Branch', 'A tree that has been planted by the goddess Caithee.', 5),
-       ('Sussman''s Lispy Fez', 'The magical headgear from a once great wizard.', 1)
+       ('Great Bardook Branch', 'A tree that has been planted by the goddess Caithee.', 5)
 ON CONFLICT (name)
-DO NOTHING;
+DO UPDATE SET
+    description = EXCLUDED.description ,
+    weight = EXCLUDED.weight;
 
 -- Add Resources
 INSERT INTO map.object_is_resource (kind, capacity, base_extraction_amount, base_extraction_time, name, description, item_pk)
