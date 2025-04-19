@@ -60,7 +60,7 @@ init([]) ->
           type => supervisor,
           modules => [world_sup]},
 
-    io:format("[~p] Starting Top Level Supervisor...~n", [?SERVER]),
+    logger:info("[~p] Starting Top Level Supervisor...~n", [?SERVER]),
     {ok, {SupFlags, [DispatcherSup, PlayerSup, WorldSup]}}.
 
 %%%===================================================================

@@ -70,10 +70,3 @@ jobs:
         run: |
           nix develop .#ci --impure -c just test
 
-      - name: "[Database] Check Migrations"
-        run: |
-          nix develop .#ci --impure -c just dbu
-
-      - name: "[Database] Check Input Generation"
-        run: |
-          nix develop .#ci --impure -c just dbi

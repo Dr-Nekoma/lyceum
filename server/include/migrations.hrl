@@ -1,0 +1,1 @@
+-type migration_type() :: main | repeatable | init_data | test.

@@ -36,6 +36,7 @@ resource_inserter(Acc) ->
     Resource -> resource_inserter([io_lib:format("('~s', '~s', ~B, ~B)", Resource) | Acc])
    end.
 
+
 -spec generate(epgsql:connection(), epgsql:bind_param(), {epgsql:bind_param(), list()}) -> any().
 generate(Connection, MapName, {Name, Table}) ->
     % TODO: improve this garbagio
@@ -68,7 +69,7 @@ generate(Connection, MapName, {Name, Table}) ->
       {insert, Resources} ->
         ResourceString = list_to_binary(lists:join(",", Resources)),
         ResourceSQL = io_lib:format("INSERT INTO map.resource(map_name, kind, x_position, y_position) "
-                                    "VALUES ~s;",
+                                    "VALUES ~s ON CONFLICT (map_name, kind, x_position, y_position) DO NOTHING;",
                                     [ResourceString]),
         do([postgres_m ||
             _ <- {epgsql:squery(Connection, ResourceSQL), insert},

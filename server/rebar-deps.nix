@@ -4,16 +4,6 @@ in { builder ? fetchOnly, fetchHex, fetchgit, fetchFromGitHub, overrides ? (x: y
 let
   self = packages // (overrides self packages);
   packages = with self; {
-    pure_migrations = builder {
-      name = "pure_migrations";
-      version = "1.3.0";
-      src = fetchHex {
-        pkg = "pure_migrations";
-        version = "1.3.0";
-        sha256 = "sha256-ACad4KGpu+G3aB7B8/pZ7p2AgVgiJqlMYz5vlLXIi8M=";
-      };
-      beamDeps = [ ];
-    };
     pc = builder {
       name = "pc";
       version = "1.15.0";
@@ -24,6 +14,16 @@ let
       };
       beamDeps = [ ];
     };
+    migraterl = builder {
+      name = "migraterl";
+      version = "0.1.2";
+      src = fetchHex {
+        pkg = "migraterl";
+        version = "0.1.2";
+        sha256 = "sha256-EZusb9EPON9fudmnxsdnRWK9COA0QWUAH18mYDv42ME=";
+      };
+      beamDeps = [ epgsql erlandono ];
+    };
     erlandono = builder {
       name = "erlandono";
       version = "3.1.3";
@@ -31,16 +31,6 @@ let
         pkg = "erlandono";
         version = "3.1.3";
         sha256 = "sha256-K/yvZZwAMsW1zv1ILrvbohqyAdFXmlRIXgkZX8IJJXc=";
-      };
-      beamDeps = [ ];
-    };
-    erlando = builder {
-      name = "erlando";
-      version = "3.1.1";
-      src = fetchHex {
-        pkg = "erlando";
-        version = "3.1.1";
-        sha256 = "sha256-ljPLSXjb14gn+nbqTDsL0kz71N2a9ICI6SLnEVSUo0Q=";
       };
       beamDeps = [ ];
     };

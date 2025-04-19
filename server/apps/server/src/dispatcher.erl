@@ -12,7 +12,8 @@
 
 -define(SERVER, lyceum_server).
 
--include("types.hrl").
+-include("user_state.hrl").
+-include("server_state.hrl").
 
 -dialyzer({nowarn_function, [login/3, start/2, get_active_pid/2]}).
 
@@ -59,7 +60,7 @@ init([]) ->
     % Setup a DB connection and bootstrap process state
     {ok, Connection} = database:connect(),
     Pid = self(),
-    io:format("[~p] Starting at ~p...~n", [?SERVER, Pid]),
+    logger:debug("[~p] Starting at ~p...~n", [?SERVER, Pid]),
     % This is a temporary solution using the built-in k/v store
     Table = ets:new(?MODULE, [named_table, private, set]),
     State =
@@ -170,18 +171,18 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 -spec login(server_state(), gen_server:from(), map()) -> ok.
 login(State, From, #{username := Username, password := _Password} = Request) ->
-    io:format("[~p] User ~p is attempting to login from ~p~n", [?SERVER, Username, From]),
+    logger:info("[~p] User ~p is attempting to login from ~p~n", [?SERVER, Username, From]),
     case registry:check_user(Request, State#server_state.connection) of
         {ok, Email} ->
-            io:format("[~p] USER: ~p successfully logged in!~n", [?SERVER, Email]),
+            logger:info("[~p] USER: ~p successfully logged in!~n", [?SERVER, Email]),
             {ok, Connection} = database:connect(),
             PlayerState = #user_state{pid = From, connection = Connection},
-            io:format("[~p] Setting USER_STATE=~p...~n", [?SERVER, PlayerState]),
+            logger:info("[~p] Setting USER_STATE=~p...~n", [?SERVER, PlayerState]),
             {ok, Pid} = get_active_pid(Email, PlayerState),
-            io:format("[~p] Successfully Spawned ~p~n", [?SERVER, Pid]),
+            logger:info("[~p] Successfully Spawned ~p~n", [?SERVER, Pid]),
             From ! {ok, {Pid, Email}};
         {error, Message} ->
-            io:format("Failed to login: ~p~n", [Message]),
+            logger:error("Failed to login: ~p~n", [Message]),
             From ! {error, Message}
     end,
     ok.
@@ -190,7 +191,7 @@ login(State, From, #{username := Username, password := _Password} = Request) ->
 get_active_pid(Email, State) ->
     case ets:lookup(?MODULE, Email) of
         [{_, Pid}] ->
-            io:format("[~p] Logging ~p at ~p...~n", [?SERVER, Email, Pid]),
+            logger:info("[~p] Logging ~p at ~p...~n", [?SERVER, Email, Pid]),
             Pid ! logout,
             start(Email, State);
         _ ->
@@ -201,5 +202,5 @@ get_active_pid(Email, State) ->
 start(Email, State) ->
     {ok, NewPid} = player_sup:start([{Email, State}]),
     ets:insert(?MODULE, {Email, NewPid}),
-    io:format("[~p] <Email=~p, PID=~p> inserted...~n", [?SERVER, Email, NewPid]),
+    logger:info("[~p] <Email=~p, PID=~p> inserted...~n", [?SERVER, Email, NewPid]),
     {ok, NewPid}.

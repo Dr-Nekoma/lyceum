@@ -16,6 +16,7 @@
   scripts = {
     build.exec = "just build";
     server.exec = "just server";
+    shell.exec = "just shell";
     client.exec = "just client";
     client-release.exec = "just client-release";
     db-up.exec = "just db-up";
@@ -61,6 +62,7 @@
       CREATE USER admin SUPERUSER;
       ALTER USER admin PASSWORD 'admin';
       GRANT ALL PRIVILEGES ON DATABASE mmo to admin;
+      ALTER USER ${app_name} CREATEROLE;
     '';
   };
 }

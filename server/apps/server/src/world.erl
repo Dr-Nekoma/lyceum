@@ -1,5 +1,6 @@
 %%%-------------------------------------------------------------------
-%% @doc World Server
+%% @doc World Server, takes care of boostrapping and maintaing items,
+%%      resources and players around a given map.
 %% @end
 %%%-------------------------------------------------------------------
 -module(world).
@@ -11,8 +12,13 @@
          code_change/3]).
 
 -define(SERVER, ?MODULE).
+-define(MAIN_MODULE_NAME, server).
 
--include("types.hrl").
+-include("migrations.hrl").
+-include("server_state.hrl").
+
+-dialyzer({nowarn_function,
+           [init/1]}).
 
 %%%===================================================================
 %%% API
@@ -36,37 +42,32 @@ start_link() ->
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
-%% Initializes the server
-%%
-%% @spec init(Args) -> {ok, State} |
-%%                     {ok, State, Timeout} |
-%%                     ignore |
-%%                     {stop, Reason}
+%% Initializes the world, runs migrations and setup the main maps
+%% @todo Conditionally remove test data if the rlx profile is "prod"
 %% @end
 %%--------------------------------------------------------------------
--spec init(list()) -> {ok, server_state()}.
+-spec init(Args) -> Result when
+      Args :: list(),
+      Result :: {ok, server_state()}.
 init([]) ->
     % Setup a DB connection and bootstrap process state
-    {ok, Connection} = database:connect(),
-    CurrDir = os:getenv("PWD"),
-    MapsDir = filename:join([CurrDir, "maps"]),
-    map_generator:create_map(Connection, MapsDir, "Pond"),
-    io:format("Starting World Application...~n"),
-    State = #server_state{connection = Connection, pid = self(), table = []},
+    {ok, Conn} = database:connect(),
+    LibDir = filename:absname(code:lib_dir(?MAIN_MODULE_NAME)),
+    Dir = filename:dirname(filename:dirname(LibDir)),
+    % DB Migrations
+    {ok, _} = init_db(Conn, Dir, main),
+    {ok, _} = init_db(Conn, Dir, repeatable),
+    {ok, _} = init_db(Conn, Dir, init_data),
+    {ok, _} = init_db(Conn, Dir, test),
+    % Start Worlds
+    logger:info("Starting World Application...~n"),
+    State = #server_state{connection = Conn, pid = self(), table = []},
     {ok, State}.
 
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
 %% Handling call messages
-%%
-%% @spec handle_call(Request, From, State) ->
-%%                                   {reply, Reply, State} |
-%%                                   {reply, Reply, State, Timeout} |
-%%                                   {noreply, State} |
-%%                                   {noreply, State, Timeout} |
-%%                                   {stop, Reason, Reply, State} |
-%%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
 -spec handle_call(term(), gen_server:from(), server_state()) -> Result when
@@ -85,17 +86,15 @@ handle_call(_Request, _From, State) ->
 %% @private
 %% @doc
 %% Handling cast messages
-%%
-%% @spec handle_cast(Msg, State) -> {noreply, State} |
-%%                                  {noreply, State, Timeout} |
-%%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_cast(term(), server_state()) -> Result when
-      Result :: 
-        {noreply, server_state()} 
-        | {noreply, server_state(), timeout()}
-        | {stop, term(), server_state()}.
+-spec handle_cast(Msg, State) -> Result when
+      Msg :: term(),
+      State :: server_state(),
+      NoReply :: {noreply, server_state()},
+      NoReplyWithTimeOut :: {noreply, server_state(), timeout()},
+      Stop :: {stop, term(), server_state()},
+      Result :: NoReply | NoReplyWithTimeOut | Stop.
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -103,19 +102,17 @@ handle_cast(_Msg, State) ->
 %% @private
 %% @doc
 %% Handling all non call/cast messages
-%%
-%% @spec handle_info(Info, State) -> {noreply, State} |
-%%                                   {noreply, State, Timeout} |
-%%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_info(term(), server_state()) -> Result when
-      Result :: 
-        {noreply, server_state()} 
-        | {noreply, server_state(), timeout()}
-        | {stop, term(), server_state()}.
+-spec handle_info(Info, State) -> Result when
+      Info :: term(),
+      State :: server_state(),
+      NoReply :: {noreply, server_state()},
+      NoReplyWithTimeOut :: {noreply, server_state(), timeout()},
+      Stop :: {stop, term(), server_state()},
+      Result :: NoReply | NoReplyWithTimeOut | Stop.
 handle_info(Info, State) ->
-    io:format("[~p] INFO: ~p~n", [?SERVER, Info]),
+    logger:info("[~p] INFO: ~p~n", [?SERVER, Info]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -146,3 +143,34 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+-spec init_db(Conn, Dir, Type) -> Result when
+      Conn :: epgsql:connection(),
+      Dir :: file:name_all(),
+      Type :: migration_type(),
+      Reason :: string(),
+      Ok :: {ok, term()},
+      Error :: {error, Reason},
+      Result :: Ok | Error.
+init_db(Conn, Dir, init_data) ->
+    Suffix = ["migrations", "init"],
+    Path = filename:join([Dir | Suffix]),
+    Options = #{repeatable => true},
+    {ok, _} = migraterl:migrate(Conn, Path, Options),
+    % Now populate the game's maps...
+    MapPath = filename:join([Dir, "maps"]),
+    ok = map_generator:create_map(Conn, MapPath, "Pond"),
+    {ok, []};
+init_db(Conn, Dir, Type) ->
+    Suffix = 
+        case Type of
+            main -> ["migrations", "main"];
+            repeatable -> ["migrations", "repeatable"];
+            test -> ["migrations", "test"]
+        end,
+    Path = filename:join([Dir | Suffix]),
+    Options = 
+        case Type of
+            main -> #{repeatable => false};
+            _ -> #{repeatable => true}
+        end,
+    migraterl:migrate(Conn, Path, Options).
