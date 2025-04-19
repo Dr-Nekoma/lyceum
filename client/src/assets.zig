@@ -134,7 +134,7 @@ fn loadTile(kind: messages.World.Tile) !struct { ?rl.Model, ?rl.Image } {
 
 pub fn tilesTable() !GameState.Tile_Table {
     var initTable = GameState.Tile_Table.initFull(.{ null, null });
-    inline for (@typeInfo(messages.World.Tile).Enum.fields) |field| {
+    inline for (@typeInfo(messages.World.Tile).@"enum".fields) |field| {
         if (!std.mem.eql(u8, field.name, "empty")) {
             const key: messages.World.Tile = @enumFromInt(field.value);
             const assets = try loadTile(key);
@@ -183,7 +183,7 @@ fn loadObject(kind: messages.World.Object) !Object {
 
 pub fn objectsTable() !GameState.Object_Table {
     var initTable = GameState.Object_Table.initFull(.{});
-    inline for (@typeInfo(messages.World.Object).Enum.fields) |field| {
+    inline for (@typeInfo(messages.World.Object).@"enum".fields) |field| {
         if (!std.mem.eql(u8, field.name, "empty")) {
             const key: messages.World.Object = @enumFromInt(field.value);
             const asset = try loadObject(key);

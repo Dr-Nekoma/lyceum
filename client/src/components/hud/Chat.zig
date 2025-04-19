@@ -67,7 +67,7 @@ pub fn at(
         self.position.* = 0;
     }
 
-    if (rl.isKeyPressed(.key_enter)) {
+    if (rl.isKeyPressed(.enter)) {
         if (self.mode.* == .idle) {
             self.mode.* = .writing;
         } else if (self.mode.* == .writing) {

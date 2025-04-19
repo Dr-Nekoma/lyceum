@@ -58,6 +58,9 @@ client-release:
 client-build:
     cd client && zig build
 
+client-watch:
+    cd client && zig build -Dno-bin --watch -fincremental
+
 client-test:
     cd client && zig build test
 

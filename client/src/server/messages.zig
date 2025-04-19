@@ -5,7 +5,7 @@ const GameState = @import("../game/state.zig");
 const GameCharacter = @import("../game/character.zig");
 
 fn createAnonymousStruct(comptime T: type, comptime keys: []const [:0]const u8) type {
-    const struct_info = @typeInfo(T).Struct;
+    const struct_info = @typeInfo(T).@"struct";
     comptime var structKeys: [keys.len]std.meta.Tuple(&.{[:0]const u8}) = undefined;
     comptime for (0.., keys) |index, key| {
         structKeys[index] = .{key};
@@ -34,7 +34,7 @@ fn createAnonymousStruct(comptime T: type, comptime keys: []const [:0]const u8) 
 pub fn selectKeysFromStruct(data: anytype, comptime keys: []const [:0]const u8) createAnonymousStruct(@TypeOf(data), keys) {
     const Temp: type = createAnonymousStruct(@TypeOf(data), keys);
     var anonymousStruct: Temp = undefined;
-    inline for (@typeInfo(Temp).Struct.fields) |field| {
+    inline for (@typeInfo(Temp).@"struct".fields) |field| {
         const current_field = &@field(anonymousStruct, field.name);
         current_field.* = @field(data, field.name);
     }

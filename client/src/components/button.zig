@@ -119,7 +119,7 @@ pub const Clickable = struct {
                 else => {},
             }
             const isHovered = draw(height);
-            if (isHovered and rl.isMouseButtonPressed(.mouse_button_left)) {
+            if (isHovered and rl.isMouseButtonPressed(.left)) {
                 rl.playSound(self.sound.*);
                 scene.* = switch (scene.*) {
                     .user_registry, .user_login, .nothing, .spawn, .character_selection, .connect => .nothing,
@@ -168,7 +168,7 @@ pub const Clickable = struct {
             config.textSpacing,
             config.ColorPalette.secondary,
         );
-        const clicked = !self.disabled and (isHovered and rl.isMouseButtonPressed(.mouse_button_left));
+        const clicked = !self.disabled and (isHovered and rl.isMouseButtonPressed(.left));
         if (clicked) rl.playSound(self.sound.*);
         return clicked;
     }
@@ -220,7 +220,7 @@ pub const Selectable = struct {
             config.ColorPalette.secondary,
         );
 
-        const clicked = isHovered and rl.isMouseButtonPressed(.mouse_button_left);
+        const clicked = isHovered and rl.isMouseButtonPressed(.left);
         if (clicked) rl.playSound(self.sound.*);
         return clicked or isSelected;
     }

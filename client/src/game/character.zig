@@ -20,7 +20,7 @@ pub const Chat = struct {
     position: usize = 0,
     mode: chat.Mode = .idle,
 };
-pub const State = std.meta.Tag(@TypeOf(@as(@This(), undefined).action));
+pub const State = std.meta.Tag(Action);
 
 pub const Animation = struct {
     frameCounter: i32 = 0,

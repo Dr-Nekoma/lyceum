@@ -16,11 +16,11 @@ const Action = struct {
 };
 
 const availableActions = [_]Action{
-    .{ .key = .key_f1, .kind = .mute },
-    .{ .key = .key_f2, .kind = .restart },
-    .{ .key = .key_f3, .kind = .toggle },
-    .{ .key = .key_comma, .kind = .decrease_volume },
-    .{ .key = .key_period, .kind = .increase_volume },
+    .{ .key = .f1, .kind = .mute },
+    .{ .key = .f2, .kind = .restart },
+    .{ .key = .f3, .kind = .toggle },
+    .{ .key = .comma, .kind = .decrease_volume },
+    .{ .key = .period, .kind = .increase_volume },
 };
 
 pub fn play(gameState: *GameState) void {

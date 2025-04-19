@@ -6,11 +6,11 @@ pub const defaultErrorDuration = 3;
 const padding = 2;
 const fontSize = 22;
 
-const Error = @Type(.{ .Enum = .{
+const Error = @Type(.{ .@"enum" = .{
     .is_exhaustive = true,
     .decls = &.{},
     .tag_type = blk: {
-        const possible_messages = @typeInfo(errorMessage).Struct.decls.len;
+        const possible_messages = @typeInfo(errorMessage).@"struct".decls.len;
         const bits = std.math.log2(possible_messages);
         break :blk std.meta.Int(
             .unsigned,
@@ -18,7 +18,7 @@ const Error = @Type(.{ .Enum = .{
         );
     },
     .fields = blk: {
-        const field_names = @typeInfo(errorMessage).Struct.decls;
+        const field_names = @typeInfo(errorMessage).@"struct".decls;
         var decls: [field_names.len]std.builtin.Type.EnumField = undefined;
         for (field_names, 0..) |fieldDecl, index| {
             decls[index] = .{ .value = index, .name = fieldDecl.name };

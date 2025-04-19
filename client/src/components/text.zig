@@ -40,7 +40,7 @@ fn pushCharacters(self: @This()) void {
         self.position.* += 1;
     }
 
-    if (rl.isKeyPressed(.key_backspace) and self.position.* > 0) {
+    if (rl.isKeyPressed(.backspace) and self.position.* > 0) {
         self.position.* -= 1;
         if (self.position.* < 0) self.position.* = 0;
         self.content[self.position.*] = 0;
@@ -99,11 +99,11 @@ fn at_impl(
     );
     const mouseOnText = blk: {
         if (rl.checkCollisionPointRec(rl.getMousePosition(), textBox)) {
-            rl.setMouseCursor(.mouse_cursor_ibeam);
+            rl.setMouseCursor(.ibeam);
             pushCharacters(self);
             break :blk true;
         } else {
-            rl.setMouseCursor(.mouse_cursor_default);
+            rl.setMouseCursor(.default);
             break :blk false;
         }
     };
