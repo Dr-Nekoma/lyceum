@@ -69,8 +69,7 @@ To run our DEMO you need to follow the steps in this particular order:
 
 1. ~nix develop --impure~ (to enter a development shell)
 2. ~devenv up~ to launch a local ~postgres~
-3. ~just db-reset~ or ~db-reset~, to initialize ~postgres~ for local development
-4. Run the ~erlang~ backend in a separate shell with either:
+3. Run the ~erlang~ backend in a separate shell with either:
 
     #+begin_src shell
       server
@@ -81,7 +80,7 @@ To run our DEMO you need to follow the steps in this particular order:
       ./result/bin/server foreground
     #+end_src
 
-5. Followed by running the ~zig~ client in a third shell with either:
+4. Followed by running the ~zig~ client in a third shell with either:
 
     #+begin_src shell
       client-release
@@ -98,7 +97,7 @@ To run our DEMO you need to follow the steps in this particular order:
       nix run --impure github:nix-community/nixGL -- ./result/bin/lyceum-client
     #+end_src
 
-6. Once you get the client to launch, connect to ~localhost~ and you can try
+5. Once you get the client to launch, connect to ~localhost~ and you can try
    playing with any of the local credentials [[https://github.com/Dr-Nekoma/lyceum/blob/master/server/database/main.input.sql#L3][here]].
 
 ** Deployment
