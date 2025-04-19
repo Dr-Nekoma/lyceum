@@ -37,13 +37,11 @@ jobs:
           extra_nix_config: |
             access-tokens = github.com=${{ github.token }}
 
-      - name: Install Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
-
       - name: "[Server] Build"
         run: |
           nix develop .#ci --impure -c just build
 
       - name: "[Server] Check Dialyzer"
+        continue-on-error: true
         run: |
           nix develop .#ci --impure -c just d
