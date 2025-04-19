@@ -84,7 +84,7 @@ deps:
 
 # Runs dializer on the erlang codebase
 dialyzer:
-    cd server && rebar3 dialyzer
+    cd server && rebar3 as dialzye dialyzer
 
 # Spawns an erlang shell
 shell: build
