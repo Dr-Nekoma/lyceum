@@ -88,3 +88,4 @@ CREATE CONSTRAINT TRIGGER object_is_resource_trigger
   DEFERRABLE INITIALLY IMMEDIATE
   FOR EACH ROW
   EXECUTE PROCEDURE object_is_resource();
+

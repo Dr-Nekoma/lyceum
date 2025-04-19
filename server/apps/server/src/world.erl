@@ -13,6 +13,7 @@
 -define(SERVER, ?MODULE).
 -define(MAIN_MODULE_NAME, server).
 
+-include("migrations.hrl").
 -include("server_state.hrl").
 
 %%%===================================================================
@@ -40,26 +41,21 @@ start_link() ->
 %% Initializes the world, runs migrations and setup the main maps
 %% @end
 %%--------------------------------------------------------------------
--spec init(list()) -> {ok, server_state()}.
+-spec init(Args) -> Result when
+      Args :: list(),
+      Result :: {ok, server_state()}.
 init([]) ->
     % Setup a DB connection and bootstrap process state
-    {ok, Connection} = database:connect(),
-    LibDir = code:lib_dir(?MAIN_MODULE_NAME),
+    {ok, Conn} = database:connect(),
+    LibDir = filename:absname(code:lib_dir(?MAIN_MODULE_NAME)),
     Dir = filename:dirname(filename:dirname(LibDir)),
-    % Main migrations
-    MainSuffix = ["migrations", "main"],
-    MainPath = filename:join([Dir | MainSuffix]),
-    {ok, _} = migraterl:migrate(Connection, MainPath, #{repeatable => false}),
-    % Views, Functions, etc
-    RepeatableSuffix = ["migrations", "repeatable"],
-    RepeatablePath = filename:join([Dir | RepeatableSuffix]),
-    {ok, _} = migraterl:migrate(Connection, RepeatablePath, #{repeatable => true}),
-    % Map Directory
-    MapsDir = filename:join([Dir, "maps"]),
-    map_generator:create_map(Connection, MapsDir, "Pond"),
+    % DB Migrations
+    {ok, _} = init_db(Conn, Dir, main),
+    {ok, _} = init_db(Conn, Dir, repeatable),
+    {ok, _} = init_db(Conn, Dir, init_data),
     % Start Worlds
     logger:info("Starting World Application...~n"),
-    State = #server_state{connection = Connection, pid = self(), table = []},
+    State = #server_state{connection = Conn, pid = self(), table = []},
     {ok, State}.
 
 %%--------------------------------------------------------------------
@@ -141,3 +137,30 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+-spec init_db(Conn, Dir, Type) -> Result when
+      Conn :: epgsql:connection(),
+      Dir :: file:name_all(),
+      Type :: migration_type(),
+      Reason :: string(),
+      Ok :: {ok, term()},
+      Error :: {error, Reason},
+      Result :: Ok | Error.
+init_db(Conn, Dir, main) ->
+    Suffix = ["migrations", "main"],
+    Path = filename:join([Dir | Suffix]),
+    Options = #{repeatable => false},
+    migraterl:migrate(Conn, Path, Options);
+init_db(Conn, Dir, repeatable) ->
+    Suffix = ["migrations", "repeatable"],
+    Path = filename:join([Dir | Suffix]),
+    Options = #{repeatable => true},
+    migraterl:migrate(Conn, Path, Options);
+init_db(Conn, Dir, init_data) ->
+    Suffix = ["migrations", "init"],
+    Path = filename:join([Dir | Suffix]),
+    Options = #{repeatable => true},
+    {ok, _} = migraterl:migrate(Conn, Path, Options),
+    % Now populate the game's maps...
+    MapPath = filename:join([Dir, "maps"]),
+    ok = map_generator:create_map(Conn, MapPath, "Pond"),
+    {ok, []}.
