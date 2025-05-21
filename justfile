@@ -71,7 +71,7 @@ client-test-ci:
     cd client && zig build test -fsys=raylib
 
 client-deps:
-    cd client && nix run github:Cloudef/zig2nix#zon2nix -- build.zig.zon > zon-deps.nix
+    cd client && nix run github:Cloudef/zig2nix -- zon2nix build.zig.zon
 
 # --------
 # Backend

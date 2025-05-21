@@ -120,7 +120,7 @@
 
         # Zig
         zig_app = "lyceum-client";
-        zigVersion = pkgs.zig;
+        zigVersion = pkgs.zig_0_14;
         raylib = pkgs.raylib;
 
         mkEnvVars = pkgs: erl: raylib: {
@@ -226,8 +226,10 @@
                 ++ lib.optionals stdenv.isLinux (linuxPkgs)
                 ++ lib.optionals stdenv.isDarwin darwinPkgs;
 
+            # To re-generate the nix lockfile:
+            # just client-deps
             postPatch = ''
-              ln -s ${pkgs.callPackage ./client/zon-deps.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
+              ln -s ${pkgs.callPackage ./client/build.zig.zon.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
             '';
 
             postInstall = ''

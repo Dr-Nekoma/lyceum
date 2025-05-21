@@ -16,15 +16,11 @@ with lib;
 let
   unpackZigArtifact =
     { name, artifact }:
-    runCommandLocal name
-      {
-        nativeBuildInputs = [ zig ];
-      }
-      ''
-        hash="$(zig fetch --global-cache-dir "$TMPDIR" ${artifact})"
-        mv "$TMPDIR/p/$hash" "$out"
-        chmod 755 "$out"
-      '';
+    runCommandLocal name { nativeBuildInputs = [ zig ]; } ''
+      hash="$(zig fetch --global-cache-dir "$TMPDIR" ${artifact})"
+      mv "$TMPDIR/p/$hash" "$out"
+      chmod 755 "$out"
+    '';
 
   fetchZig =
     {
@@ -42,13 +38,12 @@ let
       name,
       url,
       hash,
+      rev ? throw "rev is required, remove and regenerate the zon2json-lock file",
     }:
     let
       parts = splitString "#" url;
       url_base = elemAt parts 0;
       url_without_query = elemAt (splitString "?" url_base) 0;
-      rev_base = elemAt parts 1;
-      rev = if match "^[a-fA-F0-9]{40}$" rev_base != null then rev_base else "refs/heads/${rev_base}";
     in
     fetchgit {
       inherit name rev hash;
@@ -61,20 +56,25 @@ let
       name,
       url,
       hash,
-    }:
+      ...
+    }@args:
     let
       parts = splitString "://" url;
       proto = elemAt parts 0;
       path = elemAt parts 1;
       fetcher = {
-        "git+http" = fetchGitZig {
-          inherit name hash;
-          url = "http://${path}";
-        };
-        "git+https" = fetchGitZig {
-          inherit name hash;
-          url = "https://${path}";
-        };
+        "git+http" = fetchGitZig (
+          args
+          // {
+            url = "http://${path}";
+          }
+        );
+        "git+https" = fetchGitZig (
+          args
+          // {
+            url = "https://${path}";
+          }
+        );
         http = fetchZig {
           inherit name hash;
           url = "http://${path}";
@@ -82,10 +82,6 @@ let
         https = fetchZig {
           inherit name hash;
           url = "https://${path}";
-        };
-        file = unpackZigArtifact {
-          inherit name;
-          artifact = /. + path;
         };
       };
     in
