@@ -89,35 +89,55 @@ let
 in
 linkFarm name [
   {
-    name = "1220df9aa89d657f5dca24ab0ac3d187f7a992a4d27461fd9e76e934bf0670ca9a90";
+    name = "raylib_zig-5.6.0-dev-KE8REBMyBQCnQ9RBhHsoSKr97XmDHF84wx3g0UiMRDxj";
     path = fetchZigArtifact {
-      name = "raylib-zig";
-      url = "https://github.com/Not-Nik/raylib-zig/archive/58df62807f62bef1db79538d04b37b9f79909d0a.tar.gz";
-      hash = "sha256-iPVRpT6r3yIZRdhZSaFBOO+EBtHt4bpuLAnXVr7m6J8=";
+      name = "raylib_zig";
+      url = "https://github.com/Not-Nik/raylib-zig/archive/d6c77762cbdebbf56d3ff101142048dfae2496c4.tar.gz";
+      hash = "sha256-U/7W7ZBEkV1TQLCQg7ruEX4vH453Saijry2+35c820U=";
     };
   }
   {
-    name = "1220aa75240ee6459499456ef520ab7e8bddffaed8a5055441da457b198fc4e92b26";
+    name = "raylib-5.5.0-whq8uFV0zQA9NXxhpYFZk_yHW6xzg5eKGmOtMJ2DOTdU";
     path = fetchZigArtifact {
       name = "raylib";
-      url = "https://github.com/raysan5/raylib/archive/5767c4cd059e07355ae5588966d0aee97038a86b.tar.gz";
-      hash = "sha256-ijvgBlAfUD71p07Zg/oMzZnneQ95RoiaJXIkNlB26oc=";
+      url = "git+https://github.com/raysan5/raylib?ref=master#f5c96302d5623950dccdca31f8dd66d6d633dbd1";
+      hash = "sha256-hYMxc1c10gKtGlvcQMOyfJaXPQ+WlgPfPedhJjOxnFM=";
+      rev = "f5c96302d5623950dccdca31f8dd66d6d633dbd1";
     };
   }
   {
-    name = "122002d98ca255ec706ef8e5497b3723d6c6e163511761d116dac3aee87747d46cf1";
+    name = "N-V-__8AABHMqAWYuRdIlflwi8gksPnlUMQBiSxAqQAAZFms";
+    path = fetchZigArtifact {
+      name = "xcode_frameworks";
+      url = "git+https://github.com/hexops/xcode-frameworks#9a45f3ac977fd25dff77e58c6de1870b6808c4a7";
+      hash = "sha256-xveFYoQu0BT+ZtEsyca/zdQ/so9jPK56SeX3xmF3iro=";
+      rev = "9a45f3ac977fd25dff77e58c6de1870b6808c4a7";
+    };
+  }
+  {
+    name = "N-V-__8AALRTBQDo_pUJ8IQ-XiIyYwDKQVwnr7-7o5kvPDGE";
+    path = fetchZigArtifact {
+      name = "emsdk";
+      url = "git+https://github.com/emscripten-core/emsdk#3.1.50";
+      hash = "sha256-YUwb8yfz26Tfz4wyN13MBsdyA40ygJwfxHWt4eFMvQE=";
+      rev = "e2627e265d940db5ea58dffa63e490375bfc92e5";
+    };
+  }
+  {
+    name = "N-V-__8AAEp9UgBJ2n1eks3_3YZk3GCO1XOENazWaCO7ggM2";
     path = fetchZigArtifact {
       name = "raygui";
-      url = "https://github.com/raysan5/raygui/archive/4b3d94f5df6a5a2aa86286350f7e20c0ca35f516.tar.gz";
-      hash = "sha256-AjU+fyonXnGTG8ZBMb10ScB3G6iI97eiL9N3anm+r1Q=";
+      url = "git+https://github.com/raysan5/raygui#1536ae35c7b42d863135f4181fd2a225e531f68b";
+      hash = "sha256-p33HJcYZuaUV1w4iUqcfNj/mtB1ULcdBI0+pK0U0t3E=";
+      rev = "1536ae35c7b42d863135f4181fd2a225e531f68b";
     };
   }
   {
-    name = "12207bba9fbef5326ad9ac04f286c12b9eb1fe5feaf08c0f39e617a648c40521b742";
+    name = "zerl-0.1.0-92d69riJAADi_eAJnQlj5Z0EKis3eV0OVQX6Q469SUlU";
     path = fetchZigArtifact {
       name = "zerl";
-      url = "https://github.com/dont-rely-on-nulls/zerl/archive/refs/tags/v0.1.0.tar.gz";
-      hash = "sha256-9dMtMC5c+nn6oYYmX/Xc8xIwG9m9/9Wym5lraK3BeI8=";
+      url = "https://github.com/dont-rely-on-nulls/zerl/archive/c5cf31bc662fd1600988d53c03a659bead1e5a63.tar.gz";
+      hash = "sha256-Dv6Zyq/PjFPFsFJidJb/wo/eCLwzkJZNKdd8epPy4vw=";
     };
   }
 ]
