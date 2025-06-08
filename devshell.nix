@@ -33,6 +33,7 @@
     package = pkgs.postgresql_17;
     extensions = ext: [
       ext.periods
+      ext.omnigres
     ];
     initdbArgs = [
       "--locale=C"
