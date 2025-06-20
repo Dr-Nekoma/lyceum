@@ -133,11 +133,11 @@ linkFarm name [
     };
   }
   {
-    name = "zerl-0.1.0-92d69riJAADi_eAJnQlj5Z0EKis3eV0OVQX6Q469SUlU";
+    name = "zerl-0.2.0-92d69riJAACsO0D--Mak2AqKRzeUHEQlBa2kLi1B1eoY";
     path = fetchZigArtifact {
       name = "zerl";
-      url = "https://github.com/dont-rely-on-nulls/zerl/archive/c5cf31bc662fd1600988d53c03a659bead1e5a63.tar.gz";
-      hash = "sha256-Dv6Zyq/PjFPFsFJidJb/wo/eCLwzkJZNKdd8epPy4vw=";
+      url = "https://github.com/dont-rely-on-nulls/zerl/archive/refs/tags/v0.2.0.tar.gz";
+      hash = "sha256-ZbIv1T/WGnGMlYj3cO5Mdj6RoXIYiQN3tkGOGAaAFTg=";
     };
   }
 ]

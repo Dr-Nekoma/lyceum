@@ -74,6 +74,7 @@
           glfw-wayland
           wayland
           wayland-protocols
+          wayland-scanner
         ];
         linuxLibs =
           with pkgs;
