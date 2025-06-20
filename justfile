@@ -49,6 +49,9 @@ postgres:
 format:
     zig fmt .
 
+client-pure:
+    nix build .#client
+
 client:
     cd client && zig build run
 
