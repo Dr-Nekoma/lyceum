@@ -4,16 +4,16 @@ const rl = @import("raylib");
 const std = @import("std");
 
 const availableKeysAndLabels = [_]common.Slot{
-    .{ .key = .key_one, .label = "1" },
-    .{ .key = .key_two, .label = "2" },
-    .{ .key = .key_three, .label = "3" },
-    .{ .key = .key_four, .label = "4" },
-    .{ .key = .key_five, .label = "5" },
-    .{ .key = .key_six, .label = "6" },
-    .{ .key = .key_seven, .label = "7" },
-    .{ .key = .key_eight, .label = "8" },
-    .{ .key = .key_nine, .label = "9" },
-    .{ .key = .key_zero, .label = "0" },
+    .{ .key = .one, .label = "1" },
+    .{ .key = .two, .label = "2" },
+    .{ .key = .three, .label = "3" },
+    .{ .key = .four, .label = "4" },
+    .{ .key = .five, .label = "5" },
+    .{ .key = .six, .label = "6" },
+    .{ .key = .seven, .label = "7" },
+    .{ .key = .eight, .label = "8" },
+    .{ .key = .nine, .label = "9" },
+    .{ .key = .zero, .label = "0" },
 };
 
 pub fn at(slots: []const [:0]const u8, width: f32, height: f32, font: *rl.Font) !void {

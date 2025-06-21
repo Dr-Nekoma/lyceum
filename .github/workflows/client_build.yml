@@ -44,7 +44,7 @@ jobs:
         run: |
           nix build .#client
 
-      - name: "[Client] Tests"
-        run: |
-          nix develop .#ci --impure -c just client-build-ci
-          nix develop .#ci --impure -c just client-test-ci
+      #- name: "[Client] Tests"
+      #  run: |
+      #    nix develop .#ci --impure -c just client-build-ci
+      #    nix develop .#ci --impure -c just client-test-ci

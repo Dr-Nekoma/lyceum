@@ -74,6 +74,7 @@
           glfw-wayland
           wayland
           wayland-protocols
+          wayland-scanner
         ];
         linuxLibs =
           with pkgs;
@@ -111,7 +112,7 @@
 
         # App config
         app_name = "lyceum";
-        app_version = "0.1.0";
+        app_version = "0.2.0";
 
         # Erlang
         erlangVersion = pkgs.erlang;
@@ -120,7 +121,7 @@
 
         # Zig
         zig_app = "lyceum-client";
-        zigVersion = pkgs.zig_0_13;
+        zigVersion = pkgs.zig_0_14;
         raylib = pkgs.raylib;
 
         mkEnvVars = pkgs: erl: raylib: {
@@ -226,8 +227,10 @@
                 ++ lib.optionals stdenv.isLinux (linuxPkgs)
                 ++ lib.optionals stdenv.isDarwin darwinPkgs;
 
+            # To re-generate the nix lockfile:
+            # just client-deps
             postPatch = ''
-              ln -s ${pkgs.callPackage ./client/zon-deps.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
+              ln -s ${pkgs.callPackage ./client/build.zig.zon.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
             '';
 
             postInstall = ''

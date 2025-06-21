@@ -30,21 +30,21 @@ fn controlInput(gameState: *GameState) !i16 {
 
     if (entity.inventory.hud.chat.mode == .writing) return tempAngle;
 
-    if (rl.isKeyDown(.key_w)) {
+    if (rl.isKeyDown(.w)) {
         velocity.z -= deltaVelocity;
         tempAngle = 180;
-    } else if (rl.isKeyDown(.key_s)) {
+    } else if (rl.isKeyDown(.s)) {
         velocity.z += deltaVelocity;
         tempAngle = 0;
-    } else if (rl.isKeyDown(.key_a)) {
+    } else if (rl.isKeyDown(.a)) {
         velocity.x -= deltaVelocity;
         tempAngle = 270;
-    } else if (rl.isKeyDown(.key_d)) {
+    } else if (rl.isKeyDown(.d)) {
         velocity.x += deltaVelocity;
         tempAngle = 90;
     }
 
-    if (rl.isKeyDown(.key_backslash)) {
+    if (rl.isKeyDown(.backslash)) {
         try server.character.exitMap(gameState);
         rl.enableCursor();
     }

@@ -1,4 +1,5 @@
 const std = @import("std");
+const rl_zig = @import("raylib_zig");
 
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
@@ -24,10 +25,13 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
     });
 
+    const display_backend = b.option(rl_zig.LinuxDisplayBackend, "display", "Which display backend to use") orelse .Both;
+
     // TODO: figure out how to properly link a zig system library
-    if (b.lazyDependency("raylib-zig", .{
+    if (b.lazyDependency("raylib_zig", .{
         .target = target,
         .optimize = optimize,
+        .linux_display_backend = display_backend,
     })) |raylib_zig| {
         if (b.systemIntegrationOption("raylib", .{})) {
             exe.linkSystemLibrary("raylib");
@@ -53,7 +57,7 @@ pub fn build(b: *std.Build) !void {
     exe.step.dependOn(&assets.step);
 
     // https://ziglang.org/learn/build-system/#conditional-compilation
-    const assets_opt = b.option([]const u8, "assets", "custom path for the assets directory") orelse "./assets";
+    const assets_opt = b.option([]const u8, "assets", "Custom path for the assets directory") orelse "./assets";
     const options = b.addOptions();
     options.addOption([]const u8, "assets", assets_opt);
     exe.root_module.addOptions("build_options", options);
@@ -77,7 +81,12 @@ pub fn build(b: *std.Build) !void {
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
     // step when running `zig build`).
-    b.installArtifact(exe);
+    const no_bin = b.option(bool, "no-bin", "Skip emitting binary") orelse false;
+    if (no_bin) {
+        b.getInstallStep().dependOn(&exe.step);
+    } else {
+        b.installArtifact(exe);
+    }
 
     // This *creates* a Run step in the build graph, to be executed when another
     // step is evaluated that depends on it. The next line below will establish

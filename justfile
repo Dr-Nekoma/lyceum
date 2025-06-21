@@ -49,6 +49,9 @@ postgres:
 format:
     zig fmt .
 
+client-pure:
+    nix build .#client
+
 client:
     cd client && zig build run
 
@@ -57,6 +60,9 @@ client-release:
 
 client-build:
     cd client && zig build
+
+client-watch:
+    cd client && zig build -Dno-bin --watch -fincremental
 
 client-test:
     cd client && zig build test
@@ -68,7 +74,8 @@ client-test-ci:
     cd client && zig build test -fsys=raylib
 
 client-deps:
-    cd client && nix run github:Cloudef/zig2nix#zon2nix -- build.zig.zon > zon-deps.nix
+    cd client && nix run github:Cloudef/zig2nix -- zon2lock build.zig.zon
+    cd client && nix run github:Cloudef/zig2nix -- zon2nix build.zig.zon2json-lock
 
 # --------
 # Backend
