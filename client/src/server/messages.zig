@@ -110,11 +110,19 @@ pub const World = struct {
     pub const ResourceLocation = struct { Position, Resource };
 
     pub const Map = struct {
-        width: u32 = 10,
-        height: u32 = 10,
-        tiles: []const Tile = &.{},
-        objects: []Object = &.{},
-        resources: []const ResourceLocation = &.{},
+        width: u32,
+        height: u32,
+        tiles: []const Tile,
+        objects: []Object,
+        resources: []const ResourceLocation,
+
+        pub const empty: Map = .{
+            .width = 0,
+            .height = 0,
+            .tiles = &.{},
+            .objects = &.{},
+            .resources = &.{},
+        };
     };
 };
 

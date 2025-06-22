@@ -48,14 +48,14 @@ pub const Resource_Table = std.HashMap(
 pub const World = struct {
     pub const Character = @import("character.zig"); // TODO: stop cheating
     pub const Map = struct {
-        instance: messages.World.Map = .{},
+        instance: messages.World.Map = .empty,
         tiles: Tile_Table,
         objects: Object_Table,
         resources: Resource_Table,
     };
     character: Character = .{},
     other_players: Character_Table,
-    camera: rl.Camera = undefined,
+    camera: rl.Camera,
     cameraDistance: f32 = config.defaultCameraDistance,
     map: Map,
 };
