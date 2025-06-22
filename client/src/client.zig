@@ -18,8 +18,13 @@ const zerl = @import("zerl");
 pub fn main() anyerror!void {
     rl.setConfigFlags(.{ .window_resizable = true });
 
-    rl.initWindow(@intFromFloat(config.Screen.initialWidth), @intFromFloat(config.Screen.initialHeight), "Lyceum");
+    rl.initWindow(
+        @intFromFloat(config.Screen.initialWidth),
+        @intFromFloat(config.Screen.initialHeight),
+        "Lyceum",
+    );
     defer rl.closeWindow();
+
     rl.initAudioDevice();
     defer rl.closeAudioDevice();
 
@@ -67,7 +72,13 @@ pub fn main() anyerror!void {
                 try hud.at(&gameState);
             },
             .character_selection => {
-                rl.drawTextureEx(gameState.menu.assets.backgrounds.character_selection, .{ .x = 0, .y = 0 }, 0, 1, config.ColorPalette.secondary);
+                rl.drawTextureEx(
+                    gameState.menu.assets.backgrounds.character_selection,
+                    .{ .x = 0, .y = 0 },
+                    0,
+                    1,
+                    config.ColorPalette.secondary,
+                );
                 try characterMenu.selection(&gameState);
             },
             .connect => {
