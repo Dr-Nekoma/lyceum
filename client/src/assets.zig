@@ -25,7 +25,7 @@ fn load(
     const full_path = try std.fs.path.joinZ(allocator, &.{ base_filepath, file_path });
     defer allocator.free(full_path);
 
-    return T.init(full_path);
+    return .init(full_path);
 }
 
 pub fn image(imageFilePath: [:0]const u8) !rl.Image {
