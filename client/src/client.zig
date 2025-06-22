@@ -15,7 +15,7 @@ const std = @import("std");
 const userMenu = @import("menu/user.zig");
 const zerl = @import("zerl");
 
-pub fn main() anyerror!void {
+pub fn main() !void {
     rl.setConfigFlags(.{ .window_resizable = true });
 
     rl.initWindow(
