@@ -21,7 +21,7 @@ fn createAnonymousStruct(comptime T: type, comptime keys: []const [:0]const u8) 
             }
         }
         break :blk @Type(.{
-            .Struct = .{
+            .@"struct" = .{
                 .layout = .auto,
                 .fields = &fields,
                 .decls = &[_]std.builtin.Type.Declaration{},
