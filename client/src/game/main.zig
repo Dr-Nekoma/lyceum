@@ -83,16 +83,16 @@ fn drawWorld(player: *const GameCharacter, world: *const GameState.World.Map) !v
     const x_tile: i32 = @intFromFloat(player.position.x / config.assets.tile.size);
     const y_tile: i32 = @intFromFloat(player.position.z / config.assets.tile.size);
 
-    const widthBoundaries: struct { usize, usize } = .{
+    const minWidth: usize, const maxWidth: usize = .{
         @intCast(std.math.clamp(x_tile - config.fov - 1, 0, width)),
         @intCast(std.math.clamp(x_tile + config.fov + 1, 0, width)),
     };
-    const heightBoundaries: struct { usize, usize } = .{
+    const minHeight: usize, const maxHeight: usize = .{
         @intCast(std.math.clamp(y_tile - config.fov - 1, 0, height)),
         @intCast(std.math.clamp(y_tile + config.fov + 1, 0, height)),
     };
-    for (heightBoundaries.@"0"..(heightBoundaries.@"1")) |y| {
-        for (widthBoundaries.@"0"..(widthBoundaries.@"1")) |x| {
+    for (minHeight..maxHeight) |y| {
+        for (minWidth..maxWidth) |x| {
             const tile = tiles[world.instance.width * y + x];
             const object = objects[world.instance.width * y + x];
             const fy: f32 = @floatFromInt(y);
