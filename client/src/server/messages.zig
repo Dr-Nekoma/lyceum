@@ -6,7 +6,7 @@ const GameCharacter = @import("../game/character.zig");
 
 fn createAnonymousStruct(comptime T: type, comptime keys: []const [:0]const u8) type {
     const struct_info = @typeInfo(T).@"struct";
-    comptime var structKeys: [keys.len]std.meta.Tuple(&.{[:0]const u8}) = undefined;
+    comptime var structKeys: [keys.len]struct { [:0]const u8 } = undefined;
     comptime for (0.., keys) |index, key| {
         structKeys[index] = .{key};
     };
@@ -61,7 +61,7 @@ pub const User = struct {
             password: []const u8,
         };
 
-        const Info = std.meta.Tuple(&.{ zerl.ei.erlang_pid, [:0]const u8 });
+        const Info = struct { zerl.ei.erlang_pid, [:0]const u8 };
         pub const Response = TupleResponse(Info);
     };
 
