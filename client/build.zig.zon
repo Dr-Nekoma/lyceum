@@ -1,8 +1,9 @@
 .{
-    // the name of your project
     .name = .lyceum_client,
-    .fingerprint = 0x8ee7ae17a0ed0780,
     .version = "0.1.0",
+    .fingerprint = 0x8ee7ae17a0ed0780, // Changing this has security and trust implications.
+    .minimum_zig_version = "0.14.0",
+
     .dependencies = .{
         .raylib_zig = .{
             .url = "https://github.com/Not-Nik/raylib-zig/archive/d6c77762cbdebbf56d3ff101142048dfae2496c4.tar.gz",

@@ -6,15 +6,17 @@ const rm = rl.math;
 const std = @import("std");
 const GameState = @import("game/state.zig");
 const build_options = @import("build_options");
+const assert = std.debug.assert;
 
 const base_filepath = build_options.assets;
 
 fn load(
     comptime T: type,
-    comptime err: anyerror,
+    comptime err: anytype,
     comptime whitelist: anytype,
     file_path: [:0]const u8,
 ) !T {
+    comptime assert(@typeInfo(@TypeOf(err)) == .error_set);
     const valid_extensions = comptime std.StaticStringMap(void).initComptime(whitelist);
     const extension = std.fs.path.extension(file_path);
     if (!valid_extensions.has(extension)) return err;
@@ -23,7 +25,7 @@ fn load(
     const full_path = try std.fs.path.joinZ(allocator, &.{ base_filepath, file_path });
     defer allocator.free(full_path);
 
-    return T.init(full_path);
+    return .init(full_path);
 }
 
 pub fn image(imageFilePath: [:0]const u8) !rl.Image {

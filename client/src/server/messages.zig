@@ -6,7 +6,7 @@ const GameCharacter = @import("../game/character.zig");
 
 fn createAnonymousStruct(comptime T: type, comptime keys: []const [:0]const u8) type {
     const struct_info = @typeInfo(T).@"struct";
-    comptime var structKeys: [keys.len]std.meta.Tuple(&.{[:0]const u8}) = undefined;
+    comptime var structKeys: [keys.len]struct { [:0]const u8 } = undefined;
     comptime for (0.., keys) |index, key| {
         structKeys[index] = .{key};
     };
@@ -21,7 +21,7 @@ fn createAnonymousStruct(comptime T: type, comptime keys: []const [:0]const u8) 
             }
         }
         break :blk @Type(.{
-            .Struct = .{
+            .@"struct" = .{
                 .layout = .auto,
                 .fields = &fields,
                 .decls = &[_]std.builtin.Type.Declaration{},
@@ -61,7 +61,7 @@ pub const User = struct {
             password: []const u8,
         };
 
-        const Info = std.meta.Tuple(&.{ zerl.ei.erlang_pid, [:0]const u8 });
+        const Info = struct { zerl.ei.erlang_pid, [:0]const u8 };
         pub const Response = TupleResponse(Info);
     };
 
@@ -110,11 +110,19 @@ pub const World = struct {
     pub const ResourceLocation = struct { Position, Resource };
 
     pub const Map = struct {
-        width: u32 = 10,
-        height: u32 = 10,
-        tiles: []const Tile = &.{},
-        objects: []Object = &.{},
-        resources: []const ResourceLocation = &.{},
+        width: u32,
+        height: u32,
+        tiles: []const Tile,
+        objects: []Object,
+        resources: []const ResourceLocation,
+
+        pub const empty: Map = .{
+            .width = 0,
+            .height = 0,
+            .tiles = &.{},
+            .objects = &.{},
+            .resources = &.{},
+        };
     };
 };
 

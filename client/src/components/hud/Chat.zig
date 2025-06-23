@@ -5,8 +5,8 @@ const text = @import("../text.zig");
 const GameState = @import("../../game/state.zig");
 
 pub const Message = struct {
-    author: []const u8 = "",
-    content: []u8 = "",
+    author: []const u8,
+    content: []u8,
     // TODO: Add timestamp of message
     // timestamp: something,
 };
