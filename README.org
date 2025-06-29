@@ -8,8 +8,8 @@
 
 * Announcement
 
-Currently, Lyceum is in a paused state, i.e., this project may receive occasional commits and updates but major features' design and implementation are all
-*paused*. Feel free to make contributions/pull requests, one of our developers will eventually see it. We plan to return to this project at some point in the future.
++ Currently, client-side changes (besides Zig updates) are currently paused, our focus now is with the Erlang + PostgreSQL server. We plan to properly return to this project at some point in the future.
++ Feel free to make contributions/pull requests, one of our developers will eventually see it. 
 
 * About
 
@@ -18,6 +18,10 @@ written in [[https://ziglang.org/][Zig]] (supercharged with [[https://github.com
 
 #+html: <p align="center"><img src="./menu.jpg" alt="The game menu"></p>
 #+html: <p align="center"><img src="./game.gif" alt="game"/></p>
+
+** Featured
+
++ A demo of version 0.1.0 was featured on [[https://www.youtube.com/watch?v=ejYcWRERetM&t=2745s][Func Prog Sweden 2024]], as part of a talk on [[https://github.com/dont-rely-on-nulls/zerl][Zerl]].
 
 * How to run
 
