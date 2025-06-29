@@ -22,6 +22,7 @@
     db-up.exec = "just db-up";
     db-down.exec = "just db-down";
     db-reset.exec = "just db-reset";
+    pg-con.exec = "just db";
   };
 
   enterShell = ''
