@@ -5,13 +5,15 @@
 #+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_dialyzer.yml"> <img alt="[Server] Dialyzer" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_dialyzer.yml/badge.svg" /></a>
 #+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_deploy.yml"> <img alt="[Server] Deploy" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_deploy.yml/badge.svg" /></a>
 
-
-* Table of Contents
-:PROPERTIES:
-:TOC:      :include all :ignore this
-:END:
-:CONTENTS:
-:END
+- [[#about][About]]
+  - [[#featured][Featured]]
+  - [[#annoucements][Announcements]]
+- [[#development][Development]]
+  - [[#nix-shell][Nix Shell]]
+  - [[#running-the-demo][Running the Demo]]
+  - [[#deployment][Deployment]]
+- [[#lore][Lore]] 
+- [[#assets][Assets]] 
 
 * About
 
@@ -30,13 +32,13 @@ written in [[https://ziglang.org/][Zig]] (supercharged with [[https://github.com
 + Currently, client-side changes (besides Zig updates) are currently paused, our focus now is with the Erlang + PostgreSQL server. We plan to properly return to this project at some point in the future.
 + Feel free to make contributions/pull requests, one of our developers will eventually see it. 
 
-* How to run
+* Development
 
 There are several ways to run this project, but they all leverage [[https://nixos.org/][Nix]]. We have a
 single [[https://devenv.sh/][devenv]] configured, that has all the tooling required to run this project,
 it also includes postgres.
 
-** Development Shell
+** Nix Shell
 
 To enter a development shell we assume you have at least [[https://nixos.org/][Nix]] installed:
 
@@ -74,7 +76,7 @@ if you prefer running a container for the server:
 
 or if you want to build the ~zig~ client, run ~nix build .#client~.
 
-** Testing the Game
+** Running the Demo
 
 To run our DEMO you need to follow the steps in this particular order:
 
@@ -114,29 +116,6 @@ To run our DEMO you need to follow the steps in this particular order:
 ** Deployment
 
 This game is deployed in our [[https://github.com/Dr-Nekoma/trashcan][NixOS server]].
-
-* Assets
-
-References for assets used in this project:
-
-- [[https://opengameart.org/node/33425][sand_texture]]
-- [[https://opengameart.org/content/stylized-grass][grass_texture]]
-- [[https://opengameart.org/content/simple-seamless-tiles-of-dirt-and-sand-dirt-2-png][dirt_texture]]
-- [[https://opengameart.org/content/texture-water][water_texture]]
-- [[https://free3d.com/3d-model/-rectangular-grass-patch--205749.html][tile_model]] (used for all types of tiles)
-- [[https://free3d.com/3d-model/treasure-chest-v1--156264.html][chest_model]]
-- [[https://opengameart.org/content/fern][bush_model]]
-- [[https://opengameart.org/content/tree-24][tree_model]]
-- [[https://free3d.com/3d-model/rock-v2-lp-63239.html][rock_model]]  
-- [[https://www.dafont.com/eari.font?text=Lyceum][logo_font]]
-- [[https://www.dafont.com/kelmscott.font?text=Connect][text_font]]
-- [[https://tholgrimar.bandcamp.com/track/linear-b][background_music]]
-- [[https://opengameart.org/content/menu-selection-click][button_select_sound]]
-- [[https://opengameart.org/content/click][button_click_sound]]
-- [[https://opengameart.org/content/soundpack-04][error_sound]]  
-- [[https://youtu.be/gFf5eGCjUUg?si=cmJcKlSzoV4ES0p8][character_model]] (slightly modified in blender)
-
-Everything else was made by developers from the project or generated using tools.  
 
 * Lore
 
@@ -183,3 +162,27 @@ decay and external aggression, the balance of power shifts perilously,
 casting doubt upon the fate of civilizations wrought by the hands of
 gods and men alike. It is your duty, oh great Philosopher, to mend the
 meanings and bring us all closer to truth once again.
+
+* Assets
+
+References for assets used in this project:
+
+- [[https://opengameart.org/node/33425][sand_texture]]
+- [[https://opengameart.org/content/stylized-grass][grass_texture]]
+- [[https://opengameart.org/content/simple-seamless-tiles-of-dirt-and-sand-dirt-2-png][dirt_texture]]
+- [[https://opengameart.org/content/texture-water][water_texture]]
+- [[https://free3d.com/3d-model/-rectangular-grass-patch--205749.html][tile_model]] (used for all types of tiles)
+- [[https://free3d.com/3d-model/treasure-chest-v1--156264.html][chest_model]]
+- [[https://opengameart.org/content/fern][bush_model]]
+- [[https://opengameart.org/content/tree-24][tree_model]]
+- [[https://free3d.com/3d-model/rock-v2-lp-63239.html][rock_model]]  
+- [[https://www.dafont.com/eari.font?text=Lyceum][logo_font]]
+- [[https://www.dafont.com/kelmscott.font?text=Connect][text_font]]
+- [[https://opengameart.org/content/menu-selection-click][button_select_sound]]
+- [[https://opengameart.org/content/click][button_click_sound]]
+- [[https://opengameart.org/content/soundpack-04][error_sound]]  
+- [[https://youtu.be/gFf5eGCjUUg?si=cmJcKlSzoV4ES0p8][character_model]] (slightly modified in blender)
+
+Special thanks to [[https://tholgrimar.bandcamp.com/][Tholgrimar]] for allowing us to use "[[https://tholgrimar.bandcamp.com/track/linear-b][Linear B]]" as our background music.
+
+Everything else was made by developers from the project or generated using tools.  
