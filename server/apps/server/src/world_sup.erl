@@ -42,7 +42,7 @@ init([]) ->
           type => worker,
           modules => [world]},
 
-    io:format("[~p] Starting Supervisor...~n", [?SERVER]),
+    logger:info("[~p] Starting Supervisor...~n", [?SERVER]),
     {ok, {SupFlags, [WorldWorker]}}.
 
 %%%===================================================================

@@ -1,15 +1,17 @@
 #+TITLE: Lyceum 🏛️
-
 #+html: <a href="https://builtwithnix.org"><img alt="built with nix" src="https://builtwithnix.org/badge.svg" /></a><br>
 #+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/client_build.yml"> <img alt="[Client] Build" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/client_build.yml/badge.svg" /></a><br>
 #+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_build.yml"> <img alt="[Server] Build" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_build.yml/badge.svg" /></a>
 #+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_dialyzer.yml"> <img alt="[Server] Dialyzer" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_dialyzer.yml/badge.svg" /></a>
 #+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_deploy.yml"> <img alt="[Server] Deploy" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_deploy.yml/badge.svg" /></a>
 
-* Announcement
 
-+ Currently, client-side changes (besides Zig updates) are currently paused, our focus now is with the Erlang + PostgreSQL server. We plan to properly return to this project at some point in the future.
-+ Feel free to make contributions/pull requests, one of our developers will eventually see it. 
+* Table of Contents
+:PROPERTIES:
+:TOC:      :include all :ignore this
+:END:
+:CONTENTS:
+:END
 
 * About
 
@@ -22,6 +24,11 @@ written in [[https://ziglang.org/][Zig]] (supercharged with [[https://github.com
 ** Featured
 
 + A demo of version 0.1.0 was featured on [[https://www.youtube.com/watch?v=ejYcWRERetM&t=2745s][Func Prog Sweden 2024]], as part of a talk on [[https://github.com/dont-rely-on-nulls/zerl][Zerl]].
+
+** Announcement
+
++ Currently, client-side changes (besides Zig updates) are currently paused, our focus now is with the Erlang + PostgreSQL server. We plan to properly return to this project at some point in the future.
++ Feel free to make contributions/pull requests, one of our developers will eventually see it. 
 
 * How to run
 

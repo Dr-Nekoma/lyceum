@@ -54,14 +54,21 @@ CREATE TABLE IF NOT EXISTS test_schema.record(
     PRIMARY KEY(username, e_mail)
 );
 
+
 -- o.g. character instance
 CREATE TABLE IF NOT EXISTS test_schema.instance(
     name TEXT NOT NULL,
     e_mail test_schema.email NOT NULL,
     username TEXT NOT NULL,
-    -- We use this to help the Erlang backend and MNESIA,
-    -- as it is easier to store a single key like
-    uid TEXT GENERATED ALWAYS AS (encode(digest(name || username || e_mail, 'sha256'), 'hex')) STORED,
+    -- We use this to help the Erlang backend and MNESIA, as 
+    -- it is easier to store a single key like. This is safe 
+    -- to associate to PIDs in MNESIA sice we don't allow 
+    -- users to change their account and character names.
+    uid TEXT GENERATED ALWAYS AS (encode(digest(name || username, 'sha256'), 'hex')) STORED,
     FOREIGN KEY (e_mail, username) REFERENCES test_schema.record(e_mail, username),
     PRIMARY KEY(name, username, e_mail)
 );
+
+-- TESTs
+INSERT INTO test_schema.record(username, e_mail, password) VALUES ('test', 'test@test.com', 'test');
+INSERT INTO test_schema.instance(name, e_mail, username) VALUES ('char', 'test@test.com', 'test');

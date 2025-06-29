@@ -133,10 +133,8 @@
           # Devenv sets this to something else
           # https://www.postgresql.org/docs/7.0/libpq-envars.htm
           PGHOST = "127.0.0.1";
-          PG_USER = app_name;
-          PG_PASSWORD = app_name;
-          PG_DB = app_name;
-          PG_PORT = "5432";
+          # Waylad setup
+          GLFW_SCALE_TO_MONITOR="GLFW_TRUE";
         };
       in
       {
