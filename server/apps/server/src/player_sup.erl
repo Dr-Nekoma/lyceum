@@ -28,7 +28,7 @@ start_link() ->
 
 -spec start(term()) -> supervisor:startchild_ret().
 start(Args) ->
-    io:format("SUP ~p~n...", [Args]),
+    logger:info("[~p] Starting CHILD with ARGS = ~p~n", [?SERVER, Args]),
     supervisor:start_child(?MODULE, Args).
 
 %%%===================================================================
@@ -49,7 +49,7 @@ init([]) ->
           type => worker,
           modules => [player]},
 
-    io:format("[~p] Starting Supervisor...~n", [?SERVER]),
+    logger:info("[~p] Starting Supervisor...~n", [?SERVER]),
     {ok, {SupFlags, [PlayerWorker]}}.
 
 %%%===================================================================

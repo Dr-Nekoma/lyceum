@@ -17,7 +17,7 @@
 
 -spec start(term(), term()) -> gen_server:start_ret().
 start(_StartType, _StartArgs) ->
-    logger:info("Starting Server Application...~n"),
+    logger:info("Starting ~p Application...~n", [?MODULE]),
     server_sup:start_link().
 
 %%--------------------------------------------------------------------

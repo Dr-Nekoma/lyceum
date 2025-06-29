@@ -5,6 +5,8 @@
 %%%-------------------------------------------------------------------
 -module(world).
 
+-behaviour(gen_server).
+
 %% API
 -export([start_link/0]).
 %% gen_server callbacks

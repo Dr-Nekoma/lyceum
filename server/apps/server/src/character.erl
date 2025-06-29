@@ -156,7 +156,7 @@ harvest_resource(#{name := Name,
 		   x_position := XPosition,
 		   y_position := YPosition},
 		 Connection) ->
-    io:format("Name: ~p | UserName: ~p\n", [Name, Username]),
+    logger:info("NAME: ~p USERNAME: ~p~n", [Name, Username]),
     Harvest = "CALL map.harvest_resource($1::TEXT, $2::\"map\".OBJECT_TYPE, $3::REAL, $4::REAL, $5::TEXT, $6::TEXT, $7::TEXT);",
 
     Inventory = "SELECT item_name, quantity FROM map.resource_item_view WHERE\

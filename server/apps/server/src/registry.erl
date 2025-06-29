@@ -15,8 +15,9 @@
          Result :: {ok, Email} | {ok, any(), any()} | {ok, any(), any(), any()} | {error, Message}.
 check_user(#{username := Username, password := Password}, Connection) ->
     Query =
-        "SELECT * FROM player.record WHERE username = $1::TEXT "
-        "AND password = $2::TEXT",
+        "SELECT username, password, e_mail::TEXT "
+        "FROM player.record "
+        "WHERE username = $1::TEXT AND password = $2::TEXT",
     do([postgres_m
         || UnprocessedUser <- {epgsql:equery(Connection, Query, [Username, Password]), select},
            case database_utils:columns_and_rows(UnprocessedUser) of
@@ -32,7 +33,7 @@ insert_user(#{username := Username,
               password := Password},
             Connection) ->
     Query =
-        "INSERT INTO player.record (username, e-mail, password) VALUES "
-        "($1::TEXT, $2::TEXT, $3::TEXT)",
+        "INSERT INTO player.record (username, e_mail, password) VALUES "
+        "($1::TEXT, $2::player.email, $3::TEXT)",
     do([postgres_m
         || _ <- {epgsql:equery(Connection, Query, [Username, Email, Password]), insert}, ok]).

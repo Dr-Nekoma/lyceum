@@ -21,14 +21,15 @@ transform_resource(Map) ->
 -spec check_dimensions(map()) -> any().
 check_dimensions(UnprocessedMap) ->
     do([error_m ||	   
-	   case database_utils:columns_and_rows(UnprocessedMap) of
-	       [Map] ->
-		   Width = maps:get(width, Map),
-		   Height = maps:get(height, Map),
-		   return({Width, Height});
-	       _ -> io:format("[ERROR] Something to wrong when getting map dimensions!\n"),
-		    exit(2)
-	   end]).
+        case database_utils:columns_and_rows(UnprocessedMap) of
+            [Map] ->
+                Width = maps:get(width, Map),
+                Height = maps:get(height, Map),
+                return({Width, Height});
+            _ -> 
+                logger:error("[ERROR] Something to wrong when getting map dimensions!\n"),
+                exit(2)
+        end]).
 
 -spec get_map(epgsql:bind_param(), epgsql:connection()) -> any().
 get_map(MapName, Connection) ->

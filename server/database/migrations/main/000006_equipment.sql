@@ -29,10 +29,10 @@ END $$;
 
 -- TABLES
 CREATE TABLE IF NOT EXISTS equipment.instance(
-       name TEXT NOT NULL,
-       description TEXT NOT NULL,
-       kind equipment.KIND NOT NULL,
-       PRIMARY KEY(name, kind)
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    kind equipment.KIND NOT NULL,
+    PRIMARY KEY(name, kind)
 );
 
 -- This is going to be used in the next table, as a constraint
@@ -48,15 +48,15 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TABLE IF NOT EXISTS equipment.character(
-       name TEXT NOT NULL,
-       e_mail TEXT NOT NULL CHECK (e_mail ~* '^[A-Za-z0-9.+%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$'),
-       username TEXT NOT NULL,
-       is_equiped BOOL NOT NULL,
-       equipment_name TEXT NOT NULL,
-       use equipment.USE NOT NULL,
-       kind equipment.KIND NOT NULL,
-       CHECK (equipment.check_equipment_position_compatibility(use, kind)),
-       FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
-       FOREIGN KEY (equipment_name, kind) REFERENCES equipment.instance(name, kind),
-       PRIMARY KEY(name, username, e_mail, equipment_name)
+    name TEXT NOT NULL,
+    e_mail player.email NOT NULL,
+    username TEXT NOT NULL,
+    is_equiped BOOL NOT NULL,
+    equipment_name TEXT NOT NULL,
+    use equipment.USE NOT NULL,
+    kind equipment.KIND NOT NULL,
+    CHECK (equipment.check_equipment_position_compatibility(use, kind)),
+    FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
+    FOREIGN KEY (equipment_name, kind) REFERENCES equipment.instance(name, kind),
+    PRIMARY KEY(name, username, e_mail, equipment_name)
 );

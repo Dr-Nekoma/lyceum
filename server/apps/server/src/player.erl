@@ -4,6 +4,8 @@
 %%%-------------------------------------------------------------------
 -module(player).
 
+-behaviour(gen_server).
+
 %% API
 -export([start_link/1]).
 %% gen_server callbacks
@@ -30,9 +32,9 @@
 %%--------------------------------------------------------------------
 -spec start_link(term()) -> gen_server:start_ret().
 start_link(Args) ->
-    io:format("GEN_SERVER ARGS ~p~n", [Args]),
+    logger:debug("GEN_SERVER ARGS ~p~n", [Args]),
     {Name, State} = Args,
-    io:format("[~p] GEN_SERVER NAME = ~p~nGEN_SERVER STATE = ~p~n", [?MODULE, Name, State]),
+    logger:debug("[~p] GEN_SERVER NAME = ~p~nGEN_SERVER STATE = ~p~n", [?MODULE, Name, State]),
     gen_server:start_link({global, Name}, ?MODULE, State, []).
 
 %%%===================================================================
@@ -144,7 +146,7 @@ handle_info({_, {login, _}}, State) ->
     State#user_state.pid ! {error, "User already logged in"},
     {noreply, State};
 handle_info(Info, State) ->
-    io:format("[~p] INFO: ~p~n", [?MODULE, Info]),
+    logger:warning("[~p] HANDLE_INFO: ~p~n", [?MODULE, Info]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -160,7 +162,7 @@ handle_info(Info, State) ->
 %%--------------------------------------------------------------------
 -spec terminate(term(), user_state()) -> ok.
 terminate(Reason, _State) ->
-    io:format("[~p] Termination: ~p~n", [?MODULE, Reason]),
+    logger:info("[~p] Termination: ~p~n", [?MODULE, Reason]),
     ok.
 
 %%--------------------------------------------------------------------
@@ -181,9 +183,9 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 -spec list_characters(user_state(), map()) -> term().
 list_characters(State, #{email := _Email, username := Username} = Request) ->
-    io:format("[~p] Querying ~p's characters...~n", [?MODULE, Username]),
+    logger:info("[~p] Querying ~p's characters...~n", [?MODULE, Username]),
     Reply = character:player_characters(Request, State#user_state.connection),
-    io:format("[~p] Characters: ~p~n", [?MODULE, Reply]),
+    logger:info("[~p] Characters: ~p~n", [?MODULE, Reply]),
     State#user_state.pid ! Reply.
 
 -spec joining_map(user_state(), map()) -> ok.
@@ -192,16 +194,16 @@ joining_map(State, #{name := Name, map_name := MapName} = Request) ->
     Connection = State#user_state.connection,
     case character:activate(Request, Connection) of
         ok ->
-            io:format("[~p] Retriving ~p's updated info...", [?MODULE, Name]),
+            logger:info("[~p] Retriving ~p's updated info...", [?MODULE, Name]),
             Result =
                 do([error_m
                     || Character <- character:player_character(Request, Connection),
                        Map <- map:get_map(MapName, Connection),
-                       io:format("Retriving ~p's map...", [MapName]),
+                       logger:info("Retriving ~p's map...", [MapName]),
                        return(#{character => Character, map => Map})]),
             Pid ! Result;
         {error, Message} ->
-            io:format("Failed to Join Map: ~p~n", [Message]),
+            logger:error("Failed to Join Map: ~p~n", [Message]),
             Pid ! {error, "Could not join map"}
     end,
     ok.
@@ -213,7 +215,7 @@ harvest_resource(State, Request) ->
     Pid = State#user_state.pid,
     Connection = State#user_state.connection,   
     Result = character:harvest_resource(maps:update_with(kind, fun atom_to_upperstring/1, Request), Connection),
-    io:format("Harvest Result: ~p\n", [Result]),
+    logger:info("Harvest Result: ~p\n", [Result]),
     Pid ! Result.
 
 -spec update(user_state(), map()) -> term().
@@ -224,7 +226,7 @@ update(State, CharacterMap) ->
             Result = character:retrieve_near_players(CharacterMap, State#user_state.connection),
             Pid ! Result;
         {error, Message} ->
-            io:format("Failed to Update: ~p\n", [Message]),
+            logger:error("Failed to Update: ~p~n", [Message]),
             Pid ! {error, Message}
     end.
 
@@ -239,7 +241,7 @@ exit_map(State) ->
         ok ->
             Pid ! ok;
         {error, Message} ->
-            io:format("Failed to ExitMap: ~p~n", [Message]),
+            logger:error("Failed to ExitMap: ~p~n", [Message]),
             exit(2)
     end.
 
