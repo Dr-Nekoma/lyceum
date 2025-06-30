@@ -133,6 +133,8 @@
           # Devenv sets this to something else
           # https://www.postgresql.org/docs/7.0/libpq-envars.htm
           PGHOST = "127.0.0.1";
+          # Waylad setup
+          GLFW_SCALE_TO_MONITOR="GLFW_TRUE";
         };
       in
       {

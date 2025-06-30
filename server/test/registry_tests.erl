@@ -13,7 +13,7 @@ check_user_success_test() ->
     end),
     
     meck:expect(database_utils, columns_and_rows, fun(Arg) ->
-        io:format("MOCK columns_and_rows called with: ~p~n", [Arg]),
+        logger:info("MOCK columns_and_rows called with: ~p~n", [Arg]),
         [#{username => <<"user1">>, e_mail => <<"user1@email.com">>, password => <<"1234">>}]
     end),
     

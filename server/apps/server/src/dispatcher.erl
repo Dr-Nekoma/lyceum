@@ -4,6 +4,8 @@
 %%%-------------------------------------------------------------------
 -module(dispatcher).
 
+-behaviour(gen_server).
+
 %% API
 -export([start_link/0]).
 %% gen_server callbacks
@@ -132,11 +134,11 @@ handle_cast(_Msg, State) ->
              {noreply, server_state(), timeout()} |
              {stop, term(), server_state()}.
 handle_info({From, {login, Request}}, State) ->
-    io:format("[~p] INFO: ~p~n", [?SERVER, From]),
+    logger:info("[~p] INFO: ~p~n", [?SERVER, From]),
     login(State, From, Request),
     {noreply, State};
 handle_info(Info, State) ->
-    io:format("[~p] INFO: ~p~n", [?SERVER, Info]),
+    logger:error("[~p] INFO: ~p~n", [?SERVER, Info]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
