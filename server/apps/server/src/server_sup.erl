@@ -34,8 +34,9 @@ init([]) ->
     SupFlags =
         #{strategy => one_for_one,
           intensity => 12,
-          period => 3600},
+          period => 600},
 
+    %% Player-related Supervisors
     DispatcherSup =
         #{id => dispatcher_sup,
           start => {dispatcher_sup, start_link, []},
@@ -52,6 +53,7 @@ init([]) ->
           type => supervisor,
           modules => [player_sup]},
 
+    %% World Supervisor
     WorldSup =
         #{id => world_sup,
           start => {world_sup, start_link, []},
@@ -61,7 +63,7 @@ init([]) ->
           modules => [world_sup]},
 
     logger:info("[~p] Starting Top Level Supervisor...~n", [?SERVER]),
-    {ok, {SupFlags, [DispatcherSup, PlayerSup, WorldSup]}}.
+    {ok, {SupFlags, [WorldSup, DispatcherSup, PlayerSup]}}.
 
 %%%===================================================================
 %%% Internal functions

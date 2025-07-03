@@ -12,9 +12,10 @@ database := justfile_directory() + "server/database"
 server := justfile_directory() + "/server"
 client := justfile_directory() + "/client"
 server_port := "8080"
+application := "lyceum"
 
 # Deploy
-deploy_host := env_var_or_default("DEPLOY_HOST", "NONE")
+deploy_host := env_var_or_default("DEPLOY_HOST", "127.0.0.1")
 
 # Utils
 
@@ -35,9 +36,9 @@ default:
 # Database
 # ---------
 
-# Login into the local Database as `admin`
+# Login into the local database
 db:
-    psql -U admin mmo
+    psql -U admin lyceum
 
 # Bootstraps the local nix-based postgres server
 postgres:
@@ -82,43 +83,43 @@ client-deps:
 # --------
 
 build:
-    cd server && rebar3 compile
+    cd {{ server }} && rebar3 compile && rebar3 release as default
 
 # Fetches rebar3 dependencies, updates both the rebar and nix lockfiles
 deps:
-    cd server && rebar3 get-deps
-    cd server && rebar3 nix lock
+    cd {{ server }} && rebar3 get-deps
+    cd {{ server }} && rebar3 nix lock
 
 # Runs dializer on the erlang codebase
 dialyzer:
-    cd server && rebar3 as dialzye dialyzer
+    cd {{ server}} && rebar3 as dialzye dialyzer
 
 # Spawns an erlang shell
 shell: build
-    cd server && rebar3 shell
+    cd {{ server }} && rebar3 shell
 
 # Runs ther erlang server (inside the rebar shell)
 server: build
     #!/usr/bin/env bash
-    cd server && \
-        rebar3 release -n server && \
-        ./_build/default/rel/server/bin/server foreground
+    cd {{ server }} && \
+        rebar3 release -n {{ application }} && \
+        ./_build/default/rel/{{ application }}/bin/{{ application }} foreground
 
 # Runs unit tests in the server
 test:
-    cd server && rebar3 do eunit, ct
+    cd {{ server }} && rebar3 do eunit, ct
 
 # Migrates the DB (up)
 db-up:
-    ./server/database/migrate_up.sh
+    {{ database }}/migrate_up.sh
 
 # Nukes the DB
 db-down:
-    ./server/database/migrate_down.sh
+    {{ database }}/migrate_down.sh
 
 # Populate DB
 db-input:
-    ./server/database/migrate_input.sh
+    {{ database }}/migrate_input.sh
 
 # Hard reset DB
 db-reset: db-down db-up db-input
@@ -129,7 +130,7 @@ db-reset: db-down db-up db-input
 
 # Create a prod release of all apps
 release:
-    rebar3 as prod release -n server
+    rebar3 as prod release -n {{ application }}
 
 # Create a prod release (for nix) of the server
 release-nix:

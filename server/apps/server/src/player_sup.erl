@@ -27,9 +27,9 @@ start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
 -spec start(term()) -> supervisor:startchild_ret().
-start(Args) ->
-    logger:info("[~p] Starting CHILD with ARGS = ~p~n", [?SERVER, Args]),
-    supervisor:start_child(?MODULE, Args).
+start(Cache) ->
+    logger:info("[~p] Starting CHILD with ARGS = ~p~n", [?SERVER, Cache]),
+    supervisor:start_child(?MODULE, [Cache]).
 
 %%%===================================================================
 %%% Supervisor callbacks
@@ -45,7 +45,7 @@ init([]) ->
         #{id => player,
           start => {player, start_link, []},
           restart => transient,
-          shutdown => brutal_kill,
+          shutdown => 300,
           type => worker,
           modules => [player]},
 

@@ -12,7 +12,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
          code_change/3]).
 
--include("user_state.hrl").
+-include("player_state.hrl").
 
 -compile({parse_transform, do}).
 
@@ -25,17 +25,20 @@
 
 %%--------------------------------------------------------------------
 %% @doc
-%% Starts the server
-%%
-%% @spec start_link() -> {ok, Pid} | ignore | {error, Error}
+%% Starts a player's server
 %% @end
 %%--------------------------------------------------------------------
--spec start_link(term()) -> gen_server:start_ret().
-start_link(Args) ->
-    logger:debug("GEN_SERVER ARGS ~p~n", [Args]),
-    {Name, State} = Args,
-    logger:debug("[~p] GEN_SERVER NAME = ~p~nGEN_SERVER STATE = ~p~n", [?MODULE, Name, State]),
-    gen_server:start_link({global, Name}, ?MODULE, State, []).
+-spec start_link(Cache) -> Result when 
+    Cache :: player_cache(),
+    Result :: gen_server:start_ret().
+start_link(Cache) ->
+    logger:debug("GEN_SERVER ARGS ~p~n", [Cache]),
+    {ok, Conn} = database:connect(),
+    PlayerId = Cache#player_cache.player_id,
+    State = cache_to_state(Conn, Cache),
+    logger:debug("[~p] GEN_SERVER NAME = ~p~nGEN_SERVER STATE = ~p~n",
+                 [?MODULE, PlayerId, State]),
+    gen_server:start_link({global, PlayerId}, ?MODULE, State, []).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -52,7 +55,7 @@ start_link(Args) ->
 %%                     {stop, Reason}
 %% @end
 %%--------------------------------------------------------------------
--spec init(user_state()) -> {ok, user_state()}.
+-spec init(player_state()) -> {ok, player_state()}.
 init(State) ->
     {ok, State}.
 
@@ -70,14 +73,14 @@ init(State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_call(term(), gen_server:from(), user_state()) -> Return
+-spec handle_call(term(), gen_server:from(), player_state()) -> Return
     when Return ::
-             {reply, term(), user_state()} |
-             {reply, term(), user_state(), timeout()} |
-             {noreply, user_state()} |
-             {noreply, user_state(), timeout()} |
-             {stop, term(), term(), user_state()} |
-             {stop, term(), user_state()}.
+             {reply, term(), player_state()} |
+             {reply, term(), player_state(), timeout()} |
+             {noreply, player_state()} |
+             {noreply, player_state(), timeout()} |
+             {stop, term(), term(), player_state()} |
+             {stop, term(), player_state()}.
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -92,11 +95,11 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_cast(term(), user_state()) -> Return
+-spec handle_cast(term(), player_state()) -> Return
     when Return ::
-             {noreply, user_state()} |
-             {noreply, user_state(), timeout()} |
-             {stop, term(), user_state()}.
+             {noreply, player_state()} |
+             {noreply, player_state(), timeout()} |
+             {stop, term(), player_state()}.
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -110,9 +113,9 @@ handle_cast(_Msg, State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_info(term(), user_state()) -> Return
+-spec handle_info(term(), player_state()) -> Return
     when Return ::
-             {noreply, user_state()} | {noreply, user_state()} | {stop, term(), user_state()}.
+             {noreply, player_state()} | {noreply, player_state()} | {stop, term(), player_state()}.
 handle_info({list_characters, Request}, State) ->
     list_characters(State, Request),
     {noreply, State};
@@ -123,12 +126,11 @@ handle_info({joining_map,
                  Request},
             OldState) ->
     ok = joining_map(OldState, Request),
-    NewState =
-        #user_state{pid = OldState#user_state.pid,
-                    connection = OldState#user_state.connection,
-                    email = Email,
-                    username = Username,
-                    name = Name},
+    Data =
+        #player_data{email = Email,
+                     username = Username,
+                     character_name = Name},
+    NewState = OldState#player_state{data = Data},
     {noreply, NewState};
 handle_info({update_character, Request}, State) ->
     update(State, Request),
@@ -143,7 +145,7 @@ handle_info(logout, State) ->
     logout(State),
     {noreply, State};
 handle_info({_, {login, _}}, State) ->
-    State#user_state.pid ! {error, "User already logged in"},
+    State#player_state.client_pid ! {error, "User already logged in"},
     {noreply, State};
 handle_info(Info, State) ->
     logger:warning("[~p] HANDLE_INFO: ~p~n", [?MODULE, Info]),
@@ -160,7 +162,7 @@ handle_info(Info, State) ->
 %% @spec terminate(Reason, State) -> void()
 %% @end
 %%--------------------------------------------------------------------
--spec terminate(term(), user_state()) -> ok.
+-spec terminate(term(), player_state()) -> ok.
 terminate(Reason, _State) ->
     logger:info("[~p] Termination: ~p~n", [?MODULE, Reason]),
     ok.
@@ -173,25 +175,39 @@ terminate(Reason, _State) ->
 %% @spec code_change(OldVsn, State, Extra) -> {ok, NewState}
 %% @end
 %%--------------------------------------------------------------------
--spec code_change(term(), user_state(), term()) -> Return
-    when Return :: {ok, user_state()} | {error, term()}.
+-spec code_change(term(), player_state(), term()) -> Return
+    when Return :: {ok, player_state()} | {error, term()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec list_characters(user_state(), map()) -> term().
-list_characters(State, #{email := _Email, username := Username} = Request) ->
-    logger:info("[~p] Querying ~p's characters...~n", [?MODULE, Username]),
-    Reply = character:player_characters(Request, State#user_state.connection),
-    logger:info("[~p] Characters: ~p~n", [?MODULE, Reply]),
-    State#user_state.pid ! Reply.
+-spec cache_to_state(Conn, Cache) -> State
+    when
+      Conn :: epgsql:connection(),
+      Cache :: player_cache(),
+      State :: player_state().
+cache_to_state(Conn, Cache) ->
+    PlayerId = Cache#player_cache.player_id,
+    Username = Cache#player_cache.username,
+    Email = Cache#player_cache.email,
+    ClientPid = Cache#player_cache.client_pid,
+    Data = #player_data{username = Username, email = Email},
+    #player_state{connection = Conn, client_pid = ClientPid, player_id = PlayerId, data = Data}.
 
--spec joining_map(user_state(), map()) -> ok.
+-spec list_characters(player_state(), map()) -> term().
+list_characters(State, #{email := _, username := Username} = Request) ->
+    logger:info("[~p] Querying ~p's characters...~n", [?MODULE, Username]),
+    Conn = State#player_state.connection,
+    Reply = character:player_characters(Request, Conn),
+    logger:info("[~p] Characters: ~p~n", [?MODULE, Reply]),
+    State#player_state.client_pid ! Reply.
+
+-spec joining_map(player_state(), map()) -> ok.
 joining_map(State, #{name := Name, map_name := MapName} = Request) ->
-    Pid = State#user_state.pid,
-    Connection = State#user_state.connection,
+    Pid = State#player_state.client_pid,
+    Connection = State#player_state.connection,
     case character:activate(Request, Connection) of
         ok ->
             logger:info("[~p] Retriving ~p's updated info...", [?MODULE, Name]),
@@ -208,36 +224,38 @@ joining_map(State, #{name := Name, map_name := MapName} = Request) ->
     end,
     ok.
 
-atom_to_upperstring(Atom) -> string:uppercase(atom_to_list(Atom)).
+atom_to_upperstring(Atom) ->
+    string:uppercase(atom_to_list(Atom)).
 
--spec harvest_resource(user_state(), map()) -> ok.
+-spec harvest_resource(player_state(), map()) -> ok.
 harvest_resource(State, Request) ->
-    Pid = State#user_state.pid,
-    Connection = State#user_state.connection,   
-    Result = character:harvest_resource(maps:update_with(kind, fun atom_to_upperstring/1, Request), Connection),
+    Pid = State#player_state.client_pid,
+    Connection = State#player_state.connection,
+    Result =
+        character:harvest_resource(
+            maps:update_with(kind, fun atom_to_upperstring/1, Request), Connection),
     logger:info("Harvest Result: ~p\n", [Result]),
     Pid ! Result.
 
--spec update(user_state(), map()) -> term().
+-spec update(player_state(), map()) -> term().
 update(State, CharacterMap) ->
-    Pid = State#user_state.pid,
-    case character:update(CharacterMap, State#user_state.connection) of
+    Pid = State#player_state.client_pid,
+    case character:update(CharacterMap, State#player_state.connection) of
         ok ->
-            Result = character:retrieve_near_players(CharacterMap, State#user_state.connection),
+            Result = character:retrieve_near_players(CharacterMap, State#player_state.connection),
             Pid ! Result;
         {error, Message} ->
             logger:error("Failed to Update: ~p~n", [Message]),
             Pid ! {error, Message}
     end.
 
--spec exit_map(user_state()) -> term() | no_return().
+-spec exit_map(player_state()) -> term() | no_return().
 exit_map(State) ->
-    Pid = State#user_state.pid,
-    case character:deactivate(State#user_state.name,
-                              State#user_state.email,
-                              State#user_state.username,
-                              State#user_state.connection)
-    of
+    Pid = State#player_state.client_pid,
+    Name = State#player_state.data#player_data.character_name,
+    Email = State#player_state.data#player_data.email,
+    Username = State#player_state.data#player_data.username,
+    case character:deactivate(Name, Email, Username, State#player_state.connection) of
         ok ->
             Pid ! ok;
         {error, Message} ->
@@ -245,18 +263,16 @@ exit_map(State) ->
             exit(2)
     end.
 
--spec logout(user_state()) -> no_return().
+-spec logout(player_state()) -> no_return().
 logout(State) ->
-    Pid = State#user_state.pid,
-    Connection = State#user_state.connection,
-    case character:deactivate(State#user_state.name,
-                              State#user_state.email,
-                              State#user_state.username,
-                              Connection)
-    of
+    Pid = State#player_state.client_pid,
+    Name = State#player_state.data#player_data.character_name,
+    Email = State#player_state.data#player_data.email,
+    Username = State#player_state.data#player_data.username,
+    Connection = State#player_state.connection,
+    case character:deactivate(Name, Email, Username, Connection) of
         ok ->
-            epgsql:close(Connection),
-            gen_server:cast(lyceum_server, {logout, State#user_state.email}),
+            gen_server:cast(mnesia_storage, {logout, State#player_state.player_id}),
             Pid ! ok,
             exit(normal);
         {error, Message} ->

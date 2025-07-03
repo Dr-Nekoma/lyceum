@@ -40,4 +40,7 @@ fail(X) ->
     Fun(Count);
 '>>='({{error, Error}, Tag}, _) ->
     logger:error("Tag: ~p\nError: ~p\n", [Error, Tag]),
+    fail("Unexpected error (operation or PSQL) on Server side");
+'>>='(X, Y) ->
+    logger:error("Tag: ~p\nError: ~p\n", [X, Y]),
     fail("Unexpected error (operation or PSQL) on Server side").

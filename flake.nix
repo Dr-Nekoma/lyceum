@@ -35,25 +35,6 @@
 
         treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
 
-        getErlangLibs =
-          erlangPkg:
-          let
-            erlangPath = "${erlangPkg}/lib/erlang/lib/";
-            dirs = builtins.attrNames (builtins.readDir erlangPath);
-            interfaceVersion = builtins.head (
-              builtins.filter (s: builtins.substring 0 13 s == "erl_interface") dirs
-            );
-            interfacePath = erlangPath + interfaceVersion;
-          in
-          {
-            path = erlangPath;
-            dirs = dirs;
-            interface = {
-              version = interfaceVersion;
-              path = interfacePath;
-            };
-          };
-
         # Environment-specific packages
         linuxPkgs = with pkgs; [
           inotify-tools
@@ -103,6 +84,7 @@
         devPackages = 
           with pkgs;
           [
+            erlang-language-platform
             just
             raylib
             sqls
@@ -116,7 +98,6 @@
 
         # Erlang
         erlangVersion = pkgs.erlang;
-        erlangLibs = getErlangLibs erlangVersion;
         erl_app = "server";
 
         # Zig
@@ -164,7 +145,7 @@
               beamDeps = builtins.attrValues deps;
               buildPhase = ''
                 runHook preBuild
-                HOME=. DEBUG=1 rebar3 as prod release --relname server
+                HOME=. DEBUG=1 rebar3 as prod release --relname ${app_name}
                 runHook postBuild
               '';
             };

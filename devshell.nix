@@ -50,20 +50,20 @@
       "pg_stat_statements.track" = "all";
     };
     initialDatabases = [ 
-      { name = "mmo"; }
       {
+        # Database Name
         name = app_name;
+        # User who owns it
         user = app_name;
+        # A password used for local development
         pass = app_name;
+        initialSQL = builtins.readFile ./server/database/local/init.sql;
       }
     ];
     port = 5432;
     listen_addresses = "127.0.0.1";
     initialScript = ''
-      CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
-      CREATE USER admin SUPERUSER;
-      ALTER USER admin PASSWORD 'admin';
-      GRANT ALL PRIVILEGES ON DATABASE mmo to admin;
+      -- The app user
       ALTER USER ${app_name} CREATEROLE;
     '';
   };

@@ -1,7 +1,7 @@
 -module(world_tests).
 
 -include_lib("eunit/include/eunit.hrl").
--include_lib("include/server_state.hrl").
+-include_lib("include/world_state.hrl").
 
 start_link_test() -> 
     meck:new(database),
@@ -43,9 +43,8 @@ init_test() ->
 
     {ok, State} = world:init([]),
 
-    ?assertMatch(#server_state{}, State),
-    ?assertEqual(fake_connection, State#server_state.connection),
-    ?assertEqual(self(), State#server_state.pid),
+    ?assertMatch(#world_state{}, State),
+    ?assertEqual(fake_connection, State#world_state.connection),
     ?assert(meck:called(database, connect, [])),
     ?assert(meck:num_calls(migraterl, migrate, 3) >= 1),
     ?assert(meck:num_calls(map_generator, create_map, 3) >= 1),

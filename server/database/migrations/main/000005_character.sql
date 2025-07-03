@@ -9,15 +9,15 @@ CREATE TYPE character.STATE_TYPE AS ENUM(
 -- TABLES
 CREATE TABLE IF NOT EXISTS character.instance(
     name TEXT NOT NULL,
-    e_mail player.email NOT NULL,
+    email player.email NOT NULL,
     username TEXT NOT NULL,
-    FOREIGN KEY (e_mail, username) REFERENCES player.record(e_mail, username),
-    PRIMARY KEY(name, username, e_mail)
+    FOREIGN KEY (email, username) REFERENCES player.record(email, username),
+    PRIMARY KEY(name, username, email)
 );
 
 CREATE TABLE IF NOT EXISTS character.stats(
     name TEXT NOT NULL,
-    e_mail player.email NOT NULL,
+    email player.email NOT NULL,
     username TEXT NOT NULL,
     constitution SMALLINT NOT NULL CHECK (constitution > 0 AND constitution <= 150),
     wisdom SMALLINT NOT NULL CHECK (wisdom > 0 AND wisdom <= 150),
@@ -30,13 +30,13 @@ CREATE TABLE IF NOT EXISTS character.stats(
     health SMALLINT NOT NULL CHECK (health > 0 AND health <= health_max),
     mana_max SMALLINT NOT NULL CHECK (mana_max > 0 and mana_max <= 1000) DEFAULT 100,
     mana SMALLINT NOT NULL CHECK (mana > 0 AND mana <= mana_max),
-    FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
-    PRIMARY KEY(name, username, e_mail)
+    FOREIGN KEY (name, username, email) REFERENCES character.instance(name, username, email),
+    PRIMARY KEY(name, username, email)
 );
 
 CREATE TABLE IF NOT EXISTS character.position(
     name TEXT NOT NULL,
-    e_mail player.email NOT NULL,
+    email player.email NOT NULL,
     username TEXT NOT NULL,
     x_position REAL NOT NULL,
     -- TODO: Turn this back into integers when the time comes
@@ -47,17 +47,17 @@ CREATE TABLE IF NOT EXISTS character.position(
     state_type "character".STATE_TYPE NOT NULL DEFAULT 'idle', 
     face_direction SMALLINT NOT NULL CHECK (face_direction >= 0 AND face_direction < 360),	
     map_name TEXT NOT NULL,
-    FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
+    FOREIGN KEY (name, username, email) REFERENCES character.instance(name, username, email),
     FOREIGN KEY (map_name) REFERENCES map.instance(name),
-    PRIMARY KEY(name, username, e_mail)
+    PRIMARY KEY(name, username, email)
 );
 
 CREATE TABLE IF NOT EXISTS character.active(
     name TEXT NOT NULL,
-    e_mail player.email NOT NULL,
+    email player.email NOT NULL,
     username TEXT NOT NULL,
-    FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
-    PRIMARY KEY(name, username, e_mail)      
+    FOREIGN KEY (name, username, email) REFERENCES character.instance(name, username, email),
+    PRIMARY KEY(name, username, email)      
 );
 
 CREATE TABLE IF NOT EXISTS character.item(
@@ -69,11 +69,12 @@ CREATE TABLE IF NOT EXISTS character.item(
 
 CREATE TABLE IF NOT EXISTS character.inventory(
     name TEXT NOT NULL,
-    e_mail player.email NOT NULL,
+    email player.email NOT NULL,
     username TEXT NOT NULL,
     quantity SMALLINT NOT NULL,
     item_name TEXT NOT NULL,
-    FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
+    FOREIGN KEY (name, username, email) REFERENCES character.instance(name, username, email),
     FOREIGN KEY (item_name) REFERENCES character.item(name),       
-    PRIMARY KEY (name, username, e_mail, item_name)
+    PRIMARY KEY (name, username, email, item_name)
 );
+

@@ -12,6 +12,9 @@ CREATE EXTENSION IF NOT EXISTS omni_seq;
 CREATE EXTENSION IF NOT EXISTS omni_types;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+CREATE DOMAIN CURRENCY AS TEXT 
+CONSTRAINT CHECK_CURRENCY NOT NULL CHECK (VALUE IN ('dolar', 'real'));
+
 -- TYPES
 DO $$
 BEGIN
@@ -50,25 +53,25 @@ SELECT omni_types.sum_type('test_schema.STATE_TYPE', 'test_schema.MOVEMENT_TYPE'
 CREATE TABLE IF NOT EXISTS test_schema.record(
     username TEXT NOT NULL,
     password TEXT NOT NULL,
-    e_mail test_schema.email NOT NULL,
-    PRIMARY KEY(username, e_mail)
+    email test_schema.email NOT NULL,
+    PRIMARY KEY(username, email)
 );
 
 
 -- o.g. character instance
 CREATE TABLE IF NOT EXISTS test_schema.instance(
     name TEXT NOT NULL,
-    e_mail test_schema.email NOT NULL,
+    email test_schema.email NOT NULL,
     username TEXT NOT NULL,
     -- We use this to help the Erlang backend and MNESIA, as 
     -- it is easier to store a single key like. This is safe 
     -- to associate to PIDs in MNESIA sice we don't allow 
     -- users to change their account and character names.
     uid TEXT GENERATED ALWAYS AS (encode(digest(name || username, 'sha256'), 'hex')) STORED,
-    FOREIGN KEY (e_mail, username) REFERENCES test_schema.record(e_mail, username),
-    PRIMARY KEY(name, username, e_mail)
+    FOREIGN KEY (email, username) REFERENCES test_schema.record(email, username),
+    PRIMARY KEY(name, username, email)
 );
 
 -- TESTs
-INSERT INTO test_schema.record(username, e_mail, password) VALUES ('test', 'test@test.com', 'test');
-INSERT INTO test_schema.instance(name, e_mail, username) VALUES ('char', 'test@test.com', 'test');
+INSERT INTO test_schema.record(username, email, password) VALUES ('test', 'test@test.com', 'test');
+INSERT INTO test_schema.instance(name, email, username) VALUES ('char', 'test@test.com', 'test');
