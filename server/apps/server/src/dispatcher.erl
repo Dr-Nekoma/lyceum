@@ -12,12 +12,18 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
          code_change/3]).
 
+% For legacy reasons, the client needs to send the first
+% request to a "lyceum_server", which got broken into
+% multiple processes. Nowadays we only need it for initial
+% commnunications with this dispatcher gen_server.
 -define(SERVER, lyceum_server).
 
--include("user_state.hrl").
--include("server_state.hrl").
+-include("dispatcher_state.hrl").
+-include("player_state.hrl").
 
--dialyzer({nowarn_function, [login/3, start/2, get_active_pid/2]}).
+-dialyzer({nowarn_function, [login/3]}).
+
+-compile({parse_transform, do}).
 
 %%%===================================================================
 %%% API
@@ -51,24 +57,15 @@ start_link() ->
 %%--------------------------------------------------------------------
 -spec init(Args) -> Result
     when Args :: list(),
-         State ::
-             #server_state{connection :: pid(),
-                           pid :: pid(),
-                           table :: atom() | ets:tid()},
+         State :: #dispatcher_state{connection :: pid(), pid :: pid()},
          Success :: {ok, State},
          SuccessWithTimeout :: {ok, State, Timeout :: timeout()},
          Result :: Success | SuccessWithTimeout.
 init([]) ->
-    % Setup a DB connection and bootstrap process state
-    {ok, Connection} = database:connect(),
+    {ok, Connection} = database:connect_as_dispatcher(),
     Pid = self(),
-    logger:debug("[~p] Starting at ~p...~n", [?SERVER, Pid]),
-    % This is a temporary solution using the built-in k/v store
-    Table = ets:new(?MODULE, [named_table, private, set]),
-    State =
-        #server_state{connection = Connection,
-                      pid = self(),
-                      table = Table},
+    logger:info("[~p] Starting at ~p...~n", [?SERVER, Pid]),
+    State = #dispatcher_state{connection = Connection, pid = Pid},
     {ok, State}.
 
 %%--------------------------------------------------------------------
@@ -85,14 +82,14 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_call(term(), gen_server:from(), server_state()) -> Result
+-spec handle_call(term(), gen_server:from(), dispatcher_state()) -> Result
     when Result ::
-             {reply, term(), server_state()} |
-             {reply, term(), server_state(), timeout()} |
-             {noreply, server_state()} |
-             {noreply, server_state(), timeout()} |
-             {stop, term(), term(), server_state()} |
-             {stop, term(), server_state()}.
+             {reply, term(), dispatcher_state()} |
+             {reply, term(), dispatcher_state(), timeout()} |
+             {noreply, dispatcher_state()} |
+             {noreply, dispatcher_state(), timeout()} |
+             {stop, term(), term(), dispatcher_state()} |
+             {stop, term(), dispatcher_state()}.
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -107,15 +104,17 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_cast(term(), server_state()) -> Result
-    when Result ::
-             {noreply, server_state()} |
-             {noreply, server_state(), timeout()} |
-             {stop, term(), server_state()}.
-handle_cast({logout, Email}, State) ->
-    ets:delete(?MODULE, Email),
+-spec handle_cast(UserId, dispatcher_state()) -> Result
+    when UserId :: player_id(),
+         Result ::
+             {noreply, dispatcher_state()} |
+             {noreply, dispatcher_state(), timeout()} |
+             {stop, term(), dispatcher_state()}.
+handle_cast({logout, UserId}, State) ->
+    gen_server:cast(storage_mnesia, {logout, UserId}),
     {noreply, State};
-handle_cast(_Msg, State) ->
+handle_cast(Msg, State) ->
+    logger:error("[~p] CAST: ~p~n", [?SERVER, Msg]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -128,11 +127,11 @@ handle_cast(_Msg, State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_info(term(), server_state()) -> Result
+-spec handle_info(term(), dispatcher_state()) -> Result
     when Result ::
-             {noreply, server_state()} |
-             {noreply, server_state(), timeout()} |
-             {stop, term(), server_state()}.
+             {noreply, dispatcher_state()} |
+             {noreply, dispatcher_state(), timeout()} |
+             {stop, term(), dispatcher_state()}.
 handle_info({From, {login, Request}}, State) ->
     logger:info("[~p] INFO: ~p~n", [?SERVER, From]),
     login(State, From, Request),
@@ -152,7 +151,7 @@ handle_info(Info, State) ->
 %% @spec terminate(Reason, State) -> void()
 %% @end
 %%--------------------------------------------------------------------
--spec terminate(term(), server_state()) -> ok.
+-spec terminate(term(), dispatcher_state()) -> ok.
 terminate(_Reason, _State) ->
     ok.
 
@@ -164,45 +163,72 @@ terminate(_Reason, _State) ->
 %% @spec code_change(OldVsn, State, Extra) -> {ok, NewState}
 %% @end
 %%--------------------------------------------------------------------
--spec code_change(term(), server_state(), term()) -> {ok, server_state()}.
+-spec code_change(term(), dispatcher_state(), term()) -> {ok, dispatcher_state()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec login(server_state(), gen_server:from(), map()) -> ok.
+%%--------------------------------------------------------------------
+%% @doc
+%% Logs a user from the Zig Client, but first it checks whether the
+%% PID (From) is already on MNESIA. Needs to return something in an
+%% Result-like fashion {ok, Map} or {error, Reason} so the client
+%% can properly parse it.
+%% @end
+%%--------------------------------------------------------------------
+-spec login(State, From, Map) -> Result
+    when State :: dispatcher_state(),
+         From :: gen_server:from(),
+         Username :: player_name(),
+         Password :: nonempty_string(),
+         Map :: #{username := Username, password := Password},
+         Pid :: pid(),
+         Email :: player_email(),
+         Ok :: {ok, {Pid, Email}},
+         Error :: {error, Reason :: string()},
+         Result :: Ok | Error.
 login(State, From, #{username := Username, password := _Password} = Request) ->
     logger:info("[~p] User ~p is attempting to login from ~p~n", [?SERVER, Username, From]),
-    case registry:check_user(Request, State#server_state.connection) of
-        {ok, Email} ->
-            logger:info("[~p] USER: ~p successfully logged in!~n", [?SERVER, Email]),
-            {ok, Connection} = database:connect(),
-            PlayerState = #user_state{pid = From, connection = Connection},
-            logger:info("[~p] Setting USER_STATE=~p...~n", [?SERVER, PlayerState]),
-            {ok, Pid} = get_active_pid(Email, PlayerState),
-            logger:info("[~p] Successfully Spawned ~p~n", [?SERVER, Pid]),
-            From ! {ok, {Pid, Email}};
+    case registry:check_user(Request, State#dispatcher_state.connection) of
+        {ok, {PlayerId, Email}} ->
+            Cache =
+                #player_cache{player_id = PlayerId,
+                              client_pid = From,
+                              username = Username,
+                              email = Email},
+            {ok, Pid} = start_new_worker(Cache),
+            logger:info("[~p] USER: ~p successfully logged at ~p!~n", [?SERVER, Email, Pid]),
+            Reply = {ok, {Pid, Email}},
+            From ! Reply,
+            Reply;
         {error, Message} ->
             logger:error("Failed to login: ~p~n", [Message]),
-            From ! {error, Message}
-    end,
-    ok.
-
--spec get_active_pid(term(), user_state()) -> {ok, pid()}.
-get_active_pid(Email, State) ->
-    case ets:lookup(?MODULE, Email) of
-        [{_, Pid}] ->
-            logger:info("[~p] Logging ~p at ~p...~n", [?SERVER, Email, Pid]),
-            Pid ! logout,
-            start(Email, State);
-        _ ->
-            start(Email, State)
+            Reply = {error, Message},
+            From ! Reply,
+            Reply
     end.
 
--spec start(term(), user_state()) -> {ok, pid()}.
-start(Email, State) ->
-    {ok, NewPid} = player_sup:start([{Email, State}]),
-    ets:insert(?MODULE, {Email, NewPid}),
-    logger:info("[~p] <Email=~p, PID=~p> inserted...~n", [?SERVER, Email, NewPid]),
-    {ok, NewPid}.
+%%--------------------------------------------------------------------
+%% @doc
+%% Gets the PID of a player worker process from MNESIA (if it actually
+%% exists). If it does, logoff the user and create a new process with
+%% the a new Worker PID, then sends it back to Zig Client.
+%% @end
+%%--------------------------------------------------------------------
+-spec start_new_worker(Cache) -> Result
+    when Cache :: player_cache(),
+         WorkerPid :: pid(),
+         Result :: {ok, WorkerPid} | {error, Reason :: string()}.
+start_new_worker(Cache) ->
+    do([error_m
+        || Request = {login, Cache},
+           _C = gen_server:call(storage_mnesia, Request),
+           gen_server:cast(storage_mnesia, {upsert_record, Cache}),
+           case player_sup:start(Cache) of
+               {ok, Pid} ->
+                   return(Pid);
+               _ ->
+                   fail("Failed to start worker")
+           end]).

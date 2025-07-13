@@ -17,10 +17,9 @@
 -define(MAIN_MODULE_NAME, server).
 
 -include("migrations.hrl").
--include("server_state.hrl").
+-include("world_state.hrl").
 
--dialyzer({nowarn_function,
-           [init/1]}).
+-dialyzer({nowarn_function, [init/1]}).
 
 %%%===================================================================
 %%% API
@@ -35,7 +34,7 @@
 %%--------------------------------------------------------------------
 -spec start_link() -> gen_server:start_ret().
 start_link() ->
-    gen_server:start_link({global, ?SERVER}, ?MODULE, [], []).
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -48,14 +47,18 @@ start_link() ->
 %% @todo Conditionally remove test data if the rlx profile is "prod"
 %% @end
 %%--------------------------------------------------------------------
--spec init(Args) -> Result when
-      Args :: list(),
-      Result :: {ok, server_state()}.
+-spec init(Args) -> Result
+    when Args :: list(),
+         Result :: {ok, world_state()}.
 init([]) ->
     % Setup a DB connection and bootstrap process state
-    {ok, Conn} = database:connect(),
-    LibDir = filename:absname(code:lib_dir(?MAIN_MODULE_NAME)),
-    Dir = filename:dirname(filename:dirname(LibDir)),
+    {ok, Conn} = database:connect_as_migraterl(),
+    LibDir =
+        filename:absname(
+            code:lib_dir(?MAIN_MODULE_NAME)),
+    Dir = filename:dirname(
+              filename:dirname(LibDir)),
+    logger:info("~nDIR=~p~n", [Dir]),
     % DB Migrations
     {ok, _} = init_db(Conn, Dir, main),
     {ok, _} = init_db(Conn, Dir, repeatable),
@@ -63,7 +66,8 @@ init([]) ->
     {ok, _} = init_db(Conn, Dir, test),
     % Start Worlds
     logger:info("Starting World Application...~n"),
-    State = #server_state{connection = Conn, pid = self(), table = []},
+    Pond = setup_map("Pond", 6, 6),
+    State = #world_state{map = Pond, connection = Conn},
     {ok, State}.
 
 %%--------------------------------------------------------------------
@@ -72,14 +76,14 @@ init([]) ->
 %% Handling call messages
 %% @end
 %%--------------------------------------------------------------------
--spec handle_call(term(), gen_server:from(), server_state()) -> Result when
-     Result :: 
-        {reply, term(), server_state()}
-        | {reply, term(), server_state(), timeout()}
-        | {noreply, server_state()}
-        | {noreply, server_state(), timeout()}
-        | {stop, term(), term(), server_state()} 
-        | {stop, term(), server_state()}.
+-spec handle_call(term(), gen_server:from(), world_state()) -> Result
+    when Result ::
+             {reply, term(), world_state()} |
+             {reply, term(), world_state(), timeout()} |
+             {noreply, world_state()} |
+             {noreply, world_state(), timeout()} |
+             {stop, term(), term(), world_state()} |
+             {stop, term(), world_state()}.
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -90,13 +94,13 @@ handle_call(_Request, _From, State) ->
 %% Handling cast messages
 %% @end
 %%--------------------------------------------------------------------
--spec handle_cast(Msg, State) -> Result when
-      Msg :: term(),
-      State :: server_state(),
-      NoReply :: {noreply, server_state()},
-      NoReplyWithTimeOut :: {noreply, server_state(), timeout()},
-      Stop :: {stop, term(), server_state()},
-      Result :: NoReply | NoReplyWithTimeOut | Stop.
+-spec handle_cast(Msg, State) -> Result
+    when Msg :: term(),
+         State :: world_state(),
+         NoReply :: {noreply, world_state()},
+         NoReplyWithTimeOut :: {noreply, world_state(), timeout()},
+         Stop :: {stop, term(), world_state()},
+         Result :: NoReply | NoReplyWithTimeOut | Stop.
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -106,13 +110,13 @@ handle_cast(_Msg, State) ->
 %% Handling all non call/cast messages
 %% @end
 %%--------------------------------------------------------------------
--spec handle_info(Info, State) -> Result when
-      Info :: term(),
-      State :: server_state(),
-      NoReply :: {noreply, server_state()},
-      NoReplyWithTimeOut :: {noreply, server_state(), timeout()},
-      Stop :: {stop, term(), server_state()},
-      Result :: NoReply | NoReplyWithTimeOut | Stop.
+-spec handle_info(Info, State) -> Result
+    when Info :: term(),
+         State :: world_state(),
+         NoReply :: {noreply, world_state()},
+         NoReplyWithTimeOut :: {noreply, world_state(), timeout()},
+         Stop :: {stop, term(), world_state()},
+         Result :: NoReply | NoReplyWithTimeOut | Stop.
 handle_info(Info, State) ->
     logger:info("[~p] INFO: ~p~n", [?SERVER, Info]),
     {noreply, State}.
@@ -145,14 +149,23 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec init_db(Conn, Dir, Type) -> Result when
-      Conn :: epgsql:connection(),
-      Dir :: file:name_all(),
-      Type :: migration_type(),
-      Reason :: string(),
-      Ok :: {ok, term()},
-      Error :: {error, Reason},
-      Result :: Ok | Error.
+-spec setup_map(Name, Width, Height) -> Map
+    when Name :: nonempty_string(),
+         Width :: non_neg_integer(),
+         Height :: non_neg_integer(),
+         Map :: map_properties().
+setup_map(Name, Width, Height) ->
+    D = #map_dimension{width = Width, height = Height},
+    #map_properties{name = Name, dimension = D}.
+
+-spec init_db(Conn, Dir, Type) -> Result
+    when Conn :: epgsql:connection(),
+         Dir :: file:name_all(),
+         Type :: migration_type(),
+         Reason :: string(),
+         Ok :: {ok, term()},
+         Error :: {error, Reason},
+         Result :: Ok | Error.
 init_db(Conn, Dir, init_data) ->
     Suffix = ["migrations", "init"],
     Path = filename:join([Dir | Suffix]),
@@ -163,16 +176,21 @@ init_db(Conn, Dir, init_data) ->
     ok = map_generator:create_map(Conn, MapPath, "Pond"),
     {ok, []};
 init_db(Conn, Dir, Type) ->
-    Suffix = 
+    Suffix =
         case Type of
-            main -> ["migrations", "main"];
-            repeatable -> ["migrations", "repeatable"];
-            test -> ["migrations", "test"]
+            main ->
+                ["migrations", "main"];
+            repeatable ->
+                ["migrations", "repeatable"];
+            test ->
+                ["migrations", "test"]
         end,
     Path = filename:join([Dir | Suffix]),
-    Options = 
+    Options =
         case Type of
-            main -> #{repeatable => false};
-            _ -> #{repeatable => true}
+            main ->
+                #{repeatable => false};
+            _ ->
+                #{repeatable => true}
         end,
     migraterl:migrate(Conn, Path, Options).

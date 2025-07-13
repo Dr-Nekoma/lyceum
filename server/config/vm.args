@@ -3,3 +3,8 @@
 
 ## Cookie for distributed Erlang
 -setcookie lyceum
+
+## Extra options
+-heart
++K true
++A30

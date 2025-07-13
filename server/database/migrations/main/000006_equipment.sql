@@ -49,14 +49,14 @@ $$ LANGUAGE plpgsql;
 
 CREATE TABLE IF NOT EXISTS equipment.character(
     name TEXT NOT NULL,
-    e_mail player.email NOT NULL,
+    email player.email NOT NULL,
     username TEXT NOT NULL,
     is_equiped BOOL NOT NULL,
     equipment_name TEXT NOT NULL,
     use equipment.USE NOT NULL,
     kind equipment.KIND NOT NULL,
     CHECK (equipment.check_equipment_position_compatibility(use, kind)),
-    FOREIGN KEY (name, username, e_mail) REFERENCES character.instance(name, username, e_mail),
+    FOREIGN KEY (name, username, email) REFERENCES character.instance(name, username, email),
     FOREIGN KEY (equipment_name, kind) REFERENCES equipment.instance(name, kind),
-    PRIMARY KEY(name, username, e_mail, equipment_name)
+    PRIMARY KEY(name, username, email, equipment_name)
 );

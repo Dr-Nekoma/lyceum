@@ -1,13 +1,13 @@
 -- VIEWS
 CREATE OR REPLACE VIEW map.resource_item_view AS
-SELECT i.name as item_name, inv.quantity as quantity, inv.name, inv.username, ins.e_mail
+SELECT i.name as item_name, inv.quantity as quantity, inv.name, inv.username, ins.email
 FROM character.item i
 INNER JOIN map.object_is_resource oir
 ON i.name = oir.item_pk
 INNER JOIN character.inventory inv
 ON i.name = inv.item_name
 INNER JOIN character.instance ins
-ON ins.name = inv.name AND ins.username = inv.username AND ins.e_mail = inv.e_mail;
+ON ins.name = inv.name AND ins.username = inv.username AND ins.email = inv.email;
 
 CREATE OR REPLACE VIEW map.resource_view AS
 SELECT * FROM map.resource
@@ -46,7 +46,7 @@ CREATE OR REPLACE PROCEDURE map.harvest_resource
     target_x_position REAL,
     target_y_position REAL,
     character_name TEXT,
-    player_e_mail TEXT,
+    player_email TEXT,
     player_username TEXT)
    LANGUAGE plpgsql AS
 $$
@@ -61,7 +61,7 @@ $$
     AND map.resource_view.y_position = target_y_position;
   SELECT min(x) INTO delta FROM (values(resource.quantity),(resource.base_extraction_amount)) AS t(x);
   CALL map.update_resource_quantity(target_map_name , target_kind , target_x_position , target_y_position, (resource.quantity - delta)::SMALLINT);
-  CALL character.update_inventory(character_name, player_e_mail, player_username, resource.item_pk, delta);
+  CALL character.update_inventory(character_name, player_email, player_username, resource.item_pk, delta);
 END;
 $$;
 

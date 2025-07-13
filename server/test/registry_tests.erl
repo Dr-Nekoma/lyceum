@@ -7,14 +7,14 @@ check_user_success_test() ->
     meck:new(database_utils),
     
     meck:expect(epgsql, equery, fun(_Conn, _Query, _Params) -> 
-        {ok, ["username", "e_mail", "password"], [
+        {ok, ["username", "email", "password"], [
             [<<"user1">>, <<"user1@email.com">>, <<"1234">>]
         ]}
     end),
     
     meck:expect(database_utils, columns_and_rows, fun(Arg) ->
         logger:info("MOCK columns_and_rows called with: ~p~n", [Arg]),
-        [#{username => <<"user1">>, e_mail => <<"user1@email.com">>, password => <<"1234">>}]
+        [#{username => <<"user1">>, email => <<"user1@email.com">>, password => <<"1234">>}]
     end),
     
     UserMap = #{username => <<"user1">>, password => <<"1234">>},

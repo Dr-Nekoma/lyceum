@@ -1,17 +1,14 @@
-{application, server, [
+{application, storage_mnesia, [
     {description, "An OTP application"},
     {vsn, {git, short}},
     {registered, []},
-    {mod, {server, []}},
+    {mod, {storage_mnesia_app, []}},
     {applications, [
         kernel,
         stdlib,
         sasl,
-        csv,
-        epgsql,
-	    erlandono,
-        % Umbrela Projects
-        storage_mnesia
+        mnesia,
+        erlandono
     ]},
     {env, []},
     {modules, []},
