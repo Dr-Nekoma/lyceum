@@ -62,12 +62,20 @@ jobs:
       - name: Install Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@main
 
+      # To leverage devenv inside Github Actions
+      - uses: cachix/cachix-action@v14
+        with:
+          name: devenv
+
+      - name: Install devenv.sh
+        run: nix profile install nixpkgs#devenv
+
+      # Actual Pipelines
       - name: "[Server] Build"
         run: |
           nix build .#server
 
       - name: "[Server] Tests"
-        continue-on-error: true
         run: |
           nix develop .#ci --impure -c just test
 

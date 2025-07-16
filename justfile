@@ -107,7 +107,7 @@ server: build
 
 # Runs unit tests in the server
 test:
-    cd {{ server }} && rebar3 do eunit, ct
+    cd {{ server }} && rebar3 as test ct,cover
 
 # Migrates the DB (up)
 db-up:

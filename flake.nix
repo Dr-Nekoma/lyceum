@@ -81,10 +81,9 @@
           CoreServices
         ];
 
-        devPackages = 
+        devPackages =
           with pkgs;
           [
-            erlang-language-platform
             just
             raylib
             sqls
@@ -114,14 +113,19 @@
           # Devenv sets this to something else
           # https://www.postgresql.org/docs/7.0/libpq-envars.htm
           PGHOST = "127.0.0.1";
+          PRE_COMMIT_ALLOW_NO_CONFIG=1;
           # Waylad setup
-          GLFW_SCALE_TO_MONITOR="GLFW_TRUE";
+          GLFW_SCALE_TO_MONITOR = "GLFW_TRUE";
         };
       in
       {
         # nix build
         packages = rec {
+          # devenv up
           devenv-up = self.devShells.${system}.default.config.procfileScript;
+
+          # devenv test
+          devenv-test = self.devShells.${system}.default.config.test;
 
           # Leverages nix to build the erlang backend release
           # nix build .#server
@@ -206,9 +210,14 @@
             ];
 
             buildInputs =
-              with pkgs; [ raylib zigVersion erlangVersion ]
-                ++ lib.optionals stdenv.isLinux (linuxPkgs)
-                ++ lib.optionals stdenv.isDarwin darwinPkgs;
+              with pkgs;
+              [
+                raylib
+                zigVersion
+                erlangVersion
+              ]
+              ++ lib.optionals stdenv.isLinux (linuxPkgs)
+              ++ lib.optionals stdenv.isDarwin darwinPkgs;
 
             # To re-generate the nix lockfile:
             # just client-deps
@@ -247,7 +256,14 @@
             inherit inputs pkgs;
             modules = [
               (import ./devshell.nix {
-                inherit pkgs mkEnvVars erlangVersion zigVersion raylib app_name;
+                inherit
+                  pkgs
+                  mkEnvVars
+                  erlangVersion
+                  zigVersion
+                  raylib
+                  app_name
+                  ;
                 packages = devPackages;
               })
             ];
