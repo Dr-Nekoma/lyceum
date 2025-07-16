@@ -84,7 +84,6 @@
         devPackages = 
           with pkgs;
           [
-            erlang-language-platform
             just
             raylib
             sqls
