@@ -1,6 +1,5 @@
 %%%-------------------------------------------------------------------
-%% @doc Database module, centralizes our connection poolings, queries
-%%      and migrations.
+%% @doc Database module, centralizes our connection poolings & queries
 %% @end
 %%%-------------------------------------------------------------------
 

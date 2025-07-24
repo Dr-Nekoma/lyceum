@@ -1,5 +1,4 @@
 -module(storage_mnesia).
-
 -behaviour(gen_server).
 
 %% API
@@ -17,8 +16,6 @@
 
 -include_lib("stdlib/include/qlc.hrl").
 
--compile({parse_transform, do}).
-
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -26,10 +23,9 @@
 %%--------------------------------------------------------------------
 %% @doc
 %% Starts the server
-%%
-%% @spec start_link() -> {ok, Pid} | ignore | {error, Error}
 %% @end
 %%--------------------------------------------------------------------
+-spec start_link() -> gen_server:start_ret().
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
@@ -41,14 +37,15 @@ start_link() ->
 %% @private
 %% @doc
 %% Initializes the server
-%%
-%% @spec init(Args) -> {ok, State} |
-%%                     {ok, State, Timeout} |
-%%                     ignore |
-%%                     {stop, Reason}
 %% @end
 %%--------------------------------------------------------------------
-init([]) ->
+-spec init(Args) -> Result
+    when Args :: list(),
+         State :: mnesia_state(),
+         Error :: {stop, Reason :: string()},
+         Ok :: {ok, State},
+         Result :: Ok | Error.
+init(_) ->
     Nodes = [node()],
     DefaultAttributes = [{ram_copies, Nodes}],
     PlayerTableSettings =
@@ -62,44 +59,59 @@ init([]) ->
         _ ->
             ok
     end,
-    Connection = database:connect_as_mnesia(),
-    State = #mnesia_state{connection = Connection},
-    ok = mnesia:start(),
-    ok = create_table(?PLAYER_CACHE_TABLE, Options),
-    ok = mnesia:wait_for_tables([?PLAYER_CACHE_TABLE], ?MNESIA_INIT_TIMEOUT),
-    {ok, State}.
+    % Warning: You cant use "maybe" and enable Erlandono's
+    % "do" parse transform at the same time.
+    maybe
+        {ok, Connection} ?= database:connect_as_mnesia(),
+        State = #mnesia_state{connection = Connection},
+        ok ?= mnesia:start(),
+        ok ?= create_table(?PLAYER_CACHE_TABLE, Options),
+        ok ?= mnesia:wait_for_tables([?PLAYER_CACHE_TABLE], ?MNESIA_INIT_TIMEOUT),
+        {ok, State}
+    else
+        {error, Reason} -> 
+            logger:error("[~p] Error: ~p~n", [?MODULE, Reason]),
+            {stop, Reason};
+        Err ->
+            logger:error("[~p] Unexpected Error: ~p~n", [?MODULE, Err]),
+            {stop, "Unexpected Error"}
+    end.
 
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
 %% Handling call messages
-%%
-%% @spec handle_call(Request, From, State) ->
-%%                                   {reply, Reply, State} |
-%%                                   {reply, Reply, State, Timeout} |
-%%                                   {noreply, State} |
-%%                                   {noreply, State, Timeout} |
-%%                                   {stop, Reason, Reply, State} |
-%%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+-spec handle_call(Request, From, State) -> Result
+    when 
+      Request :: term(),
+      From :: gen_server:from(),
+      State :: mnesia_state(),
+      Reply :: {reply, term(), State} | {reply, term(), State, timeout()},
+      NoReply :: {noreply, State} | {noreply, State, timeout()},
+      Stop :: {stop, term(), term(), State} | {stop, term(), State},
+      Result :: Reply | NoReply | Stop.
 handle_call({login, CacheData}, _, State) ->
-    Reply =
-        case get_by_id(CacheData#player_cache.player_id) of
+    NewData =
+        case get_by_id(?PLAYER_CACHE_TABLE, CacheData#player_cache.player_id) of
             {ok, Data} ->
                 Data#player_cache{client_pid = CacheData#player_cache.client_pid};
-            {error, _} ->
+            {error, Reason} ->
+                logger:warning("[~p] Cache missing: ~p~n", [?MODULE, Reason]),
                 CacheData
         end,
+    upsert_record(?PLAYER_CACHE_TABLE, NewData),
+    Reply = {ok, NewData},
     {reply, Reply, State};
 handle_call({get_by_id, UserId}, _, State) ->
-    {ok, Reply} = get_by_id(UserId),
+    Reply = get_by_id(?PLAYER_CACHE_TABLE, UserId),
     {reply, Reply, State};
 handle_call({get_by_username, Username}, _, State) ->
-    {ok, Reply} = get_by_username(Username),
+    Reply = get_by_username(?PLAYER_CACHE_TABLE, Username),
     {reply, Reply, State};
 handle_call({get_by_email, Email}, _, State) ->
-    {ok, Reply} = get_by_email(Email),
+    Reply = get_by_email(?PLAYER_CACHE_TABLE, Email),
     {reply, Reply, State};
 handle_call(_Request, _, State) ->
     Reply = ok,
@@ -116,10 +128,10 @@ handle_call(_Request, _, State) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_cast({upsert_record, Cache}, State) ->
-    upsert_record(Cache),
+    upsert_record(?PLAYER_CACHE_TABLE, Cache),
     {noreply, State};
 handle_cast({logout, UserId}, State) ->
-    delete_player_entry(UserId),
+    delete_player_entry(?PLAYER_CACHE_TABLE, UserId),
     {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -214,33 +226,33 @@ format_query_result(Result) ->
 %% Takes a deterministacally generated UserID and
 %% fetches the PID associated with it.
 %% @end
--spec get_by_id(UserId) -> Result
-    when UserId :: player_id(),
+-spec get_by_id(Table, UserId) -> Result
+    when Table :: mnesia:table(),
+         UserId :: player_id(),
          Cache :: player_cache(),
          Reason :: mnesia_query_error(),
          Ok :: {ok, Cache},
          Error :: {error, Reason},
          Result :: Ok | Error.
-get_by_id(UserId) ->
-    Fun = fun() -> mnesia:read({player_cache, UserId}) end,
+get_by_id(Table, UserId) ->
+    Fun = fun() -> mnesia:read({Table, UserId}) end,
     format_query_result(mnesia:transaction(Fun)).
 
 %% @doc
 %% Query by a player's username, which is indexed by
 %% MNESIA.
 %% @end
--spec get_by_username(Username) -> Result
-    when Username :: player_name(),
+-spec get_by_username(Table, Username) -> Result
+    when Table :: mnesia:table(),
+         Username :: player_name(),
          Cache :: player_cache(),
          Reason :: mnesia_query_error(),
          Ok :: {ok, Cache},
          Error :: {error, Reason},
          Result :: Ok | Error.
-get_by_username(Username) ->
+get_by_username(Table, Username) ->
     Fun = fun() ->
-             QH = qlc:q([X
-                         || X <- mnesia:table(?PLAYER_CACHE_TABLE),
-                            X#player_cache.username =:= Username]),
+             QH = qlc:q([X || X <- mnesia:table(Table), X#player_cache.username =:= Username]),
              qlc:eval(QH)
           end,
     format_query_result(mnesia:transaction(Fun)).
@@ -249,18 +261,17 @@ get_by_username(Username) ->
 %% Query by a player's email, which is indexed by
 %% MNESIA.
 %% @end
--spec get_by_email(Email) -> Result
-    when Email :: player_name(),
+-spec get_by_email(Table, Email) -> Result
+    when Table :: mnesia:table(),
+         Email :: player_name(),
          Cache :: player_cache(),
          Reason :: mnesia_query_error(),
          Ok :: {ok, Cache},
          Error :: {error, Reason},
          Result :: Ok | Error.
-get_by_email(Email) ->
+get_by_email(Table, Email) ->
     Fun = fun() ->
-             QH = qlc:q([X
-                         || X <- mnesia:table(?PLAYER_CACHE_TABLE),
-                            X#player_cache.email =:= Email]),
+             QH = qlc:q([X || X <- mnesia:table(Table), X#player_cache.email =:= Email]),
              qlc:eval(QH)
           end,
     format_query_result(mnesia:transaction(Fun)).
@@ -269,14 +280,15 @@ get_by_email(Email) ->
 %% Takes a deterministacally generated UserID and
 %% fetches the PID associated with it.
 %% @end
--spec upsert_record(Cache) -> Result
-    when Cache :: player_cache(),
+-spec upsert_record(Table, Cache) -> Result
+    when Table :: mnesia:table(),
+         Cache :: player_cache(),
          Pid :: pid(),
          Ok :: {ok, Pid},
          Error :: {error, mnesia_write_error},
          Result :: Ok | Error.
-upsert_record(Cache) ->
-    Fun = fun() -> mnesia:write(player_cache, Cache, write) end,
+upsert_record(Table, Cache) ->
+    Fun = fun() -> mnesia:write(Table, Cache, write) end,
     case mnesia:transaction(Fun) of
         {atomic, ok} ->
             {ok, Cache#player_cache.client_pid};
@@ -288,13 +300,14 @@ upsert_record(Cache) ->
 %% Removes a UserID from the cache table, therefore
 %% invalidating the PID associated with it.
 %% @end
--spec delete_player_entry(UserId) -> Result
-    when UserId :: player_id(),
+-spec delete_player_entry(Table, UserId) -> Result
+    when Table :: mnesia:table(),
+         UserId :: player_id(),
          Error :: {error, mnesia_delete_error},
          Ok :: {ok, UserId},
          Result :: Ok | Error.
-delete_player_entry(UserId) ->
-    Fun = fun() -> mnesia:delete(metric, UserId, write) end,
+delete_player_entry(Table, UserId) ->
+    Fun = fun() -> mnesia:delete(Table, UserId, write) end,
     case mnesia:transaction(Fun) of
         {atomic, ok} ->
             {ok, UserId};

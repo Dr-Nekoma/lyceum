@@ -1,4 +1,13 @@
-{pkgs, packages ? [], erlangVersion, zigVersion, raylib, mkEnvVars, app_name}: 
+{
+  pkgs,
+  packages ? [ ],
+  erlangVersion,
+  zigVersion,
+  raylib,
+  mkEnvVars,
+  app_name,
+  ...
+}:
 {
   packages = packages;
 
@@ -29,6 +38,15 @@
     echo "Starting Development Environment..."
   '';
 
+  enterTest = ''
+    # Building and testing
+    just test
+
+    # Linting and formatting
+
+    # Build dioxus desktop example
+  '';
+
   services.postgres = {
     enable = true;
     package = pkgs.postgresql_17;
@@ -49,7 +67,7 @@
       "pg_stat_statements.max" = 10000;
       "pg_stat_statements.track" = "all";
     };
-    initialDatabases = [ 
+    initialDatabases = [
       {
         # Database Name
         name = app_name;
@@ -67,4 +85,9 @@
       ALTER USER ${app_name} CREATEROLE;
     '';
   };
+
+  # TODO: enable this
+  #git-hooks.hooks = {
+  #  nixfmt-rfc-style.enable = true;
+  #};
 }

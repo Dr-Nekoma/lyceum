@@ -57,14 +57,14 @@ start_link() ->
 %%--------------------------------------------------------------------
 -spec init(Args) -> Result
     when Args :: list(),
-         State :: #dispatcher_state{connection :: pid(), pid :: pid()},
+         State :: dispatcher_state(),
          Success :: {ok, State},
          SuccessWithTimeout :: {ok, State, Timeout :: timeout()},
          Result :: Success | SuccessWithTimeout.
-init([]) ->
-    {ok, Connection} = database:connect_as_dispatcher(),
+init(_) ->
     Pid = self(),
     logger:info("[~p] Starting at ~p...~n", [?SERVER, Pid]),
+    {ok, Connection} = database:connect_as_dispatcher(),
     State = #dispatcher_state{connection = Connection, pid = Pid},
     {ok, State}.
 
@@ -72,14 +72,6 @@ init([]) ->
 %% @private
 %% @doc
 %% Handling call messages
-%%
-%% @spec handle_call(Request, From, State) ->
-%%                                   {reply, Reply, State} |
-%%                                   {reply, Reply, State, Timeout} |
-%%                                   {noreply, State} |
-%%                                   {noreply, State, Timeout} |
-%%                                   {stop, Reason, Reply, State} |
-%%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
 -spec handle_call(term(), gen_server:from(), dispatcher_state()) -> Result
@@ -224,9 +216,9 @@ login(State, From, #{username := Username, password := _Password} = Request) ->
 start_new_worker(Cache) ->
     do([error_m
         || Request = {login, Cache},
-           _C = gen_server:call(storage_mnesia, Request),
-           gen_server:cast(storage_mnesia, {upsert_record, Cache}),
-           case player_sup:start(Cache) of
+           % TODO improve this
+           {ok, Data} = gen_server:call(storage_mnesia, Request),
+           case player_sup:start(Data) of
                {ok, Pid} ->
                    return(Pid);
                _ ->
