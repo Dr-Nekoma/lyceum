@@ -14,7 +14,6 @@
          code_change/3]).
 
 -define(SERVER, ?MODULE).
--define(MAIN_MODULE_NAME, server).
 
 -include("migrations.hrl").
 -include("world_state.hrl").
@@ -55,9 +54,14 @@ init([]) ->
     {ok, Conn} = database:connect_as_migraterl(),
     LibDir =
         filename:absname(
-            code:lib_dir(?MAIN_MODULE_NAME)),
-    Dir = filename:dirname(
-              filename:dirname(LibDir)),
+            code:lib_dir(?MODULE)),
+    RootDir = from_lib_dir(LibDir),
+    Dir = case application:get_env(world_settings, is_shell) of
+              {ok, true} ->
+                  to_rel(RootDir);
+              _ ->
+                  RootDir
+          end,
     logger:info("~nDIR=~p~n", [Dir]),
     % DB Migrations
     {ok, _} = init_db(Conn, Dir, main),
@@ -149,6 +153,20 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+-spec from_lib_dir(Path) -> Parent
+    when Path :: file:name_all(),
+         Parent :: file:name_all().
+from_lib_dir(Path) ->
+    filename:dirname(
+        filename:dirname(Path)).
+
+-spec to_rel(Path) -> Parent
+    when Path :: file:name_all(),
+         Parent :: file:name_all().
+to_rel(Path) ->
+    Suffix = ["rel", "lyceum"],
+    filename:join([Path | Suffix]).
+
 -spec setup_map(Name, Width, Height) -> Map
     when Name :: nonempty_string(),
          Width :: non_neg_integer(),
@@ -167,7 +185,7 @@ setup_map(Name, Width, Height) ->
          Error :: {error, Reason},
          Result :: Ok | Error.
 init_db(Conn, Dir, init_data) ->
-    Suffix = ["migrations", "init"],
+    Suffix = ["database", "migrations", "init"],
     Path = filename:join([Dir | Suffix]),
     Options = #{repeatable => true},
     {ok, _} = migraterl:migrate(Conn, Path, Options),
@@ -179,11 +197,11 @@ init_db(Conn, Dir, Type) ->
     Suffix =
         case Type of
             main ->
-                ["migrations", "main"];
+                ["database", "migrations", "main"];
             repeatable ->
-                ["migrations", "repeatable"];
+                ["database", "migrations", "repeatable"];
             test ->
-                ["migrations", "test"]
+                ["database", "migrations", "test"]
         end,
     Path = filename:join([Dir | Suffix]),
     Options =

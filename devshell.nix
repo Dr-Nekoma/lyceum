@@ -13,6 +13,7 @@
 
   languages.erlang = {
     enable = true;
+    package = erlangVersion;
   };
 
   languages.zig = {
@@ -85,9 +86,4 @@
       ALTER USER ${app_name} CREATEROLE;
     '';
   };
-
-  # TODO: enable this
-  #git-hooks.hooks = {
-  #  nixfmt-rfc-style.enable = true;
-  #};
 }

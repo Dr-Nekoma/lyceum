@@ -1,17 +1,15 @@
-{application, server, [
+{application, world, [
     {description, "An OTP application"},
-    {vsn, {git, short}},
+    {vsn, "0.1.0"},
     {registered, []},
-    {mod, {server, []}},
+    {mod, {world_app, []}},
     {applications, [
         kernel,
         stdlib,
         sasl,
         csv,
         epgsql,
-	    erlandono,
-        % Umbrela Projects
-        storage_mnesia
+        erlandono
     ]},
     {env, []},
     {modules, []},

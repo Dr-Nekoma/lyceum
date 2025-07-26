@@ -1,8 +1,8 @@
-{application, storage_mnesia, [
+{application, player, [
     {description, "An OTP application"},
-    {vsn, {git, short}},
+    {vsn, "0.1.0"},
     {registered, []},
-    {mod, {storage_mnesia_app, []}},
+    {mod, {player_app, []}},
     {applications, [
         kernel,
         stdlib,

@@ -1,6 +1,6 @@
 -- FUNCTIONS
 -- https://stackoverflow.com/a/39605068/4614840
-CREATE OR REPLACE FUNCTION map.upsert(_tbl regclass, map.input[], OUT result INTEGER)
+CREATE OR REPLACE FUNCTION map.upsert(_tbl regclass, map.tile_input[], OUT result INTEGER)
   LANGUAGE plpgsql AS
 $$
 BEGIN

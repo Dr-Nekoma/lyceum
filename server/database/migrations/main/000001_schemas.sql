@@ -3,6 +3,11 @@ CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS citext;
 
+-- https://github.com/omnigres/omnigres
+CREATE EXTENSION IF NOT EXISTS omni_id;
+CREATE EXTENSION IF NOT EXISTS omni_seq;
+CREATE EXTENSION IF NOT EXISTS omni_types;
+
 -- Create Game's schemas
 CREATE SCHEMA IF NOT EXISTS player;
 CREATE SCHEMA IF NOT EXISTS character;
