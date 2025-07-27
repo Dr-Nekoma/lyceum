@@ -56,7 +56,7 @@ init([]) ->
         filename:absname(
             code:lib_dir(?MODULE)),
     RootDir = from_lib_dir(LibDir),
-    Dir = case application:get_env(world_settings, is_shell) of
+    Dir = case application:get_env(world, is_shell) of
               {ok, true} ->
                   to_rel(RootDir);
               _ ->
