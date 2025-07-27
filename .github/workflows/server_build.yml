@@ -63,7 +63,7 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@main
 
       # To leverage devenv inside Github Actions
-      - uses: cachix/cachix-action@v14
+      - uses: cachix/cachix-action@v16
         with:
           name: devenv
 
