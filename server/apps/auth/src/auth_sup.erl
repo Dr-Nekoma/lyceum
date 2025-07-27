@@ -1,9 +1,8 @@
 %%%-------------------------------------------------------------------
-%% @doc Dispatcher supervisor.
+%% @doc Auth supervisor.
 %% @end
 %%%-------------------------------------------------------------------
-
--module(dispatcher_sup).
+-module(auth_sup).
 
 -behaviour(supervisor).
 
@@ -34,16 +33,16 @@ init([]) ->
           intensity => 12,
           period => 3600},
 
-    DispatcherWorker =
-        #{id => dispatcher,
-          start => {dispatcher, start_link, []},
+    SimpleAuthWorker =
+        #{id => simple_auth,
+          start => {simple_auth, start_link, []},
           restart => permanent,
-          shutdown => brutal_kill,
+          shutdown => 5000,
           type => worker,
-          modules => [dispatcher]},
+          modules => [simple_auth]},
 
     logger:info("[~p] Starting Supervisor...~n", [?SERVER]),
-    {ok, {SupFlags, [DispatcherWorker]}}.
+    {ok, {SupFlags, [SimpleAuthWorker]}}.
 
 %%%===================================================================
 %%% Internal functions

@@ -1,4 +1,4 @@
-{application, database, [
+{application, lib_database, [
     {description, "An OTP library"},
     {vsn, {git, short}},
     {registered, []},

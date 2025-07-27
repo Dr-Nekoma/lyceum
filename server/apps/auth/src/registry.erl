@@ -7,12 +7,17 @@
 %% TODO: fix this type
 -dialyzer({nowarn_function, [check_user/2]}).
 
+-include("player_state.hrl").
+
 -spec check_user(Map, epgsql:connection()) -> Result
     when 
          Map :: #{'password':=_, 'username':=_, _=>_},
-         Email :: string(),
-         Message :: string(),
-         Result :: {ok, Email} | {ok, any(), any()} | {ok, any(), any(), any()} | {error, Message}.
+         Email :: player_email(),
+         PlayerId :: player_id(),
+         Reason :: string(),
+         Ok :: {ok, {PlayerId, Email}},
+         Error :: {error, Reason},
+         Result :: Ok | Error.
 check_user(#{username := Username, password := Password}, Connection) ->
     Query =
         "SELECT uid, username, password, email::TEXT "

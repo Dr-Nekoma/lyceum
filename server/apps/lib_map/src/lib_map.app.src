@@ -1,15 +1,14 @@
-{application, storage_mnesia, [
-    {description, "An OTP application"},
+{application, lib_map, [
+    {description, "An OTP library"},
     {vsn, {git, short}},
     {registered, []},
-    {mod, {storage_mnesia_app, []}},
     {applications, [
         kernel,
         stdlib,
-        sasl,
-        mnesia,
         epgsql,
-        erlandono
+        sasl,
+        erlandono,
+        lib_database
     ]},
     {env, []},
     {modules, []},

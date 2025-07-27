@@ -1,17 +1,15 @@
-{application, server, [
+{application, player, [
     {description, "An OTP application"},
     {vsn, {git, short}},
     {registered, []},
-    {mod, {server, []}},
+    {mod, {player_app, []}},
     {applications, [
         kernel,
         stdlib,
         sasl,
-        csv,
+        mnesia,
         epgsql,
-	    erlandono,
-        % Umbrela Projects
-        storage_mnesia
+        erlandono
     ]},
     {env, []},
     {modules, []},

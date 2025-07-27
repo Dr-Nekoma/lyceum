@@ -1,8 +1,8 @@
 %%%-------------------------------------------------------------------
-%% @doc Dispatcher API
+%% @doc A simple module for Login/Pass authentication
 %% @end
 %%%-------------------------------------------------------------------
--module(dispatcher).
+-module(simple_auth).
 
 -behaviour(gen_server).
 
@@ -18,7 +18,7 @@
 % commnunications with this dispatcher gen_server.
 -define(SERVER, lyceum_server).
 
--include("dispatcher_state.hrl").
+-include("auth_state.hrl").
 -include("player_state.hrl").
 
 -dialyzer({nowarn_function, [login/3]}).
@@ -57,15 +57,15 @@ start_link() ->
 %%--------------------------------------------------------------------
 -spec init(Args) -> Result
     when Args :: list(),
-         State :: dispatcher_state(),
+         State :: auth_state(),
          Success :: {ok, State},
          SuccessWithTimeout :: {ok, State, Timeout :: timeout()},
          Result :: Success | SuccessWithTimeout.
 init(_) ->
     Pid = self(),
     logger:info("[~p] Starting at ~p...~n", [?SERVER, Pid]),
-    {ok, Connection} = database:connect_as_dispatcher(),
-    State = #dispatcher_state{connection = Connection, pid = Pid},
+    {ok, Connection} = database:connect_as_auth(),
+    State = #auth_state{connection = Connection, pid = Pid},
     {ok, State}.
 
 %%--------------------------------------------------------------------
@@ -74,14 +74,14 @@ init(_) ->
 %% Handling call messages
 %% @end
 %%--------------------------------------------------------------------
--spec handle_call(term(), gen_server:from(), dispatcher_state()) -> Result
+-spec handle_call(term(), gen_server:from(), auth_state()) -> Result
     when Result ::
-             {reply, term(), dispatcher_state()} |
-             {reply, term(), dispatcher_state(), timeout()} |
-             {noreply, dispatcher_state()} |
-             {noreply, dispatcher_state(), timeout()} |
-             {stop, term(), term(), dispatcher_state()} |
-             {stop, term(), dispatcher_state()}.
+             {reply, term(), auth_state()} |
+             {reply, term(), auth_state(), timeout()} |
+             {noreply, auth_state()} |
+             {noreply, auth_state(), timeout()} |
+             {stop, term(), term(), auth_state()} |
+             {stop, term(), auth_state()}.
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -96,12 +96,12 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_cast(UserId, dispatcher_state()) -> Result
+-spec handle_cast(UserId, auth_state()) -> Result
     when UserId :: player_id(),
          Result ::
-             {noreply, dispatcher_state()} |
-             {noreply, dispatcher_state(), timeout()} |
-             {stop, term(), dispatcher_state()}.
+             {noreply, auth_state()} |
+             {noreply, auth_state(), timeout()} |
+             {stop, term(), auth_state()}.
 handle_cast({logout, UserId}, State) ->
     gen_server:cast(storage_mnesia, {logout, UserId}),
     {noreply, State};
@@ -119,11 +119,11 @@ handle_cast(Msg, State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_info(term(), dispatcher_state()) -> Result
+-spec handle_info(term(), auth_state()) -> Result
     when Result ::
-             {noreply, dispatcher_state()} |
-             {noreply, dispatcher_state(), timeout()} |
-             {stop, term(), dispatcher_state()}.
+             {noreply, auth_state()} |
+             {noreply, auth_state(), timeout()} |
+             {stop, term(), auth_state()}.
 handle_info({From, {login, Request}}, State) ->
     logger:info("[~p] INFO: ~p~n", [?SERVER, From]),
     login(State, From, Request),
@@ -143,7 +143,7 @@ handle_info(Info, State) ->
 %% @spec terminate(Reason, State) -> void()
 %% @end
 %%--------------------------------------------------------------------
--spec terminate(term(), dispatcher_state()) -> ok.
+-spec terminate(term(), auth_state()) -> ok.
 terminate(_Reason, _State) ->
     ok.
 
@@ -155,7 +155,7 @@ terminate(_Reason, _State) ->
 %% @spec code_change(OldVsn, State, Extra) -> {ok, NewState}
 %% @end
 %%--------------------------------------------------------------------
--spec code_change(term(), dispatcher_state(), term()) -> {ok, dispatcher_state()}.
+-spec code_change(term(), auth_state(), term()) -> {ok, auth_state()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
@@ -171,7 +171,7 @@ code_change(_OldVsn, State, _Extra) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec login(State, From, Map) -> Result
-    when State :: dispatcher_state(),
+    when State :: auth_state(),
          From :: gen_server:from(),
          Username :: player_name(),
          Password :: nonempty_string(),
@@ -183,7 +183,7 @@ code_change(_OldVsn, State, _Extra) ->
          Result :: Ok | Error.
 login(State, From, #{username := Username, password := _Password} = Request) ->
     logger:info("[~p] User ~p is attempting to login from ~p~n", [?SERVER, Username, From]),
-    case registry:check_user(Request, State#dispatcher_state.connection) of
+    case registry:check_user(Request, State#auth_state.connection) of
         {ok, {PlayerId, Email}} ->
             Cache =
                 #player_cache{player_id = PlayerId,
@@ -218,6 +218,7 @@ start_new_worker(Cache) ->
         || Request = {login, Cache},
            % TODO improve this
            {ok, Data} = gen_server:call(storage_mnesia, Request),
+           logger:info("[~p] USER: ~p~n", [?SERVER, Data]),
            case player_sup:start(Data) of
                {ok, Pid} ->
                    return(Pid);

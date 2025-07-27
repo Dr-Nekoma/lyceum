@@ -116,7 +116,8 @@ player_characters(#{username := Username, email := Email}, Connection) ->
              FROM character.view WHERE username = $1::TEXT AND email::TEXT = $2::TEXT",
     do([postgres_m || 
 	   UnprocessedCharacters <- {epgsql:equery(Connection, Query, [Username, Email]), select},
-	   ProcessedCharacters = database_utils:transform_character_map(database_utils:columns_and_rows(UnprocessedCharacters)),
+       ColumnsRows = database_utils:columns_and_rows(UnprocessedCharacters),
+	   ProcessedCharacters = database_utils:transform_character_map(ColumnsRows),
 	   return(ProcessedCharacters)]).
 
 player_character(#{name := Name, 

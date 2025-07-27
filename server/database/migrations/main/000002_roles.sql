@@ -27,32 +27,32 @@ ALTER DEFAULT PRIVILEGES FOR ROLE application
 GRANT USAGE, SELECT ON SEQUENCES TO application;
 
 -- =================================================
--- Create a "dispatcher" user with READ / WRITE to
+-- Create an "lyceum_auth" user with READ / WRITE to
 -- SEQUENCES and TABLES.
 -- =================================================
-CREATE USER dispatcher WITH PASSWORD 'dispatcher' LOGIN;
-GRANT CONNECT ON DATABASE lyceum TO dispatcher;
+CREATE USER lyceum_auth WITH PASSWORD 'auth' LOGIN;
+GRANT CONNECT ON DATABASE lyceum TO lyceum_auth;
 
--- Grant dispatcher user access to all current schemas
+-- Grant lyceum_auth user access to all current schemas
 DO $$
 DECLARE
     schema_name TEXT;
 BEGIN
     FOR schema_name IN SELECT nspname FROM pg_namespace WHERE nspname NOT IN ('information_schema', 'pg_catalog', 'pg_toast') LOOP
-        EXECUTE format('GRANT USAGE ON SCHEMA %I TO dispatcher', schema_name);
-        EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA %I TO dispatcher', schema_name);
-        EXECUTE format('GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA %I TO dispatcher', schema_name);
-        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO dispatcher', schema_name);
-        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT USAGE, SELECT ON SEQUENCES TO dispatcher', schema_name);
+        EXECUTE format('GRANT USAGE ON SCHEMA %I TO lyceum_auth', schema_name);
+        EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA %I TO lyceum_auth', schema_name);
+        EXECUTE format('GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA %I TO lyceum_auth', schema_name);
+        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO lyceum_auth', schema_name);
+        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT USAGE, SELECT ON SEQUENCES TO lyceum_auth', schema_name);
     END LOOP;
 END
 $$;
 
-ALTER DEFAULT PRIVILEGES FOR ROLE dispatcher
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO dispatcher;
+ALTER DEFAULT PRIVILEGES FOR ROLE lyceum_auth
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO lyceum_auth;
 
-ALTER DEFAULT PRIVILEGES FOR ROLE dispatcher
-GRANT USAGE, SELECT ON SEQUENCES TO dispatcher;
+ALTER DEFAULT PRIVILEGES FOR ROLE lyceum_auth
+GRANT USAGE, SELECT ON SEQUENCES TO lyceum_auth;
 
 -- =================================================
 -- Create a "MNESIA" user with READ ONLY access

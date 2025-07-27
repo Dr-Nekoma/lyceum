@@ -5,7 +5,7 @@
 
 -module(database).
 
--export([connect/0, connect_as_dispatcher/0, connect_as_migraterl/0,
+-export([connect/0, connect_as_auth/0, connect_as_migraterl/0,
          connect_as_mnesia/0]).
 
 -define(PGHOST, os:getenv("PGHOST", "127.0.0.1")).
@@ -16,8 +16,8 @@
 -define(PG_MIGRATERL_PASSWORD, os:getenv("PG_MIGRATERL_PASSWORD", "migrations")).
 -define(PG_MNESIA_USER, os:getenv("PG_MNESIA_USER", "mnesia")).
 -define(PG_MNESIA_PASSWORD, os:getenv("PG_MNESIA_PASSWORD", "mnesia")).
--define(PG_DISPATCHER_USER, os:getenv("PG_DISPATCHER_USER", "dispatcher")).
--define(PG_DISPATCHER_PASSWORD, os:getenv("PG_DISPATCHER_PASSWORD", "dispatcher")).
+-define(PG_AUTH_USER, os:getenv("PG_AUTH_USER", "lyceum_auth")).
+-define(PG_AUTH_PASSWORD, os:getenv("PG_AUTH_PASSWORD", "auth")).
 -define(PGDATABASE, os:getenv("PGDATABASE", "lyceum")).
 
 -spec connect_with(User, Password) -> Result
@@ -48,10 +48,10 @@ connect_with(User, Password) ->
 connect() ->
     connect_with(?PGUSER, ?PGPASSWORD).
 
--spec connect_as_dispatcher() ->
+-spec connect_as_auth() ->
                                {ok, epgsql:connection()} | {error, epgsql:connect_error()}.
-connect_as_dispatcher() ->
-    connect_with(?PG_DISPATCHER_USER, ?PG_DISPATCHER_PASSWORD).
+connect_as_auth() ->
+    connect_with(?PG_AUTH_USER, ?PG_AUTH_PASSWORD).
 
 -spec connect_as_migraterl() ->
                               {ok, epgsql:connection()} | {error, epgsql:connect_error()}.

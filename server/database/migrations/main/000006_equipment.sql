@@ -1,7 +1,7 @@
 -- TYPES
 DO $$ BEGIN
     -- EQUIP_KIND
-    IF to_regtype('equipment.KIND') IS NULL THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'equipment.KIND') THEN
         CREATE TYPE equipment.KIND AS ENUM(
             'HEAD',
             'TOP',
@@ -13,7 +13,7 @@ DO $$ BEGIN
     END IF;
 
     -- EQUIP_USE
-    IF to_regtype('equipment.USE') IS NULL THEN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'equipment.USE') THEN
         CREATE TYPE equipment.USE AS ENUM(
             'HEAD',
             'TOP',

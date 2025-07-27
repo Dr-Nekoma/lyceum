@@ -1,5 +1,10 @@
-CREATE DOMAIN player.email AS citext
-  CHECK ( value ~ '^[a-zA-Z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$' );
+DO $$ BEGIN
+    -- Email
+    IF to_regtype('player.email') IS NULL THEN
+      CREATE DOMAIN player.email AS citext
+      CHECK ( value ~ '^[a-zA-Z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$' );
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS player.record(
     username TEXT NOT NULL,

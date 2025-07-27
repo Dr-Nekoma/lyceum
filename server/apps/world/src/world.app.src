@@ -1,13 +1,13 @@
-{application, storage_mnesia, [
+{application, world, [
     {description, "An OTP application"},
     {vsn, {git, short}},
     {registered, []},
-    {mod, {storage_mnesia_app, []}},
+    {mod, {world_app, []}},
     {applications, [
         kernel,
         stdlib,
         sasl,
-        mnesia,
+        csv,
         epgsql,
         erlandono
     ]},

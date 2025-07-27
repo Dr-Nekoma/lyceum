@@ -3,7 +3,6 @@
 -include_lib("common_test/include/ct.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
-%% Include the record definitions from your project
 -include("player_state.hrl").
 
 %% CT Callbacks
