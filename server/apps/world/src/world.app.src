@@ -1,6 +1,6 @@
 {application, world, [
     {description, "An OTP application"},
-    {vsn, "0.1.0"},
+    {vsn, {git, short}},
     {registered, []},
     {mod, {world_app, []}},
     {applications, [

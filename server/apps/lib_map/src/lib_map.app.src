@@ -1,6 +1,6 @@
 {application, lib_map, [
     {description, "An OTP library"},
-    {vsn, "0.1.0"},
+    {vsn, {git, short}},
     {registered, []},
     {applications, [
         kernel,

@@ -1,11 +1,16 @@
 {application, auth, [
     {description, "An OTP application"},
-    {vsn, "0.1.0"},
+    {vsn, {git, short}},
     {registered, []},
     {mod, {auth_app, []}},
     {applications, [
         kernel,
-        stdlib
+        stdlib,
+        sasl,
+        mnesia,
+        epgsql,
+        erlandono,
+        storage_mnesia
     ]},
     {env, []},
     {modules, []},
