@@ -19,12 +19,6 @@ CREATE TABLE IF NOT EXISTS player.record(
     PRIMARY KEY(username, email)
 );
 
-CREATE INDEX IF NOT EXISTS idx_player_uid 
-ON player.record(uid);
-
-CREATE INDEX IF NOT EXISTS idx_player_uid_extra
+CREATE INDEX IF NOT EXISTS idx_player_uid
 on player.record(uid)
 include (username, email);
-
-CREATE INDEX IF NOT EXISTS idx_player_email
-ON player.record(email);

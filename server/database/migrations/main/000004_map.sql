@@ -1,52 +1,29 @@
 -- TYPES
 DO $$ BEGIN
-    -- TODO: Deal with this separately on #96, aparently this causes a weird
-    --       BUG on epgsql, need to improve the testing suite until I can 
-    --       investigate this properly.
     -- Map Tile
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'map.TILE_TYPE') THEN
-    --   CREATE DOMAIN map.TILE_TYPE AS TEXT 
-    --   CONSTRAINT CHECK_TILE_TYPE
-    --   NOT NULL CHECK (VALUE IN (
-    --     'EMPTY',
-    --     'WATER',
-    --     'GRASS',
-    --     'SAND',
-    --     'DIRT'
-    --   ));
-    -- END IF;
-    --
-    -- -- Object Type
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'map.OBJECT_TYPE') THEN
-    --   CREATE DOMAIN map.OBJECT_TYPE AS TEXT 
-    --   CONSTRAINT CHECK_TILE_TYPE
-    --   NOT NULL CHECK (VALUE IN (
-    --     'EMPTY',
-    --     'BUSH',
-    --     'CHEST',
-    --     'ROCK', 
-    --     'TREE'
-    --   ));
-    -- END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'map.OBJECT_TYPE') THEN
-        CREATE TYPE map.TILE_TYPE AS ENUM(
-            'EMPTY',
-            'WATER',
-            'GRASS',
-            'SAND',
-            'DIRT'
-        );
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'map.TILE_TYPE') THEN
+      CREATE DOMAIN map.TILE_TYPE AS TEXT 
+      CONSTRAINT CHECK_TILE_TYPE
+      NOT NULL CHECK (VALUE IN (
+        'EMPTY',
+        'WATER',
+        'GRASS',
+        'SAND',
+        'DIRT'
+      ));
     END IF;
 
+    -- Object Type
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'map.OBJECT_TYPE') THEN
-        CREATE TYPE map.OBJECT_TYPE AS ENUM(
-            'EMPTY',
-            'BUSH',
-            'TREE',
-            'CHEST',
-            'ROCK'
-        );
+      CREATE DOMAIN map.OBJECT_TYPE AS TEXT 
+      CONSTRAINT CHECK_OBJECT_TYPE
+      NOT NULL CHECK (VALUE IN (
+        'EMPTY',
+        'BUSH',
+        'CHEST',
+        'ROCK', 
+        'TREE'
+      ));
     END IF;
 
     -- Map Tile Input
