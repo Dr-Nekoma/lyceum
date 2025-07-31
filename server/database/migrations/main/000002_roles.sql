@@ -30,7 +30,7 @@ GRANT USAGE, SELECT ON SEQUENCES TO application;
 -- Create an "lyceum_auth" user with READ / WRITE to
 -- SEQUENCES and TABLES.
 -- =================================================
-CREATE USER lyceum_auth WITH PASSWORD 'auth' LOGIN;
+CREATE USER lyceum_auth WITH PASSWORD 'lyceum_auth' LOGIN;
 GRANT CONNECT ON DATABASE lyceum TO lyceum_auth;
 
 -- Grant lyceum_auth user access to all current schemas

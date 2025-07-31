@@ -9,11 +9,8 @@
 -export([all/0, groups/0, init_per_group/2, end_per_group/2, init_per_testcase/2,
          end_per_testcase/2]).
 %% Test cases
--export([test_get_by_id_success/1, test_get_by_username_success/1,
-         test_get_by_email_success/1]).
+-export([test_get_by_id_success/1, test_get_by_id_failure/1]).
 -export([test_login_success/1, test_logout_success/1, test_upsert_record_success/1]).
--export([test_get_by_id_failure/1, test_get_by_username_failure/1,
-         test_get_by_email_failure/1]).
 
 %%--------------------------------------------------------------------
 %% CT Callbacks
@@ -23,13 +20,7 @@ all() ->
     [{group, query_operations}, {group, cache_functions}].
 
 groups() ->
-    [{query_operations,
-      [test_get_by_id_success,
-       test_get_by_id_failure,
-       test_get_by_username_success,
-       test_get_by_username_failure,
-       test_get_by_email_success,
-       test_get_by_email_failure]},
+    [{query_operations, [test_get_by_id_success, test_get_by_id_failure]},
      {cache_functions, [test_login_success, test_logout_success, test_upsert_record_success]}].
 
 init_per_group(Name, Config) ->
@@ -97,38 +88,6 @@ test_get_by_id_success(Config) ->
 
 test_get_by_id_failure(_Config) ->
     {error, _} = gen_server:call(storage_mnesia, {get_by_id, "nonexistent"}).
-
-test_get_by_username_success(Config) ->
-    TestCache = ?config(test_player_01, Config),
-    PlayerId = TestCache#player_cache.player_id,
-    Username = TestCache#player_cache.username,
-    Email = TestCache#player_cache.email,
-
-    %% Test get by ID
-    {ok, C} = gen_server:call(storage_mnesia, {get_by_username, Username}),
-
-    ?assertEqual(PlayerId, C#player_cache.player_id),
-    ?assertEqual(Username, C#player_cache.username),
-    ?assertEqual(Email, C#player_cache.email).
-
-test_get_by_username_failure(_Config) ->
-    {error, _} = gen_server:call(storage_mnesia, {get_by_username, "nonexistent"}).
-
-test_get_by_email_success(Config) ->
-    TestCache = ?config(test_player_01, Config),
-    PlayerId = TestCache#player_cache.player_id,
-    Username = TestCache#player_cache.username,
-    Email = TestCache#player_cache.email,
-
-    %% Test get by ID
-    {ok, C} = gen_server:call(storage_mnesia, {get_by_email, Email}),
-
-    ?assertEqual(PlayerId, C#player_cache.player_id),
-    ?assertEqual(Username, C#player_cache.username),
-    ?assertEqual(Email, C#player_cache.email).
-
-test_get_by_email_failure(_Config) ->
-    {error, _} = gen_server:call(storage_mnesia, {get_by_email, "nonexistent"}).
 
 %% Cache Operations
 test_login_success(Config) ->

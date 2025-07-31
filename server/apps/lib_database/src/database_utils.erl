@@ -33,7 +33,7 @@ columns_and_rows({FullColumns, Rows}) ->
 transform_character_map(List) ->
     F = fun(Map) ->
            Map#{state_type :=
-                    erlang:binary_to_atom(
+                    erlang:list_to_atom(
                         maps:get(state_type, Map))}
         end,
     lists:map(F, List).

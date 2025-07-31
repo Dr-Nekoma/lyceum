@@ -2,7 +2,8 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0]).
+-export([start_link/0, get_by_id/1, login/1, logout/1]).
+
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
          code_change/3]).
@@ -29,6 +30,46 @@
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
+%%--------------------------------------------------------------------
+%% @doc
+%% Fetchs Player's CLIENT PID from MNESIA.
+%% @end
+%%--------------------------------------------------------------------
+-spec get_by_id(PlayerId) -> Result
+    when
+      PlayerId :: player_id(),
+      State :: player_state(),
+      Reply :: {reply, term(), State} | {reply, term(), State, timeout()},
+      NoReply :: {noreply, State} | {noreply, State, timeout()},
+      Stop :: {stop, term(), term(), State} | {stop, term(), State},
+      Result :: Reply | NoReply | Stop.
+get_by_id(PlayerId) ->
+    gen_server:call(?MODULE, {get_by_id, PlayerId}).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Attemps to login a Player
+%% @end
+%%--------------------------------------------------------------------
+-spec login(Data) -> Result
+    when
+      Data :: player_cache(),
+      State :: player_state(),
+      Reply :: {reply, term(), State} | {reply, term(), State, timeout()},
+      NoReply :: {noreply, State} | {noreply, State, timeout()},
+      Stop :: {stop, term(), term(), State} | {stop, term(), State},
+      Result :: Reply | NoReply | Stop.
+login(Data) ->
+    gen_server:call(?MODULE, {login, Data}).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Logs a Player off
+%% @end
+%%--------------------------------------------------------------------
+logout(PlayerId) ->
+    gen_server:cast(?MODULE, {logout, PlayerId}).
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
@@ -48,10 +89,7 @@ start_link() ->
 init(_) ->
     Nodes = [node()],
     DefaultAttributes = [{ram_copies, Nodes}],
-    PlayerTableSettings =
-        [{attributes, record_info(fields, ?PLAYER_CACHE_TABLE)},
-         % Extra indexes to help certain queries later
-         {index, [#player_cache.username, #player_cache.email]}],
+    PlayerTableSettings = [{attributes, record_info(fields, ?PLAYER_CACHE_TABLE)}],
     Options = PlayerTableSettings ++ DefaultAttributes,
     case mnesia:system_info(db_nodes) of
         [] ->
@@ -92,10 +130,14 @@ init(_) ->
       NoReply :: {noreply, State} | {noreply, State, timeout()},
       Stop :: {stop, term(), term(), State} | {stop, term(), State},
       Result :: Reply | NoReply | Stop.
-handle_call({login, CacheData}, _, State) ->
+handle_call({login, CacheData}, From, State) ->
+    logger:debug("[~p] Player Logging From: ~p~n", [?MODULE, From]),
     NewData =
         case get_by_id(?PLAYER_CACHE_TABLE, CacheData#player_cache.player_id) of
             {ok, Data} ->
+                %% TODO: 
+                %% 1. Kill old PID
+                %% 2. Replace old record
                 Data#player_cache{client_pid = CacheData#player_cache.client_pid};
             {error, Reason} ->
                 logger:warning("[~p] Cache missing: ~p~n", [?MODULE, Reason]),
@@ -106,12 +148,6 @@ handle_call({login, CacheData}, _, State) ->
     {reply, Reply, State};
 handle_call({get_by_id, UserId}, _, State) ->
     Reply = get_by_id(?PLAYER_CACHE_TABLE, UserId),
-    {reply, Reply, State};
-handle_call({get_by_username, Username}, _, State) ->
-    Reply = get_by_username(?PLAYER_CACHE_TABLE, Username),
-    {reply, Reply, State};
-handle_call({get_by_email, Email}, _, State) ->
-    Reply = get_by_email(?PLAYER_CACHE_TABLE, Email),
     {reply, Reply, State};
 handle_call(_Request, _, State) ->
     Reply = ok,
@@ -224,7 +260,7 @@ format_query_result(Result) ->
 
 %% @doc
 %% Takes a deterministacally generated UserID and
-%% fetches the PID associated with it.
+%% fetches the Client PID associated with it.
 %% @end
 -spec get_by_id(Table, UserId) -> Result
     when Table :: mnesia:table(),
@@ -236,44 +272,6 @@ format_query_result(Result) ->
          Result :: Ok | Error.
 get_by_id(Table, UserId) ->
     Fun = fun() -> mnesia:read({Table, UserId}) end,
-    format_query_result(mnesia:transaction(Fun)).
-
-%% @doc
-%% Query by a player's username, which is indexed by
-%% MNESIA.
-%% @end
--spec get_by_username(Table, Username) -> Result
-    when Table :: mnesia:table(),
-         Username :: player_name(),
-         Cache :: player_cache(),
-         Reason :: mnesia_query_error(),
-         Ok :: {ok, Cache},
-         Error :: {error, Reason},
-         Result :: Ok | Error.
-get_by_username(Table, Username) ->
-    Fun = fun() ->
-             QH = qlc:q([X || X <- mnesia:table(Table), X#player_cache.username =:= Username]),
-             qlc:eval(QH)
-          end,
-    format_query_result(mnesia:transaction(Fun)).
-
-%% @doc
-%% Query by a player's email, which is indexed by
-%% MNESIA.
-%% @end
--spec get_by_email(Table, Email) -> Result
-    when Table :: mnesia:table(),
-         Email :: player_name(),
-         Cache :: player_cache(),
-         Reason :: mnesia_query_error(),
-         Ok :: {ok, Cache},
-         Error :: {error, Reason},
-         Result :: Ok | Error.
-get_by_email(Table, Email) ->
-    Fun = fun() ->
-             QH = qlc:q([X || X <- mnesia:table(Table), X#player_cache.email =:= Email]),
-             qlc:eval(QH)
-          end,
     format_query_result(mnesia:transaction(Fun)).
 
 %% @doc

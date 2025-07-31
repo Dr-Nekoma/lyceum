@@ -7,7 +7,7 @@ SET x_position = $1::REAL,
     health = $6::SMALLINT,
     mana = $7::SMALLINT,
     face_direction = $8::SMALLINT,
-    state_type = $9::\"character\".STATE_TYPE
+    state_type = $9::"character".STATE_TYPE
 WHERE 
     name = $10::TEXT
 AND email = $11::TEXT

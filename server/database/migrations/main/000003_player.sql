@@ -15,16 +15,12 @@ CREATE TABLE IF NOT EXISTS player.record(
     -- it is easier to store a single key and it is safer to
     -- associate it to PIDs, since we don't allow users to 
     -- change their account and character names.
-    uid TEXT GENERATED ALWAYS AS (encode(digest(email || username, 'sha256'), 'hex')) STORED,
+    uid BIGINT GENERATED ALWAYS AS (
+        ('x' || substring(encode(digest(username || email, 'sha256'), 'hex'), 1, 16))::bit(64)::bigint
+    ) STORED,
     PRIMARY KEY(username, email)
 );
 
-CREATE INDEX IF NOT EXISTS idx_player_uid 
-ON player.record(uid);
-
-CREATE INDEX IF NOT EXISTS idx_player_uid_extra
-on player.record(uid)
-include (username, email);
-
-CREATE INDEX IF NOT EXISTS idx_player_email
-ON player.record(email);
+CREATE INDEX IF NOT EXISTS idx_player_uid
+ON player.record(uid)
+INCLUDE (username, email);
