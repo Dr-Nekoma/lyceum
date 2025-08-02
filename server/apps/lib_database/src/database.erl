@@ -17,7 +17,7 @@
 -define(PG_MNESIA_USER, os:getenv("PG_MNESIA_USER", "mnesia")).
 -define(PG_MNESIA_PASSWORD, os:getenv("PG_MNESIA_PASSWORD", "mnesia")).
 -define(PG_AUTH_USER, os:getenv("PG_AUTH_USER", "lyceum_auth")).
--define(PG_AUTH_PASSWORD, os:getenv("PG_AUTH_PASSWORD", "auth")).
+-define(PG_AUTH_PASSWORD, os:getenv("PG_AUTH_PASSWORD", "lyceum_auth")).
 -define(PGDATABASE, os:getenv("PGDATABASE", "lyceum")).
 
 -spec connect_with(User, Password) -> Result

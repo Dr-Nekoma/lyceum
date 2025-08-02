@@ -1,20 +1,24 @@
 -- TYPES
 DO $$ BEGIN
-    -- EQUIP_KIND
+    -- Equipment Kind
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'equipment.KIND') THEN
-        CREATE TYPE equipment.KIND AS ENUM(
+        CREATE DOMAIN equipment.KIND AS TEXT 
+        CONSTRAINT CHECK_EQUIPMENT_KIND
+        NOT NULL CHECK (VALUE IN (
             'HEAD',
             'TOP',
             'BOTTOM',
             'FEET',
             'ARMS',
             'FINGER'
-        );
+        ));
     END IF;
 
-    -- EQUIP_USE
+    -- Equipment Usage
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'equipment.USE') THEN
-        CREATE TYPE equipment.USE AS ENUM(
+        CREATE DOMAIN equipment.USE AS TEXT 
+        CONSTRAINT CHECK_EQUIPMENT_USE
+        NOT NULL CHECK (VALUE IN (
             'HEAD',
             'TOP',
             'BOTTOM',
@@ -23,7 +27,7 @@ DO $$ BEGIN
             'LEFT_ARM',
             'RIGHT_ARM',
             'FINGER'
-        );
+        ));
     END IF;
 END $$;
 

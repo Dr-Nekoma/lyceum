@@ -112,7 +112,7 @@ player_characters(#{username := Username, email := Email}, Connection) ->
                     character.view.health, \
                     character.view.mana_max, \
                     character.view.mana, \
-                    character.view.state_type \
+                    character.view.state_type::TEXT \
              FROM character.view WHERE username = $1::TEXT AND email::TEXT = $2::TEXT",
     do([postgres_m || 
 	   UnprocessedCharacters <- {epgsql:equery(Connection, Query, [Username, Email]), select},

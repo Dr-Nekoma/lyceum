@@ -1,4 +1,4 @@
--type player_id() :: nonempty_string().
+-type player_id() :: integer().
 -type player_name() :: nonempty_string().
 -type player_email() :: nonempty_string().
 
