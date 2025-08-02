@@ -36,6 +36,13 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+-- -- STATE_TYPE = ACTION_TYPE | MOVEMENT_TYPE
+-- SELECT omni_types.sum_type(
+--     'character.STATE_TYPE', 
+--     'character.ACTION_TYPE', 
+--     'character.MOVEMENT_TYPE'
+-- );
+
 -- TABLES
 CREATE TABLE IF NOT EXISTS character.instance(
     name TEXT NOT NULL,
