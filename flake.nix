@@ -85,6 +85,7 @@
           with pkgs;
           [
             just
+            postgresql
             raylib
             sqls
           ]

@@ -1,49 +1,14 @@
 -- TYPES
 DO $$ BEGIN
-    -- TODO: Deal with this separately on #96, aparently this causes a weird
-    --       BUG on epgsql, need to improve the testing suite until I can 
-    --       investigate this properly.
     -- Movement Type
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'character.MOVEMENT_TYPE') THEN
-    --     CREATE DOMAIN character.MOVEMENT_TYPE AS TEXT 
-    --     CONSTRAINT CHECK_TILE_TYPE
-    --     NOT NULL CHECK (VALUE IN (
-    --         'idle',
-    --         'walking',
-    --         'running',
-    --         'jumping',
-    --         'falling',
-    --         'flying'
-    --     ));
-    -- END IF;
-    --
-    -- -- Action Type
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'character.ACTION_TYPE') THEN
-    --     CREATE TYPE character.ACTION_TYPE AS ENUM(
-    --         'casting_spell',
-    --         'collecting_resource'
-    --     );
-    -- END IF;
-
-    -- State Type
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'character.STATE_TYPE') THEN
-    --     CREATE DOMAIN character.STATE_TYPE AS TEXT 
-    --     CONSTRAINT CHECK_TILE_TYPE
-    --     NOT NULL CHECK (VALUE IN (
-    --         'collecting_resource',
-    --         'idle',
-    --         'walking'
-    --     ));
-    -- END IF;
-
-
-    -- State Type
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'character.STATE_TYPE') THEN
-        CREATE TYPE character.STATE_TYPE AS ENUM(
+        CREATE DOMAIN character.STATE_TYPE AS TEXT 
+        CONSTRAINT CHECK_STATE_TYPE
+        NOT NULL CHECK (VALUE IN (
+            'collecting_resource',
             'idle',
-            'walking',
-            'collecting_resource'
-        );
+            'walking'
+        ));
     END IF;
 END $$;
 

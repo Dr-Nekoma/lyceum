@@ -5,8 +5,7 @@
 
 -module(database).
 
--export([connect/0, connect_as_auth/0, connect_as_migraterl/0,
-         connect_as_mnesia/0]).
+-export([connect/0, connect_as_auth/0, connect_as_migraterl/0, connect_as_mnesia/0]).
 
 -define(PGHOST, os:getenv("PGHOST", "127.0.0.1")).
 -define(PGPORT, list_to_integer(os:getenv("PGPORT", "5432"))).
@@ -17,7 +16,7 @@
 -define(PG_MNESIA_USER, os:getenv("PG_MNESIA_USER", "mnesia")).
 -define(PG_MNESIA_PASSWORD, os:getenv("PG_MNESIA_PASSWORD", "mnesia")).
 -define(PG_AUTH_USER, os:getenv("PG_AUTH_USER", "lyceum_auth")).
--define(PG_AUTH_PASSWORD, os:getenv("PG_AUTH_PASSWORD", "auth")).
+-define(PG_AUTH_PASSWORD, os:getenv("PG_AUTH_PASSWORD", "lyceum_auth")).
 -define(PGDATABASE, os:getenv("PGDATABASE", "lyceum")).
 
 -spec connect_with(User, Password) -> Result
@@ -48,8 +47,7 @@ connect_with(User, Password) ->
 connect() ->
     connect_with(?PGUSER, ?PGPASSWORD).
 
--spec connect_as_auth() ->
-                               {ok, epgsql:connection()} | {error, epgsql:connect_error()}.
+-spec connect_as_auth() -> {ok, epgsql:connection()} | {error, epgsql:connect_error()}.
 connect_as_auth() ->
     connect_with(?PG_AUTH_USER, ?PG_AUTH_PASSWORD).
 

@@ -52,16 +52,7 @@ start_link() ->
 init([]) ->
     % Setup a DB connection and bootstrap process state
     {ok, Conn} = database:connect_as_migraterl(),
-    LibDir =
-        filename:absname(
-            code:lib_dir(?MODULE)),
-    RootDir = from_lib_dir(LibDir),
-    Dir = case application:get_env(world, is_shell) of
-              {ok, true} ->
-                  to_rel(RootDir);
-              _ ->
-                  RootDir
-          end,
+    Dir = database_queries:get_root_dir(),
     logger:info("~nDIR=~p~n", [Dir]),
     % DB Migrations
     {ok, _} = init_db(Conn, Dir, main),
@@ -153,20 +144,6 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec from_lib_dir(Path) -> Parent
-    when Path :: file:name_all(),
-         Parent :: file:name_all().
-from_lib_dir(Path) ->
-    filename:dirname(
-        filename:dirname(Path)).
-
--spec to_rel(Path) -> Parent
-    when Path :: file:name_all(),
-         Parent :: file:name_all().
-to_rel(Path) ->
-    Suffix = ["rel", "lyceum"],
-    filename:join([Path | Suffix]).
-
 -spec setup_map(Name, Width, Height) -> Map
     when Name :: nonempty_string(),
          Width :: non_neg_integer(),
@@ -204,6 +181,7 @@ init_db(Conn, Dir, Type) ->
                 ["database", "migrations", "test"]
         end,
     Path = filename:join([Dir | Suffix]),
+    logger:debug("[~p] MIGRATION PATH: ~p", [?MODULE, Path]),
     Options =
         case Type of
             main ->

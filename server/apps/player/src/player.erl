@@ -28,14 +28,14 @@
 %% Starts a player's server
 %% @end
 %%--------------------------------------------------------------------
--spec start_link(Cache) -> Result when 
-    Cache :: player_cache(),
-    Result :: gen_server:start_ret().
+-spec start_link(Cache) -> Result
+    when Cache :: player_cache(),
+         Result :: gen_server:start_ret().
 start_link(Cache) ->
     logger:debug("GEN_SERVER ARGS ~p~n", [Cache]),
     {ok, Conn} = database:connect(),
     PlayerId = Cache#player_cache.player_id,
-    State = cache_to_state(Conn, Cache),
+    State = to_state(Conn, Cache),
     logger:debug("[~p] GEN_SERVER NAME = ~p~nGEN_SERVER STATE = ~p~n",
                  [?MODULE, PlayerId, State]),
     gen_server:start_link({global, PlayerId}, ?MODULE, State, []).
@@ -63,14 +63,6 @@ init(State) ->
 %% @private
 %% @doc
 %% Handling call messages
-%%
-%% @spec handle_call(Request, From, State) ->
-%%                                   {reply, Reply, State} |
-%%                                   {reply, Reply, State, Timeout} |
-%%                                   {noreply, State} |
-%%                                   {noreply, State, Timeout} |
-%%                                   {stop, Reason, Reply, State} |
-%%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
 -spec handle_call(term(), gen_server:from(), player_state()) -> Return
@@ -183,18 +175,20 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
--spec cache_to_state(Conn, Cache) -> State
-    when
-      Conn :: epgsql:connection(),
-      Cache :: player_cache(),
-      State :: player_state().
-cache_to_state(Conn, Cache) ->
+-spec to_state(Conn, Cache) -> State
+    when Conn :: epgsql:connection(),
+         Cache :: player_cache(),
+         State :: player_state().
+to_state(Conn, Cache) ->
     PlayerId = Cache#player_cache.player_id,
     Username = Cache#player_cache.username,
     Email = Cache#player_cache.email,
     ClientPid = Cache#player_cache.client_pid,
     Data = #player_data{username = Username, email = Email},
-    #player_state{connection = Conn, client_pid = ClientPid, player_id = PlayerId, data = Data}.
+    #player_state{connection = Conn,
+                  client_pid = ClientPid,
+                  player_id = PlayerId,
+                  data = Data}.
 
 -spec list_characters(player_state(), map()) -> term().
 list_characters(State, #{email := _, username := Username} = Request) ->
@@ -259,7 +253,7 @@ exit_map(State) ->
         ok ->
             Pid ! ok;
         {error, Message} ->
-            logger:error("Failed to ExitMap: ~p~n", [Message]),
+            logger:error("[~p] Failed to ExitMap: ~p~n", [?MODULE, Message]),
             exit(2)
     end.
 
@@ -272,7 +266,7 @@ logout(State) ->
     Connection = State#player_state.connection,
     case character:deactivate(Name, Email, Username, Connection) of
         ok ->
-            gen_server:cast(mnesia_storage, {logout, State#player_state.player_id}),
+            storage_mnesia:logout(State#player_state.player_id),
             Pid ! ok,
             exit(normal);
         {error, Message} ->
