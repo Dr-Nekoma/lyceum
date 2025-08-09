@@ -28,17 +28,16 @@
 %% Starts a player's server
 %% @end
 %%--------------------------------------------------------------------
--spec start_link(Cache) -> Result
-    when Cache :: player_cache(),
+-spec start_link(Args) -> Result
+    when Args :: list(),
          Result :: gen_server:start_ret().
-start_link(Cache) ->
-    logger:debug("GEN_SERVER ARGS ~p~n", [Cache]),
+start_link(Args) ->
+    logger:debug("[~p] PLAYER SERVER ARGS ~p~n", [?MODULE, Args]),
+    Cache = Args,
     {ok, Conn} = database:connect(),
-    PlayerId = Cache#player_cache.player_id,
     State = to_state(Conn, Cache),
-    logger:debug("[~p] GEN_SERVER NAME = ~p~nGEN_SERVER STATE = ~p~n",
-                 [?MODULE, PlayerId, State]),
-    gen_server:start_link({global, PlayerId}, ?MODULE, State, []).
+    logger:debug("[~p] GEN_SERVER INIT DATA ~p~n", [?MODULE, State]),
+    gen_server:start_link({global, Cache#player_cache.email}, ?MODULE, State, []).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -48,16 +47,22 @@ start_link(Cache) ->
 %% @private
 %% @doc
 %% Initializes the server
-%%
-%% @spec init(Args) -> {ok, State} |
-%%                     {ok, State, Timeout} |
-%%                     ignore |
-%%                     {stop, Reason}
 %% @end
 %%--------------------------------------------------------------------
--spec init(player_state()) -> {ok, player_state()}.
+-spec init(State) -> Result
+    when State :: player_state(),
+         Reason :: string(),
+         Ok :: {ok, State} | {ok, State, gen_server:timeout()},
+         Stop :: {stop, Reason},
+         Result :: ignore | Ok | Stop.
 init(State) ->
-    {ok, State}.
+    PlayerId = State#player_cache.player_pid,
+    case cache:update_player_pid(PlayerId, self()) of
+        {ok, _} ->
+            {ok, State};
+        _ ->
+            {stop, "TODO"}
+    end.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -266,7 +271,7 @@ logout(State) ->
     Connection = State#player_state.connection,
     case character:deactivate(Name, Email, Username, Connection) of
         ok ->
-            storage_mnesia:logout(State#player_state.player_id),
+            cache:logout(State#player_state.player_id),
             Pid ! ok,
             exit(normal);
         {error, Message} ->

@@ -103,7 +103,7 @@ handle_call(_Request, _From, State) ->
              {noreply, auth_state(), timeout()} |
              {stop, term(), auth_state()}.
 handle_cast({logout, UserId}, State) ->
-    gen_server:cast(storage_mnesia, {logout, UserId}),
+    gen_server:cast(cache, {logout, UserId}),
     {noreply, State};
 handle_cast(Msg, State) ->
     logger:error("[~p] CAST: ~p~n", [?SERVER, Msg]),
@@ -215,13 +215,13 @@ login(State, From, #{username := Username, password := _Password} = Request) ->
          Result :: {ok, WorkerPid} | {error, Reason :: string()}.
 start_new_worker(Cache) ->
     do([error_m
-        || Request = {login, Cache},
-           % TODO improve this
-           {ok, Data} = gen_server:call(storage_mnesia, Request),
+        || {ok, Data} = cache:login(Cache),
            logger:info("[~p] USER: ~p~n", [?SERVER, Data]),
-           case player_sup:start(Data) of
-               {ok, Pid} ->
+           case player_tl_sup:start_child(Data) of
+               {ok, _SupPid} ->
+                   {ok, Pid} = cache:get_by_id(Data#player_cache.player_pid),
                    return(Pid);
-               _ ->
+               {error, Err} ->
+                   logger:error("[~p] Error while starting INNER SUP: ~p~n", [?MODULE, Err]),
                    fail("Failed to start worker")
            end]).

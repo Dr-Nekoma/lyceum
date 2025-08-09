@@ -10,7 +10,7 @@
         mnesia,
         epgsql,
         erlandono,
-        storage_mnesia
+        cache
     ]},
     {env, []},
     {modules, []},
