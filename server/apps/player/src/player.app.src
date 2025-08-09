@@ -9,7 +9,8 @@
         sasl,
         mnesia,
         epgsql,
-        erlandono
+        erlandono,
+        cache
     ]},
     {env, []},
     {modules, []},

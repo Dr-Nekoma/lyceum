@@ -24,11 +24,13 @@
 -record(player_cache,
         {player_id :: player_id(),
          client_pid :: pid(),
+         player_pid :: pid(),
          username :: player_name(),
          email :: player_email()}).
 
 -type player_cache() ::
     #player_cache{player_id :: player_id(),
                   client_pid :: pid(),
+                  player_pid :: pid(),
                   username :: player_name(),
                   email :: player_email()}.

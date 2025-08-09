@@ -1,9 +1,9 @@
 %%%-------------------------------------------------------------------
-%% @doc storage_mnesia public API
+%% @doc The Cache's OTP Applcation
 %% @end
 %%%-------------------------------------------------------------------
 
--module(storage_mnesia_app).
+-module(cache_app).
 
 -behaviour(application).
 
@@ -11,7 +11,7 @@
 
 start(_StartType, _StartArgs) ->
     logger:info("[~p] Starting Application...~n", [?MODULE]),
-    storage_mnesia_sup:start_link().
+    cache_sup:start_link().
 
 stop(_State) ->
     ok.

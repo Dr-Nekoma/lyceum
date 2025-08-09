@@ -1,8 +1,8 @@
--module(storage_mnesia).
+-module(cache).
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, get_by_id/1, login/1, logout/1]).
+-export([start_link/0, get_by_id/1, login/1, logout/1, update_player_pid/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
@@ -62,6 +62,23 @@ get_by_id(PlayerId) ->
 login(Data) ->
     gen_server:call(?MODULE, {login, Data}).
 
+
+%%--------------------------------------------------------------------
+%% @doc
+%% Updates a Player's PID.
+%% @end
+%%--------------------------------------------------------------------
+-spec update_player_pid(PlayerId, Pid) -> Result
+    when
+      PlayerId :: player_id(),
+      Pid :: pid(),
+      Reply :: {reply, term(), State} | {reply, term(), State, timeout()},
+      NoReply :: {noreply, State} | {noreply, State, timeout()},
+      Stop :: {stop, term(), term(), State} | {stop, term(), State},
+      Result :: Reply | NoReply | Stop.
+update_player_pid(PlayerId, Pid) ->
+    gen_server:call(?MODULE, {update_player_pid, PlayerId, Pid}).
+
 %%--------------------------------------------------------------------
 %% @doc
 %% Logs a Player off
@@ -73,7 +90,6 @@ logout(PlayerId) ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -97,7 +113,7 @@ init(_) ->
         _ ->
             ok
     end,
-    % Warning: You cant use "maybe" and enable Erlandono's
+    % Warning: You can't use "maybe" and enable Erlandono's
     % "do" parse transform at the same time.
     maybe
         {ok, Connection} ?= database:connect_as_mnesia(),
@@ -133,7 +149,7 @@ init(_) ->
 handle_call({login, CacheData}, From, State) ->
     logger:debug("[~p] Player Logging From: ~p~n", [?MODULE, From]),
     NewData =
-        case get_by_id(?PLAYER_CACHE_TABLE, CacheData#player_cache.player_id) of
+        case get_by_player_id(?PLAYER_CACHE_TABLE, CacheData#player_cache.player_id) of
             {ok, Data} ->
                 %% TODO: 
                 %% 1. Kill old PID
@@ -143,11 +159,14 @@ handle_call({login, CacheData}, From, State) ->
                 logger:warning("[~p] Cache missing: ~p~n", [?MODULE, Reason]),
                 CacheData
         end,
-    upsert_record(?PLAYER_CACHE_TABLE, NewData),
+    upsert_player_record(?PLAYER_CACHE_TABLE, NewData),
     Reply = {ok, NewData},
     {reply, Reply, State};
 handle_call({get_by_id, UserId}, _, State) ->
-    Reply = get_by_id(?PLAYER_CACHE_TABLE, UserId),
+    Reply = get_by_player_id(?PLAYER_CACHE_TABLE, UserId),
+    {reply, Reply, State};
+handle_call({update_player_pid, PlayerId, Pid}, _, State) ->
+    Reply = update_player_pid(?PLAYER_CACHE_TABLE, PlayerId, Pid),
     {reply, Reply, State};
 handle_call(_Request, _, State) ->
     Reply = ok,
@@ -164,10 +183,10 @@ handle_call(_Request, _, State) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_cast({upsert_record, Cache}, State) ->
-    upsert_record(?PLAYER_CACHE_TABLE, Cache),
+    upsert_player_record(?PLAYER_CACHE_TABLE, Cache),
     {noreply, State};
 handle_cast({logout, UserId}, State) ->
-    delete_player_entry(?PLAYER_CACHE_TABLE, UserId),
+    delete_player_record(?PLAYER_CACHE_TABLE, UserId),
     {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -259,37 +278,59 @@ format_query_result(Result) ->
     end.
 
 %% @doc
-%% Takes a deterministacally generated UserID and
+%% Takes a deterministacally generated PlayerId and
 %% fetches the Client PID associated with it.
 %% @end
--spec get_by_id(Table, UserId) -> Result
+-spec get_by_player_id(Table, PlayerId) -> Result
     when Table :: mnesia:table(),
-         UserId :: player_id(),
+         PlayerId :: player_id(),
          Cache :: player_cache(),
          Reason :: mnesia_query_error(),
          Ok :: {ok, Cache},
          Error :: {error, Reason},
          Result :: Ok | Error.
-get_by_id(Table, UserId) ->
-    Fun = fun() -> mnesia:read({Table, UserId}) end,
+get_by_player_id(Table, PlayerId) ->
+    Fun = fun() -> mnesia:read({Table, PlayerId}) end,
     format_query_result(mnesia:transaction(Fun)).
 
 %% @doc
-%% Takes a deterministacally generated UserID and
-%% fetches the PID associated with it.
+%% Upserts Cache data in a Player Table.
 %% @end
--spec upsert_record(Table, Cache) -> Result
+-spec upsert_player_record(Table, Cache) -> Result
     when Table :: mnesia:table(),
          Cache :: player_cache(),
          Pid :: pid(),
          Ok :: {ok, Pid},
          Error :: {error, mnesia_write_error},
          Result :: Ok | Error.
-upsert_record(Table, Cache) ->
+upsert_player_record(Table, Cache) ->
     Fun = fun() -> mnesia:write(Table, Cache, write) end,
     case mnesia:transaction(Fun) of
         {atomic, ok} ->
-            {ok, Cache#player_cache.client_pid};
+            {ok, Cache#player_cache.player_pid};
+        _ ->
+            {error, mnesia_write_error}
+    end.
+
+%% @doc
+%% Upserts Cache data in a Player Table.
+%% @end
+-spec update_player_pid(Table, PlayerId, Pid) -> Result
+    when Table :: mnesia:table(),
+         PlayerId :: player_id(),
+         Pid :: pid(),
+         Ok :: {ok, Pid},
+         Error :: {error, mnesia_write_error},
+         Result :: Ok | Error.
+update_player_pid(Table, PlayerId, Pid) ->
+    Fun = fun() -> 
+        {atomic, Old} = mnesia:read({Table, PlayerId}),
+        New = Old#player_cache{player_pid = Pid},
+        mnesia:write(Table, New, write) 
+    end,
+    case mnesia:transaction(Fun) of
+        {atomic, ok} ->
+            {ok, Pid};
         _ ->
             {error, mnesia_write_error}
     end.
@@ -298,13 +339,13 @@ upsert_record(Table, Cache) ->
 %% Removes a UserID from the cache table, therefore
 %% invalidating the PID associated with it.
 %% @end
--spec delete_player_entry(Table, UserId) -> Result
+-spec delete_player_record(Table, UserId) -> Result
     when Table :: mnesia:table(),
          UserId :: player_id(),
          Error :: {error, mnesia_delete_error},
          Ok :: {ok, UserId},
          Result :: Ok | Error.
-delete_player_entry(Table, UserId) ->
+delete_player_record(Table, UserId) ->
     Fun = fun() -> mnesia:delete(Table, UserId, write) end,
     case mnesia:transaction(Fun) of
         {atomic, ok} ->
