@@ -7,7 +7,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1]).
+-export([start_link/1, login/2]).
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
          code_change/3]).
@@ -22,27 +22,41 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-
 %%--------------------------------------------------------------------
 %% @doc
 %% Starts a player's server
 %% @end
 %%--------------------------------------------------------------------
--spec start_link(Args) -> Result
-    when Args :: list(),
+-spec start_link(Cache) -> Result
+    when Cache :: player_cache(),
          Result :: gen_server:start_ret().
-start_link(Args) ->
-    logger:debug("[~p] PLAYER SERVER ARGS ~p~n", [?MODULE, Args]),
-    Cache = Args,
+start_link(Cache) ->
+    logger:debug("[~p] PLAYER SERVER ARGS ~p~n", [?MODULE, Cache]),
     {ok, Conn} = database:connect(),
     State = to_state(Conn, Cache),
     logger:debug("[~p] GEN_SERVER INIT DATA ~p~n", [?MODULE, State]),
-    gen_server:start_link({global, Cache#player_cache.email}, ?MODULE, State, []).
+    gen_server:start_link({global, Cache#player_cache.player_id}, ?MODULE, State, []).
+
+%%--------------------------------------------------------------------
+%% @doc
+%% To be used from the Auth Layer to properly Login a user, and return
+%% a proper PID to the Zig Client.
+%% @end
+%%--------------------------------------------------------------------
+-spec login(From, Msg) -> Result
+    when From :: gen_server:from(),
+         Msg :: {login, player_cache()},
+         Pid :: pid(),
+         Reason :: string(),
+         Ok :: {ok, Pid},
+         Error :: {error, Reason},
+         Result :: Ok | Error.
+login(From, {login, _Request} = Msg) ->
+    gen_server:call(From, Msg).
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -56,13 +70,9 @@ start_link(Args) ->
          Stop :: {stop, Reason},
          Result :: ignore | Ok | Stop.
 init(State) ->
-    PlayerId = State#player_cache.player_pid,
-    case cache:update_player_pid(PlayerId, self()) of
-        {ok, _} ->
-            {ok, State};
-        _ ->
-            {stop, "TODO"}
-    end.
+    NewCache = to_cache(State),
+    cache:upsert_player_record(NewCache),
+    {ok, State}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -70,14 +80,24 @@ init(State) ->
 %% Handling call messages
 %% @end
 %%--------------------------------------------------------------------
--spec handle_call(term(), gen_server:from(), player_state()) -> Return
-    when Return ::
-             {reply, term(), player_state()} |
-             {reply, term(), player_state(), timeout()} |
-             {noreply, player_state()} |
-             {noreply, player_state(), timeout()} |
-             {stop, term(), term(), player_state()} |
-             {stop, term(), player_state()}.
+-spec handle_call(term(), From, State) -> Return
+    when From :: gen_server:from(),
+         State :: player_state(),
+         Timeout :: timeout(),
+         Reply :: {reply, term(), State} | {reply, term(), State, Timeout},
+         NoReply :: {noreply, State} | {noreply, State, Timeout},
+         Stop :: {stop, term(), term(), State} | {stop, term(), State},
+         Return :: Reply | NoReply | Stop.
+handle_call({login, Cache}, _From, State) ->
+    Pid = self(),
+    NewCache = Cache#player_cache{player_pid = Pid},
+    % {ok, _} = cache:upsert_player_record(NewCache),
+    NewState = to_state(State#player_state.connection, NewCache),
+    Payload = {Pid, NewCache#player_cache.email},
+    Reply = {ok, Payload},
+    ClientPid = NewCache#player_cache.client_pid,
+    ClientPid ! Reply,
+    {reply, Reply, NewState};
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -142,7 +162,7 @@ handle_info(logout, State) ->
     logout(State),
     {noreply, State};
 handle_info({_, {login, _}}, State) ->
-    State#player_state.client_pid ! {error, "User already logged in"},
+    % State#player_state.client_pid ! {error, "User already logged in"},
     {noreply, State};
 handle_info(Info, State) ->
     logger:warning("[~p] HANDLE_INFO: ~p~n", [?MODULE, Info]),
@@ -194,6 +214,21 @@ to_state(Conn, Cache) ->
                   client_pid = ClientPid,
                   player_id = PlayerId,
                   data = Data}.
+
+-spec to_cache(State) -> Cache
+    when State :: player_state(),
+         Cache :: player_cache().
+to_cache(State) ->
+    PlayerId = State#player_state.player_id,
+    ClientPid = State#player_state.client_pid,
+    Data = State#player_state.data,
+    Username = Data#player_data.username,
+    Email = Data#player_data.email,
+    #player_cache{player_id = PlayerId,
+                  client_pid = ClientPid,
+                  player_pid = self(),
+                  username = Username,
+                  email = Email}.
 
 -spec list_characters(player_state(), map()) -> term().
 list_characters(State, #{email := _, username := Username} = Request) ->

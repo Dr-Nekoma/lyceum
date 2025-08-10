@@ -21,14 +21,9 @@
 -include("auth_state.hrl").
 -include("player_state.hrl").
 
--dialyzer({nowarn_function, [login/3]}).
-
--compile({parse_transform, do}).
-
 %%%===================================================================
 %%% API
 %%%===================================================================
-
 %%--------------------------------------------------------------------
 %% @doc
 %% Starts the server
@@ -43,7 +38,6 @@ start_link() ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -125,7 +119,7 @@ handle_cast(Msg, State) ->
              {noreply, auth_state(), timeout()} |
              {stop, term(), auth_state()}.
 handle_info({From, {login, Request}}, State) ->
-    logger:info("[~p] INFO: ~p~n", [?SERVER, From]),
+    logger:info("[~p] LOGIN ATTEMPT FROM ~p WITH REQUEST ~p~n", [?SERVER, From, Request]),
     login(State, From, Request),
     {noreply, State};
 handle_info(Info, State) ->
@@ -183,45 +177,21 @@ code_change(_OldVsn, State, _Extra) ->
          Result :: Ok | Error.
 login(State, From, #{username := Username, password := _Password} = Request) ->
     logger:info("[~p] User ~p is attempting to login from ~p~n", [?SERVER, Username, From]),
-    case registry:check_user(Request, State#auth_state.connection) of
-        {ok, {PlayerId, Email}} ->
-            Cache =
-                #player_cache{player_id = PlayerId,
+    maybe
+        {ok, {PlayerId, Email}} ?= registry:check_user(Request, State#auth_state.connection),
+        Cache = #player_cache{player_id = PlayerId,
                               client_pid = From,
                               username = Username,
                               email = Email},
-            {ok, Pid} = start_new_worker(Cache),
-            logger:info("[~p] USER: ~p successfully logged at ~p!~n", [?SERVER, Email, Pid]),
-            Reply = {ok, {Pid, Email}},
-            From ! Reply,
-            Reply;
+        {ok, SupPid} ?= player_tl_sup:start_child(Cache),
+        logger:info("[~p] SUPERVISOR for ~p STARTED at ~p~n", [?MODULE, PlayerId, SupPid]),
+        WorkerId = {global, PlayerId},
+        Msg = {login, Cache},
+        {ok, Reply} ?= gen_server:call(WorkerId, Msg),
+        logger:debug("[~p] AUTH REPLY ~p~n", [?MODULE, Reply]),
+        {ok, Reply}
+    else
         {error, Message} ->
             logger:error("Failed to login: ~p~n", [Message]),
-            Reply = {error, Message},
-            From ! Reply,
-            Reply
+            {error, Message}
     end.
-
-%%--------------------------------------------------------------------
-%% @doc
-%% Gets the PID of a player worker process from MNESIA (if it actually
-%% exists). If it does, logoff the user and create a new process with
-%% the a new Worker PID, then sends it back to Zig Client.
-%% @end
-%%--------------------------------------------------------------------
--spec start_new_worker(Cache) -> Result
-    when Cache :: player_cache(),
-         WorkerPid :: pid(),
-         Result :: {ok, WorkerPid} | {error, Reason :: string()}.
-start_new_worker(Cache) ->
-    do([error_m
-        || {ok, Data} = cache:login(Cache),
-           logger:info("[~p] USER: ~p~n", [?SERVER, Data]),
-           case player_tl_sup:start_child(Data) of
-               {ok, _SupPid} ->
-                   {ok, Pid} = cache:get_by_id(Data#player_cache.player_pid),
-                   return(Pid);
-               {error, Err} ->
-                   logger:error("[~p] Error while starting INNER SUP: ~p~n", [?MODULE, Err]),
-                   fail("Failed to start worker")
-           end]).

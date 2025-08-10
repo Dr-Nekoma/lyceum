@@ -20,7 +20,7 @@
 %%--------------------------------------------------------------------
 -spec start_link() -> supervisor:startlink_ret().
 start_link() ->
-    logger:info("[~p] Starting TOP SUPERVISOR...", [?MODULE]),
+    logger:debug("[~p] Starting TOP LEVEL SUPERVISOR...~n", [?MODULE]),
     supervisor:start_link({global, ?MODULE}, ?MODULE, []).
 
 %%--------------------------------------------------------------------
@@ -37,48 +37,21 @@ start_link() ->
          Error :: {error, Reason},
          Result :: Ok | Error.
 start_child(PlayerData) ->
-    logger:info("[~p] Starting CHILD SUPERVISOR with ARGS = ~p~n", [?MODULE, PlayerData]),
-    case supervisor:start_child(?MODULE, [PlayerData]) of
+    logger:debug("[~p] Starting CHILD SUPERVISOR with ARGS = ~p~n", [?MODULE, PlayerData]),
+    SupRef = {global, ?MODULE},
+    % Specs = get_specs([PlayerData]),
+    case supervisor:start_child(SupRef, [PlayerData]) of
         {ok, SupPid} ->
             {ok, SupPid};
         {ok, SupPid, _} ->
+            {ok, SupPid};
+        {error, {already_started, SupPid}} ->
+            logger:notice("[~p] SUP ~p IS ALREADY STARTED~n", [?MODULE, SupPid]),
             {ok, SupPid};
         {error, Err} ->
             logger:error("[~p] start_child ERROR ~p~n", [?MODULE, Err]),
             {error, "Error while starting child supervisor"}
     end.
-
-%%--------------------------------------------------------------------
-%% @doc
-%% Given an inner Player supervisor, find the PID of a child process
-%% under a particular module.
-%% @end
-%%--------------------------------------------------------------------
-% -spec find_child_pid(SupId, Module) -> Result
-%     when SupId :: supervisor:sup_ref(),
-%          Module :: module(),
-%          Pid :: pid(),
-%          Reason :: string(),
-%          Ok :: {ok, Pid},
-%          Error :: {error, Reason},
-%          Result :: Ok | Error.
-% find_child_pid(SupId, Module) ->
-%     logger:debug("[~p] FIND ~p with ~p~n", [?MODULE, SupId, Module]),
-%     Children = supervisor:which_children(SupId),
-%     Fun = fun({Id, Pid, Type, Modules}) ->
-%              logger:debug("[~p] Child ID: ~p, PID: ~p, Type: ~p, Modules: ~p~n",
-%                           [?MODULE, Id, Pid, Type, Modules]),
-%              case Modules of
-%                  [Mod] when Mod =:= Module -> true;
-%                  _ -> false
-%              end
-%           end,
-%     case lists:filter(Fun, Children) of
-%         [{_Id, Pid, _Type, _Modules}] ->
-%             {ok, Pid};
-%         _ ->
-%             {error, "todo"}
-%     end.
 
 %%====================================================================
 %% Supervisor callbacks
@@ -100,18 +73,25 @@ init(Args) ->
           % they terminate normally
           intensity => 0,
           % Max secs. between restarts
-          period => 5},
+          period => 5,
+          % This Top Level Supervisor will
+          % live as long the VM is on
+          auto_shutdow => never},
 
-    InternalSup =
-        #{id => player_sup,
-          start => {player_sup, start_link, Args},
-          restart => transient,
-          shutdown => 5000,
-          type => supervisor,
-          modules => [player_sup]},
+    InternalSup = get_specs(Args),
+
+    logger:debug("[~p] TOP LEVEL SUPERVISOR STARTED AT ~p with ~p...",
+                 [?MODULE, self(), InternalSup]),
 
     {ok, {SupFlags, [InternalSup]}}.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+get_specs(Args) ->
+    #{id => player_sup,
+      start => {player_sup, start_link, Args},
+      restart => transient,
+      shutdown => 5000,
+      type => supervisor,
+      modules => [player_sup]}.

@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, get_by_id/1, login/1, logout/1, update_player_pid/2]).
+-export([start_link/0, get_by_id/1, login/1, logout/1, upsert_player_record/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
@@ -68,16 +68,15 @@ login(Data) ->
 %% Updates a Player's PID.
 %% @end
 %%--------------------------------------------------------------------
--spec update_player_pid(PlayerId, Pid) -> Result
+-spec upsert_player_record(Cache) -> Result
     when
-      PlayerId :: player_id(),
-      Pid :: pid(),
+      Cache :: player_cache(),
       Reply :: {reply, term(), State} | {reply, term(), State, timeout()},
       NoReply :: {noreply, State} | {noreply, State, timeout()},
       Stop :: {stop, term(), term(), State} | {stop, term(), State},
       Result :: Reply | NoReply | Stop.
-update_player_pid(PlayerId, Pid) ->
-    gen_server:call(?MODULE, {update_player_pid, PlayerId, Pid}).
+upsert_player_record(Cache) ->
+    gen_server:call(?MODULE, {upsert_player_record, Cache}).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -165,8 +164,8 @@ handle_call({login, CacheData}, From, State) ->
 handle_call({get_by_id, UserId}, _, State) ->
     Reply = get_by_player_id(?PLAYER_CACHE_TABLE, UserId),
     {reply, Reply, State};
-handle_call({update_player_pid, PlayerId, Pid}, _, State) ->
-    Reply = update_player_pid(?PLAYER_CACHE_TABLE, PlayerId, Pid),
+handle_call({upsert_record, Cache}, _, State) ->
+    Reply = upsert_player_record(?PLAYER_CACHE_TABLE, Cache),
     {reply, Reply, State};
 handle_call(_Request, _, State) ->
     Reply = ok,
@@ -176,15 +175,17 @@ handle_call(_Request, _, State) ->
 %% @private
 %% @doc
 %% Handling cast messages
-%%
-%% @spec handle_cast(Msg, State) -> {noreply, State} |
-%%                                  {noreply, State, Timeout} |
-%%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_cast({upsert_record, Cache}, State) ->
-    upsert_player_record(?PLAYER_CACHE_TABLE, Cache),
-    {noreply, State};
+-spec handle_cast(Msg, State) -> Result
+    when
+      Msg :: term(),
+      State :: player_state(),
+      Reason :: string(),
+      Timeout :: gen_server:timeout(),
+      NoReply :: {noreply, State} | {noreply, State, Timeout},
+      Stop :: {stop, Reason, State},
+      Result :: NoReply | Stop.
 handle_cast({logout, UserId}, State) ->
     delete_player_record(?PLAYER_CACHE_TABLE, UserId),
     {noreply, State};
@@ -299,39 +300,17 @@ get_by_player_id(Table, PlayerId) ->
 -spec upsert_player_record(Table, Cache) -> Result
     when Table :: mnesia:table(),
          Cache :: player_cache(),
-         Pid :: pid(),
-         Ok :: {ok, Pid},
+         Ok :: {ok, Cache},
          Error :: {error, mnesia_write_error},
          Result :: Ok | Error.
 upsert_player_record(Table, Cache) ->
     Fun = fun() -> mnesia:write(Table, Cache, write) end,
     case mnesia:transaction(Fun) of
         {atomic, ok} ->
-            {ok, Cache#player_cache.player_pid};
-        _ ->
-            {error, mnesia_write_error}
-    end.
-
-%% @doc
-%% Upserts Cache data in a Player Table.
-%% @end
--spec update_player_pid(Table, PlayerId, Pid) -> Result
-    when Table :: mnesia:table(),
-         PlayerId :: player_id(),
-         Pid :: pid(),
-         Ok :: {ok, Pid},
-         Error :: {error, mnesia_write_error},
-         Result :: Ok | Error.
-update_player_pid(Table, PlayerId, Pid) ->
-    Fun = fun() -> 
-        {atomic, Old} = mnesia:read({Table, PlayerId}),
-        New = Old#player_cache{player_pid = Pid},
-        mnesia:write(Table, New, write) 
-    end,
-    case mnesia:transaction(Fun) of
-        {atomic, ok} ->
-            {ok, Pid};
-        _ ->
+            logger:debug("[~p] RECORD ~p INSERTED ON ~p~n", [?MODULE, Cache, Table]),
+            {ok, Cache};
+        Err ->
+            logger:error("[~p] ~p~n", [?MODULE, Err]),
             {error, mnesia_write_error}
     end.
 
