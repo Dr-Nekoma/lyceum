@@ -1,0 +1,1 @@
+-type player_fsm_state() :: logged_in | in_game | logged_out.
