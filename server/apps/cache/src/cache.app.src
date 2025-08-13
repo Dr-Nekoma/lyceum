@@ -1,8 +1,8 @@
-{application, storage_mnesia, [
+{application, cache, [
     {description, "An OTP application"},
     {vsn, {git, short}},
     {registered, []},
-    {mod, {storage_mnesia_app, []}},
+    {mod, {cache_app, []}},
     {applications, [
         kernel,
         stdlib,

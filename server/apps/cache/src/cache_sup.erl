@@ -2,8 +2,7 @@
 %% @doc storage_mnesia top level supervisor.
 %% @end
 %%%-------------------------------------------------------------------
-
--module(storage_mnesia_sup).
+-module(cache_sup).
 
 -behaviour(supervisor).
 
@@ -22,14 +21,14 @@ init([]) ->
           intensity => 10,
           period => 600},
 
-    StorageMNESIA =
-        #{id => storage_mnesia,
-          start => {storage_mnesia, start_link, []},
+    CacheMNESIA =
+        #{id => cache,
+          start => {cache, start_link, []},
           restart => permanent,
           shutdown => 600,
           type => worker,
-          modules => [storage_mnesia]},
+          modules => [cache]},
 
-    {ok, {SupFlags, [StorageMNESIA]}}.
+    {ok, {SupFlags, [CacheMNESIA]}}.
 
 %% internal functions

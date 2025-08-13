@@ -103,7 +103,7 @@ handle_call(_Request, _From, State) ->
              {noreply, auth_state(), timeout()} |
              {stop, term(), auth_state()}.
 handle_cast({logout, UserId}, State) ->
-    gen_server:cast(storage_mnesia, {logout, UserId}),
+    gen_server:cast(cache, {logout, UserId}),
     {noreply, State};
 handle_cast(Msg, State) ->
     logger:error("[~p] CAST: ~p~n", [?SERVER, Msg]),
@@ -217,7 +217,7 @@ start_new_worker(Cache) ->
     do([error_m
         || Request = {login, Cache},
            % TODO improve this
-           {ok, Data} = gen_server:call(storage_mnesia, Request),
+           {ok, Data} = gen_server:call(cache, Request),
            logger:info("[~p] USER: ~p~n", [?SERVER, Data]),
            case player_sup:start(Data) of
                {ok, Pid} ->
