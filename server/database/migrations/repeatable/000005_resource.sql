@@ -32,10 +32,15 @@ $$
        WHERE map_name = target_map_name and kind = target_kind and x_position = target_x_position and y_position = target_y_position;
        INSERT INTO map.object (map_name, kind, x_position, y_position)
        VALUES (target_map_name, 'EMPTY'::map.OBJECT_TYPE, target_x_position, target_y_position);
+       RAISE INFO 'Removing resource and replacing with EMPTY at position (%, %) on map % for kind %', 
+                  target_x_position, target_y_position, target_map_name, target_kind;
      ELSE
        UPDATE map.resource
        SET quantity = target_quantity
        WHERE map_name = target_map_name and kind = target_kind and x_position = target_x_position and y_position = target_y_position;
+       RAISE INFO 'Updating resource quantity to % at position (%, %) on map % for kind %', 
+                   target_quantity, target_x_position, target_y_position, target_map_name, target_kind;
+       
      END IF;
 END;
 $$;
