@@ -42,10 +42,6 @@
   enterTest = ''
     # Building and testing
     just test
-
-    # Linting and formatting
-
-    # Build dioxus desktop example
   '';
 
   services.postgres = {
@@ -61,6 +57,11 @@
     ];
     settings = {
       shared_preload_libraries = "pg_stat_statements";
+      session_preload_libraries = "auto_explain";
+      "auto_explain.log_min_duration" = 150;
+      "auto_explain.log_analyze" = true;
+      log_min_duration_statement = 0;
+      log_statement = "all";
       # pg_stat_statements config, nested attr sets need to be
       # converted to strings, otherwise postgresql.conf fails
       # to be generated.

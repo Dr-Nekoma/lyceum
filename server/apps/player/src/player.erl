@@ -34,12 +34,11 @@
     when Cache :: player_cache(),
          Result :: gen_statem:start_ret().
 start_link(Cache) ->
-    logger:debug("GEN_STATEM ARGS ~p~n", [Cache]),
+    logger:debug("[~p] GEN_STATEM ARGS ~p~n", [?MODULE, Cache]),
     {ok, Conn} = database:connect(),
     PlayerId = Cache#player_cache.player_id,
     State = to_state(Conn, Cache),
-    logger:debug("[~p] GEN_STATEM NAME = ~p~nGEN_STATEM STATE = ~p~n",
-                 [?MODULE, PlayerId, State]),
+    logger:debug("[~p] GEN_STATEM ID = ~p WITH STATE = ~p~n", [?MODULE, PlayerId, State]),
     gen_statem:start_link({global, PlayerId}, ?MODULE, State, []).
 
 %%%===================================================================
@@ -65,6 +64,12 @@ callback_mode() ->
     when State :: player_state(),
          Return :: gen_statem:init_result(player_fsm_state()).
 init(State) ->
+    ClientPid = State#player_state.client_pid,
+    PlayerData = State#player_state.data,
+    PlayerEmail = PlayerData#player_data.email,
+    PlayerPid = self(),
+    Reply = {ok, {PlayerPid, PlayerEmail}},
+    ClientPid ! Reply,
     {ok, logged_in, State}.
 
 %%--------------------------------------------------------------------
@@ -96,7 +101,8 @@ logged_in(info,
                              character_name = Name},
             NewState = State#player_state{data = Data},
             {next_state, in_game, NewState};
-        {error, _} ->
+        {error, Reason} ->
+            logger:error("[~p] ERROR WHILE joining_map: ~p", [?MODULE, Reason]),
             {keep_state, State}
     end;
 logged_in(info, {update_character, Request}, State) ->

@@ -54,29 +54,29 @@ client-pure:
     nix build .#client
 
 client:
-    cd client && zig build run
+    cd {{ client }} && zig build run
 
 client-release:
-    cd client && zig build run --release=fast
+    cd {{ client }} && zig build run --release=fast
 
 client-build:
-    cd client && zig build
+    cd {{ client }} && zig build
 
 client-watch:
-    cd client && zig build -Dno-bin --watch -fincremental
+    cd {{ client }} && zig build -Dno-bin --watch -fincremental
 
 client-test:
-    cd client && zig build test
+    cd {{ client }} && zig build test
 
 client-build-ci:
-    cd client && zig build -fsys=raylib
+    cd {{ client }} && zig build -fsys=raylib
 
 client-test-ci:
-    cd client && zig build test -fsys=raylib
+    cd {{ client }} && zig build test -fsys=raylib
 
 client-deps:
-    cd client && nix run github:Cloudef/zig2nix -- zon2lock build.zig.zon
-    cd client && nix run github:Cloudef/zig2nix -- zon2nix build.zig.zon2json-lock
+    cd {{ client }} && nix run github:Cloudef/zig2nix -- zon2lock build.zig.zon
+    cd {{ client }} && nix run github:Cloudef/zig2nix -- zon2nix build.zig.zon2json-lock
 
 # --------
 # Backend
@@ -91,8 +91,8 @@ deps:
     cd {{ server }} && rebar3 nix lock
 
 # Runs dializer on the erlang codebase
-dialyzer:
-    cd {{ server}} && rebar3 as dialzye dialyzer
+dialyzer: build
+    cd {{ server }} && rebar3 dialyzer
 
 # Spawns an erlang shell
 shell: build

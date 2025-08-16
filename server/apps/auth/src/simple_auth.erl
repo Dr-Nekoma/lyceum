@@ -21,8 +21,6 @@
 -include("auth_state.hrl").
 -include("player_state.hrl").
 
--dialyzer({nowarn_function, [login/3]}).
-
 -compile({parse_transform, do}).
 
 %%%===================================================================
@@ -176,9 +174,7 @@ code_change(_OldVsn, State, _Extra) ->
          Username :: player_name(),
          Password :: nonempty_string(),
          Map :: #{username := Username, password := Password},
-         Pid :: pid(),
-         Email :: player_email(),
-         Ok :: {ok, {Pid, Email}},
+         Ok :: ok,
          Error :: {error, Reason :: string()},
          Result :: Ok | Error.
 login(State, From, #{username := Username, password := _Password} = Request) ->
@@ -192,9 +188,7 @@ login(State, From, #{username := Username, password := _Password} = Request) ->
                               email = Email},
             {ok, Pid} = start_new_worker(Cache),
             logger:info("[~p] USER: ~p successfully logged at ~p!~n", [?SERVER, Email, Pid]),
-            Reply = {ok, {Pid, Email}},
-            From ! Reply,
-            Reply;
+            ok;
         {error, Message} ->
             logger:error("Failed to login: ~p~n", [Message]),
             Reply = {error, Message},
@@ -219,7 +213,7 @@ start_new_worker(Cache) ->
            % TODO improve this
            {ok, Data} = gen_server:call(cache, Request),
            logger:info("[~p] USER: ~p~n", [?SERVER, Data]),
-           case player_sup:start(Data) of
+           case player_top_level_sup:start_child(Data) of
                {ok, Pid} ->
                    return(Pid);
                _ ->

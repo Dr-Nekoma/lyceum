@@ -84,6 +84,7 @@
         devPackages =
           with pkgs;
           [
+            erlfmt
             just
             postgresql
             raylib
