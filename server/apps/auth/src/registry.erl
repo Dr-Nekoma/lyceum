@@ -4,9 +4,6 @@
 
 -compile({parse_transform, do}).
 
-%% TODO: fix this type
--dialyzer({nowarn_function, [check_user/2]}).
-
 -include("player_state.hrl").
 
 -spec check_user(Map, epgsql:connection()) -> Result

@@ -3,6 +3,10 @@
 -export([create_map/3, resource_inserter/1]).
 -compile({parse_transform, do}).
 
+% TODO: Rework this whole module so we don't have to ignore
+% dialyzer warnings.
+-dialyzer({nowarn_function, [generate/3, create_map/3]}).
+
 create_assets(Connection, MapPath, MapName, FileName) ->
     AssetPath = filename:join([MapPath, MapName, FileName]),
     Assets = fetch_file(AssetPath),
@@ -37,7 +41,10 @@ resource_inserter(Acc) ->
    end.
 
 
--spec generate(epgsql:connection(), epgsql:bind_param(), {epgsql:bind_param(), list()}) -> any().
+-spec generate(Connection, MapName, {epgsql:bind_param(), list()}) -> Result when
+      Connection :: epgsql:connection(),
+      MapName :: epgsql:bind_param(),
+      Result :: any().
 generate(Connection, MapName, {Name, Table}) ->
     % TODO: improve this garbagio
     Inserter = spawn(map_generator, resource_inserter, [[]]),
