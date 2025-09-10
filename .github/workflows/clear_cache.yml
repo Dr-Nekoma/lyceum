@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clear Cache
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             console.log("About to clear")
