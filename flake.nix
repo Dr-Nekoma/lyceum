@@ -2,8 +2,8 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    flake-utils = {
-      url = "github:numtide/flake-utils/v1.0.0";
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
     };
 
     devenv = {
@@ -19,50 +19,28 @@
       self,
       nixpkgs,
       devenv,
-      flake-utils,
+      flake-parts,
       treefmt-nix,
       ...
     }@inputs:
-    flake-utils.lib.eachDefaultSystem (
-      system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          config = {
-            allowUnfree = true;
-          };
-        };
-
-        treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
-
-        # Environment-specific packages
-        linuxPkgs = with pkgs; [
-          inotify-tools
-          glfw
-          libGL
-          libpulseaudio
-          libxkbcommon
-          pkg-config
-          xorg.libxcb
-          xorg.libXft
-          xorg.libX11
-          xorg.libX11.dev
-          xorg.libXrandr
-          xorg.libXinerama
-          xorg.libXcursor
-          xorg.libXi
-          # Wayland stuff
-          glfw-wayland
-          wayland
-          wayland-protocols
-          wayland-scanner
-        ];
-        linuxLibs =
-          with pkgs;
-          lib.makeLibraryPath [
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "aarch64-darwin"
+        "x86_64-darwin"
+      ];
+      perSystem =
+        { pkgs, system, ... }:
+        let
+          # Environment-specific packages
+          linuxPkgs = with pkgs; [
+            inotify-tools
+            glfw
             libGL
+            libpulseaudio
             libxkbcommon
-            raylib
+            pkg-config
             xorg.libxcb
             xorg.libXft
             xorg.libX11
@@ -75,52 +53,80 @@
             glfw-wayland
             wayland
             wayland-protocols
+            wayland-scanner
           ];
-        darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
-          CoreFoundation
-          CoreServices
-        ];
+          linuxLibs =
+            with pkgs;
+            lib.makeLibraryPath [
+              libGL
+              libxkbcommon
+              raylib
+              xorg.libxcb
+              xorg.libXft
+              xorg.libX11
+              xorg.libX11.dev
+              xorg.libXrandr
+              xorg.libXinerama
+              xorg.libXcursor
+              xorg.libXi
+              # Wayland stuff
+              glfw-wayland
+              wayland
+              wayland-protocols
+            ];
+          darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
+            CoreFoundation
+            CoreServices
+          ];
 
-        devPackages =
-          with pkgs;
-          [
-            erlfmt
-            just
-            postgresql
-            raylib
-            sqls
-          ]
-          ++ lib.optionals stdenv.isLinux linuxPkgs
-          ++ lib.optionals stdenv.isDarwin darwinPkgs;
+          devPackages =
+            with pkgs;
+            [
+              erlfmt
+              just
+              postgresql
+              raylib
+              sqls
+            ]
+            ++ lib.optionals stdenv.isLinux linuxPkgs
+            ++ lib.optionals stdenv.isDarwin darwinPkgs;
 
-        # App config
-        app_name = "lyceum";
-        app_version = "0.2.1";
+          # App config
+          app_name = "lyceum";
+          app_version = "0.2.2";
 
-        # Erlang
-        erlangVersion = pkgs.erlang;
-        erl_app = "server";
+          # Erlang
+          erlangVersion = pkgs.erlang;
+          erl_app = "server";
 
-        # Zig
-        zig_app = "lyceum-client";
-        zigVersion = pkgs.zig_0_14;
-        raylib = pkgs.raylib;
+          # Zig
+          zig_app = "lyceum-client";
+          zigVersion = pkgs.zig_0_14;
+          raylib = pkgs.raylib;
 
-        mkEnvVars = pkgs: erl: raylib: {
-          LOCALE_ARCHIVE = pkgs.lib.optionalString pkgs.stdenv.isLinux "${pkgs.glibcLocales}/lib/locale/locale-archive";
-          LANG = "en_US.UTF-8";
-          # https://www.erlang.org/doc/man/kernel_app.html
-          ERL_AFLAGS = "-kernel shell_history enabled";
-          ERL_INCLUDE_PATH = "${erl}/lib/erlang/usr/include";
-          # Devenv sets this to something else
-          # https://www.postgresql.org/docs/7.0/libpq-envars.htm
-          PGHOST = "127.0.0.1";
-          PRE_COMMIT_ALLOW_NO_CONFIG=1;
-          # Waylad setup
-          GLFW_SCALE_TO_MONITOR = "GLFW_TRUE";
-        };
-      in
+          mkEnvVars = pkgs: erl: raylib: {
+            LOCALE_ARCHIVE = pkgs.lib.optionalString pkgs.stdenv.isLinux "${pkgs.glibcLocales}/lib/locale/locale-archive";
+            LANG = "en_US.UTF-8";
+            # https://www.erlang.org/doc/man/kernel_app.html
+            ERL_AFLAGS = "-kernel shell_history enabled";
+            ERL_INCLUDE_PATH = "${erl}/lib/erlang/usr/include";
+            # Devenv sets this to something else
+            # https://www.postgresql.org/docs/7.0/libpq-envars.htm
+            PGHOST = "127.0.0.1";
+            PRE_COMMIT_ALLOW_NO_CONFIG=1;
+            # Waylad setup
+            GLFW_SCALE_TO_MONITOR = "GLFW_TRUE";
+          };
+
+          treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
+        in
       {
+        # This sets `pkgs` to a nixpkgs with allowUnfree option set.
+        _module.args.pkgs = import nixpkgs {
+          inherit system;
+          config.allowUnfree = true;
+        };
+
         # nix build
         packages = rec {
           # devenv up
@@ -274,6 +280,9 @@
 
         # nix fmt
         formatter = treefmtEval.config.build.wrapper;
-      }
-    );
+      };
+
+      flake = {
+      };
+  };
 }
