@@ -46,7 +46,7 @@
 
   services.postgres = {
     enable = true;
-    package = pkgs.postgresql_17;
+    package = pkgs.postgresql_18;
     extensions = ext: [
       ext.periods
       ext.omnigres
@@ -68,6 +68,23 @@
       compute_query_id = "on";
       "pg_stat_statements.max" = 10000;
       "pg_stat_statements.track" = "all";
+      # Async IO, io_uring or workers
+      # For io_uring method (Linux only, requires liburing)
+      io_method = "io_uring";
+      # For the "worker" settings, if io_uring is not available
+      ## For systems with many CPU cores and high I/O latency
+      # io_workers = 8;
+      ## For smaller systems or fast local storage
+      # io_workers = 2;
+      # Adjust shared buffers
+      shared_buffers = "1GB";
+      # Increase work memory for large operations
+      work_mem = "16MB";
+      # Enable huge pages if available
+      huge_pages = "try";
+      # Adjust I/O concurrency settings
+      effective_io_concurrency = 16;
+      maintenance_io_concurrency = 16;
     };
     initialDatabases = [
       {

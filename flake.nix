@@ -60,6 +60,7 @@
             lib.makeLibraryPath [
               libGL
               libxkbcommon
+              liburing
               raylib
               xorg.libxcb
               xorg.libXft
@@ -173,6 +174,7 @@
               pkgs.coreutils
               pkgs.gawk
               pkgs.gnugrep
+              pkgs.liburing
               pkgs.openssl
             ];
             config = {
