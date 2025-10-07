@@ -273,6 +273,7 @@
                   zigVersion
                   raylib
                   app_name
+                  system
                   ;
                 packages = devPackages;
               })
@@ -286,5 +287,5 @@
 
       flake = {
       };
-  };
+    };
 }
