@@ -306,9 +306,9 @@ pub const user = struct {
             .ok => |erlang_characters| {
                 const placeholder = try assets.texture(config.assets.paths.menu.character.placeholder);
 
-                var characters = std.ArrayList(GameCharacter).init(gameState.allocator);
+                var characters: std.ArrayList(GameCharacter) = .empty;
                 for (erlang_characters) |stats| {
-                    try characters.append(.{
+                    try characters.append(gameState.allocator, .{
                         .stats = stats,
                         .preview = placeholder,
                     });

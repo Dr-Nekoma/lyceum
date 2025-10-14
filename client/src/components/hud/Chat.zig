@@ -62,7 +62,7 @@ pub fn at(
             .content = try gameState.allocator.allocSentinel(u8, self.position.*, 0),
         };
         std.mem.copyForwards(u8, message.content, self.content[0..self.position.*]);
-        try self.messages.append(message);
+        try self.messages.append(gameState.allocator, message);
         @memset(self.content, 0);
         self.position.* = 0;
     }

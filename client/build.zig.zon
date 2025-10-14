@@ -2,17 +2,17 @@
     .name = .lyceum_client,
     .version = "0.1.0",
     .fingerprint = 0x8ee7ae17a0ed0780, // Changing this has security and trust implications.
-    .minimum_zig_version = "0.14.0",
+    .minimum_zig_version = "0.15.1",
 
     .dependencies = .{
         .raylib_zig = .{
-            .url = "https://github.com/Not-Nik/raylib-zig/archive/d6c77762cbdebbf56d3ff101142048dfae2496c4.tar.gz",
-            .hash = "raylib_zig-5.6.0-dev-KE8REBMyBQCnQ9RBhHsoSKr97XmDHF84wx3g0UiMRDxj",
+            .url = "git+https://github.com/raylib-zig/raylib-zig?ref=devel#163b1ef2e993fe7cc7c76bb3213d98612f4b7676",
+            .hash = "raylib_zig-5.6.0-dev-KE8REGNJBQDSjjyCmf4ATVQtk_OaBpY0B7kBxwSOPEGZ",
         },
 
         .zerl = .{
-            .url = "https://github.com/dont-rely-on-nulls/zerl/archive/refs/tags/v0.2.0.tar.gz",
-            .hash = "zerl-0.2.0-92d69riJAACsO0D--Mak2AqKRzeUHEQlBa2kLi1B1eoY",
+            .url = "git+https://github.com/dont-rely-on-nulls/zerl?ref=zig-0.15#0fd0d8e3a0105cfc0620ea88f43e6584b89723e3",
+            .hash = "zerl-0.2.0-92d69iiJAADbGHYQVaOgEnjZb2QlM6yaHmPgxgl3AdMq",
         },
     },
     .paths = .{

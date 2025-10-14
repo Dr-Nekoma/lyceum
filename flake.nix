@@ -102,7 +102,7 @@
 
           # Zig
           zig_app = "lyceum-client";
-          zigVersion = pkgs.zig_0_14;
+          zigVersion = pkgs.zig_0_15;
           raylib = pkgs.raylib;
 
           mkEnvVars = pkgs: erl: raylib: {

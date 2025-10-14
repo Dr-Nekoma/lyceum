@@ -6,13 +6,12 @@ const GameState = @import("../../game/state.zig");
 
 const barHeight = 40;
 
-pub fn stats(character: *const GameState.World.Character, size: rl.Vector2, position: rl.Vector2, fontSize: f32, allocator: std.mem.Allocator, font: *rl.Font) !void {
+pub fn stats(character: *const GameState.World.Character, size: rl.Vector2, position: rl.Vector2, fontSize: f32, font: *rl.Font) !void {
     const nameLength: f32 = rl.measureTextEx(font.*, character.stats.name, fontSize, config.textSpacing).x;
 
-    var index: [4]u8 = undefined;
-    const levelNumberStr = try std.fmt.bufPrintZ(index[0..], "{d}", .{character.stats.level});
-    const levelStr = try std.fmt.allocPrintZ(allocator, "{s}{s}", .{ "Lvl. ", levelNumberStr });
-    defer allocator.free(levelStr);
+    var index: [16]u8 = undefined;
+    const levelStr = try std.fmt.bufPrintZ(index[0..], "{s}{d}", .{ "Lvl. ", character.stats.level });
+
     const levelLength: f32 = rl.measureTextEx(font.*, levelStr, fontSize, config.textSpacing).x;
 
     const boundarySize: rl.Vector2 = .{
@@ -100,7 +99,7 @@ pub const mainSize: rl.Vector2 = .{
     .y = barHeight,
 };
 
-pub fn at(character: *const GameState.World.Character, size: rl.Vector2, position: rl.Vector2, fontSize: f32, allocator: std.mem.Allocator, font: *rl.Font) !void {
-    try stats(character, size, position, fontSize, allocator, font);
+pub fn at(character: *const GameState.World.Character, size: rl.Vector2, position: rl.Vector2, fontSize: f32, font: *rl.Font) !void {
+    try stats(character, size, position, fontSize, font);
     try faceStats(character, font);
 }
