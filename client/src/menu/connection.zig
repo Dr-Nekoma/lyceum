@@ -10,11 +10,15 @@ const Button = @import("../components/button.zig");
 const GameState = @import("../game/state.zig");
 
 fn print_connect_server_error(message: anytype) !void {
-    const stderr = std.io.getStdErr().writer();
+    var buf: [256]u8 = undefined;
+    var stderr_file = std.fs.File.stderr().writer(&buf);
+    const stderr = &stderr_file.interface;
+
     try stderr.print(
         "Could not connect to Lyceum Server!\n\u{1b}[31mError: \u{1b}[37m{}\n",
         .{message},
     );
+    try stderr.flush();
 }
 
 pub fn connect(gameState: *GameState) !void {

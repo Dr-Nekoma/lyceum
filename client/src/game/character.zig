@@ -16,7 +16,7 @@ const Button = @import("../components/button.zig");
 pub const Chat = struct {
     pub const bufferSize = 50;
     content: [bufferSize:0]u8 = .{0} ** bufferSize,
-    messages: std.ArrayList(chat.Message) = std.ArrayList(chat.Message).init(std.heap.c_allocator),
+    messages: std.ArrayList(chat.Message) = .empty,
     position: usize = 0,
     mode: chat.Mode = .idle,
 };
