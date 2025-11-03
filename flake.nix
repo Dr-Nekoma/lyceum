@@ -116,176 +116,181 @@
             # Devenv sets this to something else
             # https://www.postgresql.org/docs/7.0/libpq-envars.htm
             PGHOST = "127.0.0.1";
-            PRE_COMMIT_ALLOW_NO_CONFIG=1;
+            PRE_COMMIT_ALLOW_NO_CONFIG = 1;
             # Waylad setup
             GLFW_SCALE_TO_MONITOR = "GLFW_TRUE";
           };
 
           treefmtEval = treefmt-nix.lib.evalModule pkgs ./treefmt.nix;
         in
-      {
-        # This sets `pkgs` to a nixpkgs with allowUnfree option set.
-        _module.args.pkgs = import nixpkgs {
-          inherit system;
-          config.allowUnfree = true;
-        };
+        {
+          # This sets `pkgs` to a nixpkgs with allowUnfree option set.
+          _module.args.pkgs = import nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+          };
 
-        # nix build
-        packages = rec {
-          # devenv up
-          devenv-up = self.devShells.${system}.default.config.procfileScript;
+          # nix build
+          packages = rec {
+            # devenv up
+            devenv-up = self.devShells.${system}.default.config.procfileScript;
 
-          # devenv test
-          devenv-test = self.devShells.${system}.default.config.test;
+            # devenv test
+            devenv-test = self.devShells.${system}.default.config.test;
 
-          # Leverages nix to build the erlang backend release
-          # nix build .#server
-          server =
-            let
-              deps = import ./server/rebar-deps.nix {
-                inherit (pkgs) fetchHex fetchFromGitHub fetchgit;
-                builder = pkgs.beamPackages.buildRebar3;
+            # Leverages nix to build the erlang backend release
+            # nix build .#server
+            server =
+              let
+                deps = import ./server/rebar-deps.nix {
+                  inherit (pkgs) fetchHex fetchFromGitHub fetchgit;
+                  builder = pkgs.beamPackages.buildRebar3;
+                };
+              in
+              pkgs.beamPackages.rebar3Relx {
+                pname = erl_app;
+                version = app_version;
+                root = ./server;
+                src = pkgs.lib.cleanSource ./server;
+                releaseType = "release";
+                profile = "prod";
+                include = [
+                  "rebar.config"
+                ];
+                buildInputs =
+                  (with pkgs; [
+                    coreutils
+                    gawk
+                    gnugrep
+                    openssl
+                  ])
+                  ++ pkgs.lib.optional pkgs.stdenv.isLinux [
+                    pkgs.liburing
+                  ];
+                beamDeps = builtins.attrValues deps;
+                buildPhase = ''
+                  runHook preBuild
+                  HOME=. DEBUG=1 rebar3 as prod release --relname ${app_name}
+                  runHook postBuild
+                '';
               };
-            in
-            pkgs.beamPackages.rebar3Relx {
-              pname = erl_app;
-              version = app_version;
-              root = ./server;
-              src = pkgs.lib.cleanSource ./server;
-              releaseType = "release";
-              profile = "prod";
-              include = [
-                "rebar.config"
+
+            # nix build .#dockerImage
+            dockerImage = pkgs.dockerTools.buildLayeredImage {
+              name = erl_app;
+              tag = "latest";
+              created = "now";
+              # This will copy the compiled erlang release to the image
+              contents = [
+                server
               ];
-              beamDeps = builtins.attrValues deps;
-              buildPhase = ''
-                runHook preBuild
-                HOME=. DEBUG=1 rebar3 as prod release --relname ${app_name}
-                runHook postBuild
+              config = {
+                Volumes = {
+                  "/opt/${erl_app}/etc" = { };
+                  "/opt/${erl_app}/data" = { };
+                  "/opt/${erl_app}/log" = { };
+                };
+                WorkingDir = "/opt/${erl_app}";
+                Cmd = [
+                  "${server}/bin/${erl_app}"
+                  "foreground"
+                ];
+                Env = [
+                  "ERL_DIST_PORT=8080"
+                  "ERL_AFLAGS=\"-kernel shell_history enabled\""
+                  "NODE_NAME=${erl_app}"
+                ];
+                ExposedPorts = {
+                  "4369/tcp" = { };
+                  "4369/ucp" = { };
+                  "8080/tcp" = { };
+                  "8080/udp" = { };
+                };
+              };
+            };
+
+            # nix build .#client
+            client = pkgs.stdenv.mkDerivation {
+              pname = zig_app;
+              version = app_version;
+              src = pkgs.lib.cleanSource ./client;
+
+              zigBuildFlags = [
+                "-fsys=raylib"
+                "--release=fast"
+                "-Dassets=${builtins.toString ./client}/assets"
+              ];
+
+              nativeBuildInputs = [
+                zigVersion.hook
+                pkgs.makeWrapper
+              ];
+
+              buildInputs =
+                with pkgs;
+                [
+                  raylib
+                  zigVersion
+                  erlangVersion
+                ]
+                ++ lib.optionals stdenv.isLinux (linuxPkgs)
+                ++ lib.optionals stdenv.isDarwin darwinPkgs;
+
+              # To re-generate the nix lockfile:
+              # just client-deps
+              postPatch = ''
+                ln -s ${pkgs.callPackage ./client/build.zig.zon.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
+              '';
+
+              postInstall = ''
+                wrapProgram "$out/bin/${zig_app}" --prefix LD_LIBRARY_PATH ":" "${linuxLibs}"
               '';
             };
 
-          # nix build .#dockerImage
-          dockerImage = pkgs.dockerTools.buildLayeredImage {
-            name = erl_app;
-            tag = "latest";
-            created = "now";
-            # This will copy the compiled erlang release to the image
-            contents = [
-              server
-              pkgs.coreutils
-              pkgs.gawk
-              pkgs.gnugrep
-              pkgs.liburing
-              pkgs.openssl
-            ];
-            config = {
-              Volumes = {
-                "/opt/${erl_app}/etc" = { };
-                "/opt/${erl_app}/data" = { };
-                "/opt/${erl_app}/log" = { };
-              };
-              WorkingDir = "/opt/${erl_app}";
-              Cmd = [
-                "${server}/bin/${erl_app}"
-                "foreground"
+          };
+
+          # nix run
+          apps = {
+          };
+
+          devShells = {
+            # `nix develop .#ci`
+            # reduce the number of packages to the bare minimum needed for CI
+            ci = pkgs.mkShell {
+              env = mkEnvVars pkgs erlangVersion raylib;
+              buildInputs = with pkgs; [
+                erlangVersion
+                just
+                rebar3
+                rsync
+                zigVersion
+                raylib
               ];
-              Env = [
-                "ERL_DIST_PORT=8080"
-                "ERL_AFLAGS=\"-kernel shell_history enabled\""
-                "NODE_NAME=${erl_app}"
+            };
+
+            # `nix develop --impure`
+            default = devenv.lib.mkShell {
+              inherit inputs pkgs;
+              modules = [
+                (import ./devshell.nix {
+                  inherit
+                    pkgs
+                    mkEnvVars
+                    erlangVersion
+                    zigVersion
+                    raylib
+                    app_name
+                    system
+                    ;
+                  packages = devPackages;
+                })
               ];
-              ExposedPorts = {
-                "4369/tcp" = { };
-                "4369/ucp" = { };
-                "8080/tcp" = { };
-                "8080/udp" = { };
-              };
             };
           };
 
-          # nix build .#client
-          client = pkgs.stdenv.mkDerivation {
-            pname = zig_app;
-            version = app_version;
-            src = pkgs.lib.cleanSource ./client;
-
-            zigBuildFlags = [
-              "-fsys=raylib"
-              "--release=fast"
-              "-Dassets=${builtins.toString ./client}/assets"
-            ];
-
-            nativeBuildInputs = [
-              zigVersion.hook
-              pkgs.makeWrapper
-            ];
-
-            buildInputs =
-              with pkgs;
-              [
-                raylib
-                zigVersion
-                erlangVersion
-              ]
-              ++ lib.optionals stdenv.isLinux (linuxPkgs)
-              ++ lib.optionals stdenv.isDarwin darwinPkgs;
-
-            # To re-generate the nix lockfile:
-            # just client-deps
-            postPatch = ''
-              ln -s ${pkgs.callPackage ./client/build.zig.zon.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
-            '';
-
-            postInstall = ''
-              wrapProgram "$out/bin/${zig_app}" --prefix LD_LIBRARY_PATH ":" "${linuxLibs}"
-            '';
-          };
-
+          # nix fmt
+          formatter = treefmtEval.config.build.wrapper;
         };
-
-        # nix run
-        apps = {
-        };
-
-        devShells = {
-          # `nix develop .#ci`
-          # reduce the number of packages to the bare minimum needed for CI
-          ci = pkgs.mkShell {
-            env = mkEnvVars pkgs erlangVersion raylib;
-            buildInputs = with pkgs; [
-              erlangVersion
-              just
-              rebar3
-              rsync
-              zigVersion
-              raylib
-            ];
-          };
-
-          # `nix develop --impure`
-          default = devenv.lib.mkShell {
-            inherit inputs pkgs;
-            modules = [
-              (import ./devshell.nix {
-                inherit
-                  pkgs
-                  mkEnvVars
-                  erlangVersion
-                  zigVersion
-                  raylib
-                  app_name
-                  system
-                  ;
-                packages = devPackages;
-              })
-            ];
-          };
-        };
-
-        # nix fmt
-        formatter = treefmtEval.config.build.wrapper;
-      };
 
       flake = {
       };
