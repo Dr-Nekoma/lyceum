@@ -83,7 +83,7 @@
       # Async IO, io_uring or workers
       # For io_uring method (Linux only, requires liburing)
       io_method = "io_uring";
-    } 
+    }
     // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
       # in case "io_uring" is not available
       io_method = "worker";
