@@ -30,9 +30,9 @@
 %% Starts a player's FSM
 %% @end
 %%--------------------------------------------------------------------
--spec start_link(Cache) -> Result
-    when Cache :: player_cache(),
-         Result :: gen_statem:start_ret().
+-spec start_link(Cache) -> Result when
+    Cache :: player_cache(),
+    Result :: gen_statem:start_ret().
 start_link(Cache) ->
     logger:debug("[~p] GEN_STATEM ARGS ~p~n", [?MODULE, Cache]),
     {ok, Conn} = database:connect(),
@@ -60,9 +60,9 @@ callback_mode() ->
 %% Initializes the state machine
 %% @end
 %%--------------------------------------------------------------------
--spec init(State) -> Return
-    when State :: player_state(),
-         Return :: gen_statem:init_result(player_fsm_state()).
+-spec init(State) -> Return when
+    State :: player_state(),
+    Return :: gen_statem:init_result(player_fsm_state()).
 init(State) ->
     ClientPid = State#player_state.client_pid,
     PlayerData = State#player_state.data,
@@ -79,26 +79,32 @@ init(State) ->
 %% character nor has joined any map.
 %% @end
 %%--------------------------------------------------------------------
--spec logged_in(EventType, term(), State) -> Return
-    when EventType :: gen_statem:event_type(),
-         State :: player_state(),
-         Return :: gen_statem:event_handler_result(atom()).
+-spec logged_in(EventType, term(), State) -> Return when
+    EventType :: gen_statem:event_type(),
+    State :: player_state(),
+    Return :: gen_statem:event_handler_result(atom()).
 logged_in(info, {list_characters, Request}, State) ->
     list_characters(State, Request),
     {keep_state, State};
-logged_in(info,
-          {joining_map,
-           #{username := Username,
-             email := Email,
-             name := Name} =
-               Request},
-          State) ->
+logged_in(
+    info,
+    {joining_map,
+        #{
+            username := Username,
+            email := Email,
+            name := Name
+        } =
+            Request},
+    State
+) ->
     case joining_map(State, Request) of
         ok ->
             Data =
-                #player_data{email = Email,
-                             username = Username,
-                             character_name = Name},
+                #player_data{
+                    email = Email,
+                    username = Username,
+                    character_name = Name
+                },
             NewState = State#player_state{data = Data},
             {next_state, in_game, NewState};
         {error, Reason} ->
@@ -120,10 +126,10 @@ logged_in(EventType, Event, State) ->
 %% State function for when player is ready to play the game.
 %% @end
 %%--------------------------------------------------------------------
--spec in_game(EventType, term(), State) -> Return
-    when EventType :: gen_statem:event_type(),
-         State :: player_state(),
-         Return :: gen_statem:event_handler_result(atom()).
+-spec in_game(EventType, term(), State) -> Return when
+    EventType :: gen_statem:event_type(),
+    State :: player_state(),
+    Return :: gen_statem:event_handler_result(atom()).
 in_game(info, {update_character, Request}, State) ->
     update(State, Request),
     {keep_state, State};
@@ -149,9 +155,9 @@ in_game(EventType, Event, State) ->
 %% This is called by a gen_statem when it is about to terminate.
 %% @end
 %%--------------------------------------------------------------------
--spec terminate(term(), atom(), State) -> Return
-    when State :: player_state(),
-         Return :: ok.
+-spec terminate(term(), atom(), State) -> Return when
+    State :: player_state(),
+    Return :: ok.
 terminate(Reason, StateName, _State) ->
     logger:info("[~p] Termination in state ~p: ~p~n", [?MODULE, StateName, Reason]),
     ok.
@@ -162,9 +168,9 @@ terminate(Reason, StateName, _State) ->
 %% Convert process state when code is changed
 %% @end
 %%--------------------------------------------------------------------
--spec code_change(term(), atom(), State, term()) -> Return
-    when State :: player_state(),
-         Return :: {ok, atom(), State}.
+-spec code_change(term(), atom(), State, term()) -> Return when
+    State :: player_state(),
+    Return :: {ok, atom(), State}.
 code_change(_OldVsn, StateName, State, _Extra) ->
     {ok, StateName, State}.
 
@@ -177,36 +183,40 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %% Handle events common to all states
 %% @end
 %%--------------------------------------------------------------------
--spec handle_common_events(EventType, term(), State, atom()) -> Return
-    when EventType :: gen_statem:event_type(),
-         State :: player_state(),
-         Return :: gen_statem:event_handler_result(atom()).
+-spec handle_common_events(EventType, term(), State, atom()) -> Return when
+    EventType :: gen_statem:event_type(),
+    State :: player_state(),
+    Return :: gen_statem:event_handler_result(atom()).
 handle_common_events(EventType, Info, State, StateName) ->
-    logger:warning("[~p] UNHANDLED EVENT ~p IN STATE ~p: ~p~n",
-                   [?MODULE, EventType, StateName, Info]),
+    logger:warning(
+        "[~p] UNHANDLED EVENT ~p IN STATE ~p: ~p~n",
+        [?MODULE, EventType, StateName, Info]
+    ),
     {keep_state, State}.
 
--spec to_state(Conn, Cache) -> State
-    when Conn :: epgsql:connection(),
-         Cache :: player_cache(),
-         State :: player_state().
+-spec to_state(Conn, Cache) -> State when
+    Conn :: epgsql:connection(),
+    Cache :: player_cache(),
+    State :: player_state().
 to_state(Conn, Cache) ->
     PlayerId = Cache#player_cache.player_id,
     Username = Cache#player_cache.username,
     Email = Cache#player_cache.email,
     ClientPid = Cache#player_cache.client_pid,
     Data = #player_data{username = Username, email = Email},
-    #player_state{connection = Conn,
-                  client_pid = ClientPid,
-                  player_id = PlayerId,
-                  data = Data}.
+    #player_state{
+        connection = Conn,
+        client_pid = ClientPid,
+        player_id = PlayerId,
+        data = Data
+    }.
 
--spec list_characters(State, PlayerMap) -> Return
-    when State :: player_state(),
-         Email :: player_email(),
-         Username :: player_name(),
-         PlayerMap :: #{email := Email, username := Username},
-         Return :: ok.
+-spec list_characters(State, PlayerMap) -> Return when
+    State :: player_state(),
+    Email :: player_email(),
+    Username :: player_name(),
+    PlayerMap :: #{email := Email, username := Username},
+    Return :: ok.
 list_characters(State, #{email := _, username := Username} = Request) ->
     logger:info("[~p] Querying ~p's characters...~n", [?MODULE, Username]),
     Conn = State#player_state.connection,
@@ -215,13 +225,13 @@ list_characters(State, #{email := _, username := Username} = Request) ->
     State#player_state.client_pid ! Reply,
     ok.
 
--spec joining_map(State, Map) -> Return
-    when State :: player_state(),
-         Name :: player_name(),
-         MapName :: string(),
-         Map :: #{name := Name, map_name := MapName},
-         Reason :: string(),
-         Return :: ok | {error, Reason}.
+-spec joining_map(State, Map) -> Return when
+    State :: player_state(),
+    Name :: player_name(),
+    MapName :: string(),
+    Map :: #{name := Name, map_name := MapName},
+    Reason :: string(),
+    Return :: ok | {error, Reason}.
 joining_map(State, #{name := Name, map_name := MapName} = Request) ->
     Pid = State#player_state.client_pid,
     Connection = State#player_state.connection,
@@ -229,11 +239,13 @@ joining_map(State, #{name := Name, map_name := MapName} = Request) ->
         ok ->
             logger:info("[~p] Retrieving ~p's updated info...", [?MODULE, Name]),
             Result =
-                do([error_m
-                    || Character <- character:player_character(Request, Connection),
-                       Map <- map:get_map(MapName, Connection),
-                       logger:info("Retrieving ~p's map...", [MapName]),
-                       return(#{character => Character, map => Map})]),
+                do([
+                    error_m
+                 || Character <- character:player_character(Request, Connection),
+                    Map <- map:get_map(MapName, Connection),
+                    logger:info("Retrieving ~p's map...", [MapName]),
+                    return(#{character => Character, map => Map})
+                ]),
             Pid ! Result,
             ok;
         {error, Message} ->
@@ -251,7 +263,8 @@ harvest_resource(State, Request) ->
     Connection = State#player_state.connection,
     Result =
         character:harvest_resource(
-            maps:update_with(kind, fun atom_to_upperstring/1, Request), Connection),
+            maps:update_with(kind, fun atom_to_upperstring/1, Request), Connection
+        ),
     logger:info("Harvest Result: ~p\n", [Result]),
     Pid ! Result.
 
@@ -283,9 +296,9 @@ exit_map(State) ->
             {error, Message}
     end.
 
--spec logout(State) -> Exit
-    when State :: player_state(),
-         Exit :: no_return().
+-spec logout(State) -> Exit when
+    State :: player_state(),
+    Exit :: no_return().
 logout(State) ->
     Pid = State#player_state.client_pid,
     Name = State#player_state.data#player_data.character_name,

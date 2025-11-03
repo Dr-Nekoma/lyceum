@@ -83,11 +83,13 @@
           devPackages =
             with pkgs;
             [
+              erlang-language-platform
               erlfmt
               just
               postgresql
               raylib
               sqls
+              watchman
             ]
             ++ lib.optionals stdenv.isLinux linuxPkgs
             ++ lib.optionals stdenv.isDarwin darwinPkgs;
