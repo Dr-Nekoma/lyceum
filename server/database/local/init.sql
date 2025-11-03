@@ -3,8 +3,6 @@
 -- to READ and WRITE on ROLES, SCHEMAS, SEQUENCES 
 -- and TABLES.
 -- =================================================
-CREATE USER migrations
-WITH LOGIN SUPERUSER CREATEROLE PASSWORD 'migrations';
 GRANT CONNECT ON DATABASE lyceum TO migrations;
 GRANT CREATE ON DATABASE lyceum TO migrations;
 
@@ -15,10 +13,15 @@ ALTER DEFAULT PRIVILEGES FOR ROLE migrations GRANT ALL ON SEQUENCES TO migration
 -- =================================================
 -- Create an "admin" superuser as well
 -- =================================================
-CREATE USER admin
-WITH LOGIN SUPERUSER CREATEROLE PASSWORD 'admin';
 GRANT CONNECT ON DATABASE lyceum TO admin;
 GRANT CREATE ON DATABASE lyceum TO admin;
 
 ALTER DEFAULT PRIVILEGES FOR ROLE migrations GRANT ALL ON TABLES TO admin;
 ALTER DEFAULT PRIVILEGES FOR ROLE migrations GRANT ALL ON SEQUENCES TO admin;
+
+-- =================================================
+-- Other users needed by Lyceum
+-- =================================================
+GRANT CONNECT ON DATABASE lyceum TO application;
+GRANT CONNECT ON DATABASE lyceum TO lyceum_auth;
+GRANT CONNECT ON DATABASE lyceum TO mnesia;

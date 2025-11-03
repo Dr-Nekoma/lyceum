@@ -1,11 +1,7 @@
 -- =================================================
--- Create an "application" user with access to READ
--- and WRITE SEQUENCES and TABLES.
+-- Make "application" have access to READ/WRITE on
+-- SEQUENCES and TABLES.
 -- =================================================
-CREATE USER application WITH PASSWORD 'application' LOGIN;
-GRANT CONNECT ON DATABASE lyceum TO application;
-
--- Grant application user access to all current schemas
 DO $$
 DECLARE
     schema_name TEXT;
@@ -27,13 +23,9 @@ ALTER DEFAULT PRIVILEGES FOR ROLE application
 GRANT USAGE, SELECT ON SEQUENCES TO application;
 
 -- =================================================
--- Create an "lyceum_auth" user with READ / WRITE to
--- SEQUENCES and TABLES.
+-- Make "lyceum_auth" user READ / WRITE permissions
+-- to SEQUENCES and TABLES.
 -- =================================================
-CREATE USER lyceum_auth WITH PASSWORD 'lyceum_auth' LOGIN;
-GRANT CONNECT ON DATABASE lyceum TO lyceum_auth;
-
--- Grant lyceum_auth user access to all current schemas
 DO $$
 DECLARE
     schema_name TEXT;
@@ -55,14 +47,8 @@ ALTER DEFAULT PRIVILEGES FOR ROLE lyceum_auth
 GRANT USAGE, SELECT ON SEQUENCES TO lyceum_auth;
 
 -- =================================================
--- Create a "MNESIA" user with READ ONLY access
--- to all TABLES.
+-- Give "MNESIA" user RO access to all TABLES.
 -- =================================================
-CREATE USER mnesia WITH PASSWORD 'mnesia' LOGIN;
-GRANT CONNECT ON DATABASE lyceum TO mnesia;
-
--- Grant mnesia user read-only access to all current
--- schemas
 DO $$
 DECLARE
     schema_name TEXT;

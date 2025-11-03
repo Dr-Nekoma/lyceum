@@ -107,7 +107,17 @@
     listen_addresses = "127.0.0.1";
     initialScript = ''
       -- The app user
-      ALTER USER ${app_name} CREATEROLE;
+      ALTER USER ${app_name} SUPERUSER CREATEROLE;
+
+      CREATE USER migrations
+      WITH LOGIN SUPERUSER CREATEROLE PASSWORD 'migrations';
+
+      CREATE USER admin
+      WITH LOGIN SUPERUSER CREATEROLE PASSWORD 'admin';
+
+      CREATE USER application WITH LOGIN PASSWORD 'application';
+      CREATE USER lyceum_auth WITH LOGIN PASSWORD 'lyceum_auth';
+      CREATE USER mnesia WITH LOGIN PASSWORD 'mnesia';
     '';
   };
 }

@@ -29,17 +29,21 @@ start_link() ->
 %%%===================================================================
 init([]) ->
     SupFlags =
-        #{strategy => one_for_one,
-          intensity => 12,
-          period => 3600},
+        #{
+            strategy => one_for_one,
+            intensity => 12,
+            period => 3600
+        },
 
     SimpleAuthWorker =
-        #{id => simple_auth,
-          start => {simple_auth, start_link, []},
-          restart => permanent,
-          shutdown => 5000,
-          type => worker,
-          modules => [simple_auth]},
+        #{
+            id => simple_auth,
+            start => {simple_auth, start_link, []},
+            restart => permanent,
+            shutdown => 5000,
+            type => worker,
+            modules => [simple_auth]
+        },
 
     logger:info("[~p] Starting Supervisor...~n", [?SERVER]),
     {ok, {SupFlags, [SimpleAuthWorker]}}.

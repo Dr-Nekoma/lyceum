@@ -9,8 +9,14 @@
 %% API
 -export([start_link/0]).
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
-         code_change/3]).
+-export([
+    init/1,
+    handle_call/3,
+    handle_cast/2,
+    handle_info/2,
+    terminate/2,
+    code_change/3
+]).
 
 % For legacy reasons, the client needs to send the first
 % request to a "lyceum_server", which got broken into
@@ -53,12 +59,12 @@ start_link() ->
 %%                     {stop, Reason}
 %% @end
 %%--------------------------------------------------------------------
--spec init(Args) -> Result
-    when Args :: list(),
-         State :: auth_state(),
-         Success :: {ok, State},
-         SuccessWithTimeout :: {ok, State, Timeout :: timeout()},
-         Result :: Success | SuccessWithTimeout.
+-spec init(Args) -> Result when
+    Args :: list(),
+    State :: auth_state(),
+    Success :: {ok, State},
+    SuccessWithTimeout :: {ok, State, Timeout :: timeout()},
+    Result :: Success | SuccessWithTimeout.
 init(_) ->
     Pid = self(),
     logger:info("[~p] Starting at ~p...~n", [?SERVER, Pid]),
@@ -72,14 +78,14 @@ init(_) ->
 %% Handling call messages
 %% @end
 %%--------------------------------------------------------------------
--spec handle_call(term(), gen_server:from(), auth_state()) -> Result
-    when Result ::
-             {reply, term(), auth_state()} |
-             {reply, term(), auth_state(), timeout()} |
-             {noreply, auth_state()} |
-             {noreply, auth_state(), timeout()} |
-             {stop, term(), term(), auth_state()} |
-             {stop, term(), auth_state()}.
+-spec handle_call(term(), gen_server:from(), auth_state()) -> Result when
+    Result ::
+        {reply, term(), auth_state()}
+        | {reply, term(), auth_state(), timeout()}
+        | {noreply, auth_state()}
+        | {noreply, auth_state(), timeout()}
+        | {stop, term(), term(), auth_state()}
+        | {stop, term(), auth_state()}.
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -94,12 +100,12 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_cast(UserId, auth_state()) -> Result
-    when UserId :: player_id(),
-         Result ::
-             {noreply, auth_state()} |
-             {noreply, auth_state(), timeout()} |
-             {stop, term(), auth_state()}.
+-spec handle_cast(UserId, auth_state()) -> Result when
+    UserId :: player_id(),
+    Result ::
+        {noreply, auth_state()}
+        | {noreply, auth_state(), timeout()}
+        | {stop, term(), auth_state()}.
 handle_cast({logout, UserId}, State) ->
     gen_server:cast(cache, {logout, UserId}),
     {noreply, State};
@@ -117,11 +123,11 @@ handle_cast(Msg, State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
--spec handle_info(term(), auth_state()) -> Result
-    when Result ::
-             {noreply, auth_state()} |
-             {noreply, auth_state(), timeout()} |
-             {stop, term(), auth_state()}.
+-spec handle_info(term(), auth_state()) -> Result when
+    Result ::
+        {noreply, auth_state()}
+        | {noreply, auth_state(), timeout()}
+        | {stop, term(), auth_state()}.
 handle_info({From, {login, Request}}, State) ->
     logger:info("[~p] INFO: ~p~n", [?SERVER, From]),
     login(State, From, Request),
@@ -168,24 +174,26 @@ code_change(_OldVsn, State, _Extra) ->
 %% can properly parse it.
 %% @end
 %%--------------------------------------------------------------------
--spec login(State, From, Map) -> Result
-    when State :: auth_state(),
-         From :: gen_server:from(),
-         Username :: player_name(),
-         Password :: nonempty_string(),
-         Map :: #{username := Username, password := Password},
-         Ok :: ok,
-         Error :: {error, Reason :: string()},
-         Result :: Ok | Error.
+-spec login(State, From, Map) -> Result when
+    State :: auth_state(),
+    From :: gen_server:from(),
+    Username :: player_name(),
+    Password :: nonempty_string(),
+    Map :: #{username := Username, password := Password},
+    Ok :: ok,
+    Error :: {error, Reason :: string()},
+    Result :: Ok | Error.
 login(State, From, #{username := Username, password := _Password} = Request) ->
     logger:info("[~p] User ~p is attempting to login from ~p~n", [?SERVER, Username, From]),
     case registry:check_user(Request, State#auth_state.connection) of
         {ok, {PlayerId, Email}} ->
             Cache =
-                #player_cache{player_id = PlayerId,
-                              client_pid = From,
-                              username = Username,
-                              email = Email},
+                #player_cache{
+                    player_id = PlayerId,
+                    client_pid = From,
+                    username = Username,
+                    email = Email
+                },
             {ok, Pid} = start_new_worker(Cache),
             logger:info("[~p] USER: ~p successfully logged at ~p!~n", [?SERVER, Email, Pid]),
             ok;
@@ -203,19 +211,21 @@ login(State, From, #{username := Username, password := _Password} = Request) ->
 %% the a new Worker PID, then sends it back to Zig Client.
 %% @end
 %%--------------------------------------------------------------------
--spec start_new_worker(Cache) -> Result
-    when Cache :: player_cache(),
-         WorkerPid :: pid(),
-         Result :: {ok, WorkerPid} | {error, Reason :: string()}.
+-spec start_new_worker(Cache) -> Result when
+    Cache :: player_cache(),
+    WorkerPid :: pid(),
+    Result :: {ok, WorkerPid} | {error, Reason :: string()}.
 start_new_worker(Cache) ->
-    do([error_m
-        || Request = {login, Cache},
-           % TODO improve this
-           {ok, Data} = gen_server:call(cache, Request),
-           logger:info("[~p] USER: ~p~n", [?SERVER, Data]),
-           case player_top_level_sup:start_child(Data) of
-               {ok, Pid} ->
-                   return(Pid);
-               _ ->
-                   fail("Failed to start worker")
-           end]).
+    do([
+        error_m
+     || Request = {login, Cache},
+        % TODO improve this
+        {ok, Data} = gen_server:call(cache, Request),
+        logger:info("[~p] USER: ~p~n", [?SERVER, Data]),
+        case player_top_level_sup:start_child(Data) of
+            {ok, Pid} ->
+                return(Pid);
+            _ ->
+                fail("Failed to start worker")
+        end
+    ]).
