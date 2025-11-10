@@ -90,7 +90,7 @@ To run our DEMO you need to follow the steps in this particular order:
       just server
       # or if you want a pure build
       nix build .#server
-      ./result/bin/server foreground
+      ./result/bin/lyceum foreground
     #+end_src
 
 4. Followed by running the ~zig~ client in a third shell with either:
