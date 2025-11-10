@@ -248,7 +248,7 @@ pub const user = struct {
         };
         switch (server_response) {
             .ok => |item| {
-                gameState.connection.handler, gameState.menu.login.email = item;
+                gameState.connection.handler, gameState.menu.login.email = item.@"0";
                 try getCharacters(gameState);
             },
             .@"error" => |msg| {
