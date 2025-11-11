@@ -157,16 +157,18 @@
                 include = [
                   "rebar.config"
                 ];
-                buildInputs =
-                  (with pkgs; [
+                buildInputs = (
+                  with pkgs;
+                  [
                     coreutils
                     gawk
                     gnugrep
                     openssl
-                  ])
-                  ++ pkgs.lib.optional pkgs.stdenv.isLinux [
-                    pkgs.liburing
-                  ];
+                  ]
+                  ++ lib.optional stdenv.isLinux [
+                    liburing
+                  ]
+                );
                 beamDeps = builtins.attrValues deps;
                 buildPhase = ''
                   runHook preBuild

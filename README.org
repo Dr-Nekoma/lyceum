@@ -3,7 +3,6 @@
 #+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/client_build.yml"> <img alt="[Client] Build" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/client_build.yml/badge.svg" /></a><br>
 #+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_build.yml"> <img alt="[Server] Build" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_build.yml/badge.svg" /></a>
 #+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_dialyzer.yml"> <img alt="[Server] Dialyzer" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_dialyzer.yml/badge.svg" /></a>
-#+html: <a href="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_deploy.yml"> <img alt="[Server] Deploy" src="https://github.com/Dr-Nekoma/lyceum/actions/workflows/server_deploy.yml/badge.svg" /></a>
 
 - [[#about][About]]
   - [[#featured][Featured]]
