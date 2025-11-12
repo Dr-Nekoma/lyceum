@@ -96,7 +96,7 @@
 
           # App config
           app_name = "lyceum";
-          app_version = "0.2.2";
+          app_version = "0.2.3";
 
           # Erlang
           erlangVersion = pkgs.erlang;
