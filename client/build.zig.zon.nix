@@ -89,12 +89,12 @@ let
 in
 linkFarm name [
   {
-    name = "raylib_zig-5.6.0-dev-KE8REGNJBQDSjjyCmf4ATVQtk_OaBpY0B7kBxwSOPEGZ";
+    name = "raylib_zig-5.6.0-dev-KE8REE1LBQCL7lia-DwUkusWI1G4kJmhtatLh2kNsuiE";
     path = fetchZigArtifact {
       name = "raylib_zig";
-      url = "git+https://github.com/raylib-zig/raylib-zig?ref=devel#163b1ef2e993fe7cc7c76bb3213d98612f4b7676";
-      hash = "sha256-lvwlqHjliuezvcDN74k1p/4Ynpgq70SQDlc7HMZwvt4=";
-      rev = "163b1ef2e993fe7cc7c76bb3213d98612f4b7676";
+      url = "git+https://github.com/raylib-zig/raylib-zig?ref=devel#3cd4d3179d967fc8b931514603fdbc4a43a1d771";
+      hash = "sha256-08vqDx+XJATl1i+jV9JW3EFatT3O0jRYeV1oQnuxqjQ=";
+      rev = "3cd4d3179d967fc8b931514603fdbc4a43a1d771";
     };
   }
   {
@@ -152,12 +152,11 @@ linkFarm name [
     };
   }
   {
-    name = "zerl-0.2.0-92d69iiJAADbGHYQVaOgEnjZb2QlM6yaHmPgxgl3AdMq";
+    name = "zerl-0.3.0-92d69gOhAACvMjmTAWdTo9d25ZIblDCIJhqHvl_M-u0W";
     path = fetchZigArtifact {
       name = "zerl";
-      url = "git+https://github.com/dont-rely-on-nulls/zerl?ref=zig-0.15#0fd0d8e3a0105cfc0620ea88f43e6584b89723e3";
-      hash = "sha256-A8P/jmkiPWgZ/ucAJQOpysPYt5zgk81dCv2B9kwhwBk=";
-      rev = "0fd0d8e3a0105cfc0620ea88f43e6584b89723e3";
+      url = "https://github.com/dont-rely-on-nulls/zerl/archive/refs/tags/v0.3.0.tar.gz";
+      hash = "sha256-4AUlnAhc8AEI9ZebThDJeCsDrajP/p9NVS/em8q5SdQ=";
     };
   }
 ]
