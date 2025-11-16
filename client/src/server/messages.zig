@@ -61,7 +61,8 @@ pub const User = struct {
             password: []const u8,
         };
 
-        const Info = struct { zerl.ei.erlang_pid, [:0]const u8 };
+        // TODO: return an ok with two items from server and remove outer tuple
+        const Info = struct { struct { zerl.ei.erlang_pid, [:0]const u8 } };
         pub const Response = TupleResponse(Info);
     };
 
