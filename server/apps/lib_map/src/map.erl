@@ -26,17 +26,21 @@ transform_resource(Map) ->
 
 -spec check_dimensions(map()) -> any().
 check_dimensions(UnprocessedMap) ->
-    do([error_m
-        || case database_utils:columns_and_rows(UnprocessedMap) of
-               [Map] ->
-                   Width = maps:get(width, Map),
-                   Height = maps:get(height, Map),
-                   return({Width, Height});
-               _ ->
-                   logger:error("[~p] Something to wrong when getting map dimensions!~n",
-                                [?MODULE]),
-                   exit(2)
-           end]).
+    do([
+        error_m
+     || case database_utils:columns_and_rows(UnprocessedMap) of
+            [Map] ->
+                Width = maps:get(width, Map),
+                Height = maps:get(height, Map),
+                return({Width, Height});
+            _ ->
+                logger:error(
+                    "[~p] Something to wrong when getting map dimensions!~n",
+                    [?MODULE]
+                ),
+                exit(2)
+        end
+    ]).
 
 -spec get_map(epgsql:bind_param(), epgsql:connection()) -> any().
 get_map(MapName, Connection) ->
@@ -48,30 +52,40 @@ get_map(MapName, Connection) ->
     Objects = epgsql:equery(Connection, ObjectsQuery, [MapName]),
     ResourcesQuery = database_queries:fetch_query("map", "select_map_resources.sql"),
     Resources = epgsql:equery(Connection, ResourcesQuery, [MapName]),
-    do([postgres_m
-        || UnprocessedMap <- {Dimensions, select},
-           {ok, {Width, Height}} = check_dimensions(UnprocessedMap), %% I miss you ErrorT
-           UnprocessedTiles <- {Tiles, select},
-           ProcessedTiles =
-               lists:map(fun transform_tile/1, database_utils:columns_and_rows(UnprocessedTiles)),
-           UnprocessedObjects <- {Objects, select},
-           ProcessedObjects =
-               lists:map(fun transform_object/1,
-                         database_utils:columns_and_rows(UnprocessedObjects)),
-           UnprocessedResources <- {Resources, select},
-           ProcessedResources =
-               lists:map(fun transform_resource/1,
-                         database_utils:columns_and_rows(UnprocessedResources)),
-           Quantity = Width * Height,
-           if (length(ProcessedTiles) == Quantity) and (length(ProcessedObjects) == Quantity) ->
-                  return(#{tiles => ProcessedTiles,
-                           objects => ProcessedObjects,
-                           resources => ProcessedResources,
-                           width => Width,
-                           height => Height});
-              (length(ProcessedTiles) == 0) or (length(ProcessedObjects) == 0) ->
-                  % TODO: Put the map name in this error message for the client!
-                  fail("Map can't be instantiated!");
-              true ->
-                  fail("Mismatch between dimensions, tiles and objects!")
-           end]).
+    do([
+        postgres_m
+     || UnprocessedMap <- {Dimensions, select},
+        %% I miss you ErrorT
+        {ok, {Width, Height}} = check_dimensions(UnprocessedMap),
+        UnprocessedTiles <- {Tiles, select},
+        ProcessedTiles =
+            lists:map(fun transform_tile/1, database_utils:columns_and_rows(UnprocessedTiles)),
+        UnprocessedObjects <- {Objects, select},
+        ProcessedObjects =
+            lists:map(
+                fun transform_object/1,
+                database_utils:columns_and_rows(UnprocessedObjects)
+            ),
+        UnprocessedResources <- {Resources, select},
+        ProcessedResources =
+            lists:map(
+                fun transform_resource/1,
+                database_utils:columns_and_rows(UnprocessedResources)
+            ),
+        Quantity = Width * Height,
+        if
+            (length(ProcessedTiles) == Quantity) and (length(ProcessedObjects) == Quantity) ->
+                return(#{
+                    tiles => ProcessedTiles,
+                    objects => ProcessedObjects,
+                    resources => ProcessedResources,
+                    width => Width,
+                    height => Height
+                });
+            (length(ProcessedTiles) == 0) or (length(ProcessedObjects) == 0) ->
+                % TODO: Put the map name in this error message for the client!
+                fail("Map can't be instantiated!");
+            true ->
+                fail("Mismatch between dimensions, tiles and objects!")
+        end
+    ]).
