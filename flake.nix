@@ -75,10 +75,7 @@
               wayland
               wayland-protocols
             ];
-          darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
-            CoreFoundation
-            CoreServices
-          ];
+          darwinPkgs = with pkgs; [ apple-sdk libiconv ];
 
           devPackages =
             with pkgs;
