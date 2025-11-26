@@ -75,7 +75,7 @@
               wayland
               wayland-protocols
             ];
-          darwinPkgs = with pkgs; [ apple-sdk libiconv ];
+          darwinPkgs = with pkgs; [ libiconv ];
 
           devPackages =
             with pkgs;
