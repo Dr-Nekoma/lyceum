@@ -10,6 +10,12 @@
   ...
 }:
 {
+  # Use a different SDK version.
+  apple.sdk =
+    if pkgs.stdenv.isDarwin
+    then pkgs.apple-sdk
+    else null;
+
   packages = packages;
 
   languages.erlang = {

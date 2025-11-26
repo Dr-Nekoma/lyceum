@@ -82,6 +82,7 @@
             [
               erlang-language-platform
               erlfmt
+              git-lfs
               just
               postgresql
               raylib
