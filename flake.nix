@@ -198,7 +198,7 @@
                   "foreground"
                 ];
                 Env = [
-                  "ERL_DIST_PORT=8080"
+                  "ERL_DIST_PORT=9100"
                   "ERL_AFLAGS=\"-kernel shell_history enabled\""
                   "NODE_NAME=${erl_app}"
                 ];

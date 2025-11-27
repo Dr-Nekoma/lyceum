@@ -48,9 +48,14 @@ END
 $$;
 
 -- PROCEDURES
-CREATE OR REPLACE PROCEDURE character.update_inventory
-   (new_name TEXT, new_email TEXT, new_username TEXT, new_item_name TEXT, new_quantity SMALLINT)
-   LANGUAGE sql AS
+CREATE OR REPLACE PROCEDURE character.update_inventory(
+    new_name text,
+    new_email text,
+    new_username text,
+    new_item_name text,
+    new_quantity smallint
+)
+LANGUAGE sql AS
 $$
   INSERT INTO character.inventory(name, email, username, quantity, item_name)
   VALUES (new_name, new_email, new_username, new_quantity, new_item_name)
