@@ -50,7 +50,6 @@
             xorg.libXcursor
             xorg.libXi
             # Wayland stuff
-            glfw-wayland
             wayland
             wayland-protocols
             wayland-scanner
