@@ -70,7 +70,7 @@
               libxcursor
               libxi
               # Wayland stuff
-              glfw-wayland
+              glfw
               wayland
               wayland-protocols
             ];
@@ -231,7 +231,6 @@
                 with pkgs;
                 [
                   raylib
-                  zigVersion
                   erlangVersion
                 ]
                 ++ lib.optionals stdenv.isLinux (linuxPkgs)
@@ -239,8 +238,11 @@
 
               # To re-generate the nix lockfile:
               # just client-deps
-              postPatch = ''
-                ln -s ${pkgs.callPackage ./client/build.zig.zon.nix { }} $ZIG_GLOBAL_CACHE_DIR/p
+              postConfigure = ''
+                mkdir -p "$ZIG_GLOBAL_CACHE_DIR/p"
+                for pkg in ${pkgs.callPackage ./client/build.zig.zon.nix { zig = zigVersion; }}/*; do
+                  ln -s "$pkg" "$ZIG_GLOBAL_CACHE_DIR/p/$(basename "$pkg")"
+                done
               '';
 
               postInstall = ''
