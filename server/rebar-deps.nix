@@ -53,7 +53,7 @@ let
         rev = "f05e99dc890d2c7321d0bc0463351b6d85acdfd5";
         sha256 = "0z923fhpn83b2rhzjlin9pka1jriwmkp8cxnkzhnzq73hw271sxw";
       };
-      beamDeps = [ ];
+      beamDeps = [ pc ];
     };
   };
 in self
