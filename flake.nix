@@ -41,16 +41,15 @@
             libpulseaudio
             libxkbcommon
             pkg-config
-            xorg.libxcb
-            xorg.libXft
-            xorg.libX11
-            xorg.libX11.dev
-            xorg.libXrandr
-            xorg.libXinerama
-            xorg.libXcursor
-            xorg.libXi
+            libxcb
+            libxft
+            libx11
+            libx11.dev
+            libxrandr
+            libxinerama
+            libxcursor
+            libxi
             # Wayland stuff
-            glfw-wayland
             wayland
             wayland-protocols
             wayland-scanner
@@ -62,14 +61,14 @@
               libxkbcommon
               liburing
               raylib
-              xorg.libxcb
-              xorg.libXft
-              xorg.libX11
-              xorg.libX11.dev
-              xorg.libXrandr
-              xorg.libXinerama
-              xorg.libXcursor
-              xorg.libXi
+              libxcb
+              libxft
+              libx11
+              libx11.dev
+              libxrandr
+              libxinerama
+              libxcursor
+              libxi
               # Wayland stuff
               glfw-wayland
               wayland
