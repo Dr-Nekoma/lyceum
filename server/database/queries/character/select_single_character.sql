@@ -18,5 +18,5 @@ SELECT
 FROM character.view
 WHERE
     username = $1::TEXT
-AND email = $2::TEXT
-AND name = $3::TEXT
+    AND email = $2::TEXT
+    AND name = $3::TEXT

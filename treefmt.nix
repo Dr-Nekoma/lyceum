@@ -5,5 +5,9 @@
   projectRootFile = "flake.nix";
   programs = {
     nixfmt.enable = true;
+    sqlfluff = {
+      enable = true;
+      dialect = "postgres";
+    };
   };
 }

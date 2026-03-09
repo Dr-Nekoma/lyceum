@@ -1,13 +1,18 @@
 -- VIEWS
 CREATE OR REPLACE VIEW map.resource_item_view AS
-SELECT i.name as item_name, inv.quantity as quantity, inv.name, inv.username, ins.email
+SELECT
+    i.name AS item_name,
+    inv.quantity AS quantity,
+    inv.name,
+    inv.username,
+    ins.email
 FROM character.item i
 INNER JOIN map.object_is_resource oir
-ON i.name = oir.item_pk
+    ON i.name = oir.item_pk
 INNER JOIN character.inventory inv
-ON i.name = inv.item_name
+    ON i.name = inv.item_name
 INNER JOIN character.instance ins
-ON ins.name = inv.name AND ins.username = inv.username AND ins.email = inv.email;
+    ON ins.name = inv.name AND ins.username = inv.username AND ins.email = inv.email;
 
 CREATE OR REPLACE VIEW map.resource_view AS
 SELECT * FROM map.resource
@@ -15,13 +20,14 @@ NATURAL JOIN map.object_is_resource
 NATURAL JOIN map.object;
 
 -- PROCEDURES
-CREATE OR REPLACE PROCEDURE map.update_resource_quantity
-   (target_map_name TEXT,
+CREATE OR REPLACE PROCEDURE map.update_resource_quantity(
+    target_map_name TEXT,
     target_kind map.OBJECT_TYPE,
     target_x_position REAL,
     target_y_position REAL,
-    target_quantity SMALLINT)
-   LANGUAGE plpgsql AS
+    target_quantity SMALLINT
+)
+LANGUAGE plpgsql AS
 $$
     BEGIN
     IF target_quantity = 0
@@ -45,15 +51,16 @@ $$
 END;
 $$;
 
-CREATE OR REPLACE PROCEDURE map.harvest_resource
-   (target_map_name TEXT,
+CREATE OR REPLACE PROCEDURE map.harvest_resource(
+    target_map_name TEXT,
     target_kind map.OBJECT_TYPE,
     target_x_position REAL,
     target_y_position REAL,
     character_name TEXT,
     player_email TEXT,
-    player_username TEXT)
-   LANGUAGE plpgsql AS
+    player_username TEXT
+)
+LANGUAGE plpgsql AS
 $$
   DECLARE resource map.resource_view%rowtype;
           delta SMALLINT;
@@ -72,7 +79,7 @@ $$;
 
 -- FUNCTIONS
 CREATE OR REPLACE FUNCTION object_is_resource() RETURNS TRIGGER
-   LANGUAGE plpgsql AS
+LANGUAGE plpgsql AS
 $$
   BEGIN
   IF EXISTS (SELECT kind, capacity FROM map.object_is_resource
@@ -89,8 +96,7 @@ $$;
 -- https://www.postgresql.org/docs/17/sql-createtrigger.html
 DROP TRIGGER IF EXISTS object_is_resource_trigger ON map.resource;
 CREATE CONSTRAINT TRIGGER object_is_resource_trigger
-  AFTER INSERT OR UPDATE ON map.resource
-  DEFERRABLE INITIALLY IMMEDIATE
-  FOR EACH ROW
-  EXECUTE PROCEDURE object_is_resource();
-
+AFTER INSERT OR UPDATE ON map.resource
+DEFERRABLE INITIALLY IMMEDIATE
+FOR EACH ROW
+EXECUTE PROCEDURE object_is_resource();

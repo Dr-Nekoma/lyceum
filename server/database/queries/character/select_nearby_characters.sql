@@ -22,4 +22,4 @@ FROM character.view
 NATURAL JOIN character.active
 WHERE
     map_name = $1::TEXT
-AND name <> $2::TEXT
+    AND name <> $2::TEXT

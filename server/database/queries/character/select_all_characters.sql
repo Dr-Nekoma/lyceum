@@ -1,4 +1,4 @@
-SELECT 
+SELECT
     character.view.name,
     character.view.constitution,
     character.view.wisdom,
@@ -19,6 +19,6 @@ SELECT
     character.view.mana,
     character.view.state_type
 FROM character.view
-WHERE 
+WHERE
     username = $1::TEXT
-AND email::TEXT = $2::TEXT
+    AND email::TEXT = $2::TEXT

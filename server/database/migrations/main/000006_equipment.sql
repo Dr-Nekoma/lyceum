@@ -32,15 +32,17 @@ DO $$ BEGIN
 END $$;
 
 -- TABLES
-CREATE TABLE IF NOT EXISTS equipment.instance(
+CREATE TABLE IF NOT EXISTS equipment.instance (
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     kind equipment.KIND NOT NULL,
-    PRIMARY KEY(name, kind)
+    PRIMARY KEY (name, kind)
 );
 
 -- This is going to be used in the next table, as a constraint
-CREATE OR REPLACE FUNCTION equipment.check_equipment_position_compatibility(use equipment.USE, kind equipment.KIND) RETURNS BOOL AS $$
+CREATE OR REPLACE FUNCTION equipment.check_equipment_position_compatibility(
+    use equipment.USE, kind equipment.KIND
+) RETURNS BOOL AS $$
 BEGIN
     RETURN CASE 
         WHEN use::TEXT = kind::TEXT THEN true
@@ -51,16 +53,20 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TABLE IF NOT EXISTS equipment.character(
+CREATE TABLE IF NOT EXISTS equipment.character (
     name TEXT NOT NULL,
-    email player.email NOT NULL,
+    email player.EMAIL NOT NULL,
     username TEXT NOT NULL,
     is_equiped BOOL NOT NULL,
     equipment_name TEXT NOT NULL,
     use equipment.USE NOT NULL,
     kind equipment.KIND NOT NULL,
     CHECK (equipment.check_equipment_position_compatibility(use, kind)),
-    FOREIGN KEY (name, username, email) REFERENCES character.instance(name, username, email),
-    FOREIGN KEY (equipment_name, kind) REFERENCES equipment.instance(name, kind),
-    PRIMARY KEY(name, username, email, equipment_name)
+    FOREIGN KEY (name, username, email) REFERENCES character.instance (
+        name, username, email
+    ),
+    FOREIGN KEY (equipment_name, kind) REFERENCES equipment.instance (
+        name, kind
+    ),
+    PRIMARY KEY (name, username, email, equipment_name)
 );
