@@ -46,12 +46,11 @@ let
     };
     csv = builder {
       name = "csv";
-      version = "git";
-      src = fetchFromGitHub {
-        owner = "schonfinkel";
-        repo = "csv";
-        rev = "f05e99dc890d2c7321d0bc0463351b6d85acdfd5";
-        sha256 = "0z923fhpn83b2rhzjlin9pka1jriwmkp8cxnkzhnzq73hw271sxw";
+      version = "3.0.4";
+      src = fetchHex {
+        pkg = "csve";
+        version = "3.0.4";
+        sha256 = "sha256-RKH7dhTjyuh6vKhj8A5hx4xRMYK3lSINZWHM47NPVts=";
       };
       beamDeps = [ pc ];
     };

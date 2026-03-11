@@ -1,19 +1,18 @@
 {"1.2.0",
-[{<<"csv">>,
-  {git,"https://github.com/schonfinkel/csv.git",
-       {ref,"f05e99dc890d2c7321d0bc0463351b6d85acdfd5"}},
-  0},
+[{<<"csv">>,{pkg,<<"csve">>,<<"3.0.4">>},0},
  {<<"epgsql">>,{pkg,<<"epgsql">>,<<"4.7.1">>},0},
  {<<"erlandono">>,{pkg,<<"erlandono">>,<<"3.1.3">>},0},
  {<<"migraterl">>,{pkg,<<"migraterl">>,<<"0.1.2">>},0},
  {<<"pc">>,{pkg,<<"pc">>,<<"1.15.0">>},0}]}.
 [
 {pkg_hash,[
+ {<<"csv">>, <<"F0193B883B40FD1B0D2A4B421A3C849465F7B39A5221C250EE9EB72BF527F8DE">>},
  {<<"epgsql">>, <<"D4E47CAE46C18C8AFA88E34D59A9B4BAE16368D7CE1EB3DA24FA755EB28393EB">>},
  {<<"erlandono">>, <<"8B5562D3DDC3A89EB513973D727B585513DC0A3A95E65A0E343957DD0ED655B9">>},
  {<<"migraterl">>, <<"0C8A390496FA025159DF47D9A24DAA654A013EA1C1B6FECE4A9E0EA395CD7695">>},
  {<<"pc">>, <<"0DE7D4DF1BB23897E27965FC134DC63156DD2E5B512A9536CB7004D984400A45">>}]},
 {pkg_hash_ext,[
+ {<<"csv">>, <<"44A1FB7614E3CAE87ABCA863F00E61C78C513182B795220D6561CCE3B34F56DB">>},
  {<<"epgsql">>, <<"B6D86B7DC42C8555B1D4E20880E5099D6D6D053148000E188E548F98E4E01836">>},
  {<<"erlandono">>, <<"2BFCAF659C0032C5B5CEFD482EBBDBA21AB201D1579A54485E09195FC2092577">>},
  {<<"migraterl">>, <<"119BAC6FD10F38DF5FB9D9A7C6C7674562BD08E0344165001F5F26603BF8D8C1">>},
