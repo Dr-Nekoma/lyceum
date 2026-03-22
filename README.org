@@ -24,7 +24,10 @@ written in [[https://ziglang.org/][Zig]] (supercharged with [[https://github.com
 
 ** Featured
 
-+ A demo of version 0.1.0 was featured on [[https://www.youtube.com/watch?v=ejYcWRERetM&t=2745s][Func Prog Sweden 2024]], as part of a talk on [[https://github.com/dont-rely-on-nulls/zerl][Zerl]].
+| Year | Language | Description                                                                              | Link                                                            |
+|------+----------+------------------------------------------------------------------------------------------+-----------------------------------------------------------------|
+| 2024 | 🇺🇸       | A demo of version 0.1.0 was featured on [[https://www.youtube.com/c/FuncProgSweden][Func Prog Sweden 2024]], as part of a talk on [[https://github.com/dont-rely-on-nulls/zerl][Zerl]] | [[https://www.youtube.com/watch?v=ejYcWRERetM&t=2745s][Zerl: Making Zig in the BEAM an ez time]]                         |
+| 2025 | 🇧🇷       | Explains how our Erlang backend and Nix/NixOS environment works, from [[https://gambiconf.dev/][Gambiconf 2025]]     | [[https://www.youtube.com/watch?v=RJWmmI9Vwgw][Criando um MMO RPG com Erlang, PostgreSQL, Zig, Nix e gambiarra]] |
 
 ** Announcement
 
