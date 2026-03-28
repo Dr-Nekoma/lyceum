@@ -74,16 +74,14 @@
               wayland
               wayland-protocols
             ];
-          darwinPkgs = with pkgs.darwin.apple_sdk.frameworks; [
-            CoreFoundation
-            CoreServices
-          ];
+          darwinPkgs = with pkgs; [ libiconv ];
 
           devPackages =
             with pkgs;
             [
               erlang-language-platform
               erlfmt
+              git-lfs
               just
               postgresql
               raylib
