@@ -107,7 +107,7 @@ linkFarm name [
     name = "N-V-__8AABHMqAWYuRdIlflwi8gksPnlUMQBiSxAqQAAZFms";
     path = fetchZigArtifact {
       name = "xcode_frameworks";
-      url = "git+https://github.com/hexops/xcode-frameworks#9a45f3ac977fd25dff77e58c6de1870b6808c4a7";
+      url = "git+https://github.com/Corendos/xcode-frameworks#9a45f3ac977fd25dff77e58c6de1870b6808c4a7";
       hash = "sha256-xveFYoQu0BT+ZtEsyca/zdQ/so9jPK56SeX3xmF3iro=";
       rev = "9a45f3ac977fd25dff77e58c6de1870b6808c4a7";
     };
