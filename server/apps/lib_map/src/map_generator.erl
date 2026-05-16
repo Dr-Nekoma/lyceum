@@ -1,20 +1,19 @@
 -module(map_generator).
 
--export([create_map/3, resource_inserter/1]).
+-export([create_map/2, resource_inserter/1]).
 -compile({parse_transform, do}).
 
-% TODO: Rework this whole module so we don't have to ignore
-% dialyzer warnings.
--dialyzer({nowarn_function, [generate/3, create_map/3]}).
+-dialyzer({nowarn_function, [generate/3, create_map/2]}).
 
-create_assets(Connection, MapPath, MapName, FileName) ->
+create_assets(Pool, MapPath, MapName, FileName) ->
     AssetPath = filename:join([MapPath, MapName, FileName]),
     Assets = fetch_file(AssetPath),
-    generate(Connection, MapName, Assets).
+    generate(Pool, MapName, Assets).
 
-create_map(Connection, MapPath, MapName) ->
-    create_assets(Connection, MapPath, MapName, "tile.csv"),
-    create_assets(Connection, MapPath, MapName, "object.csv").
+create_map(MapPath, MapName) ->
+    Pool = lyceum_pool,
+    create_assets(Pool, MapPath, MapName, "tile.csv"),
+    create_assets(Pool, MapPath, MapName, "object.csv").
 
 fetch_file(CsvPath) ->
     {ok, Bin} = file:read_file(CsvPath),
@@ -41,12 +40,8 @@ resource_inserter(Acc) ->
    end.
 
 
--spec generate(Connection, MapName, {epgsql:bind_param(), list()}) -> Result when
-      Connection :: epgsql:connection(),
-      MapName :: epgsql:bind_param(),
-      Result :: any().
-generate(Connection, MapName, {Name, Table}) ->
-    % TODO: improve this garbagio
+-spec generate(database:pool_name(), iodata(), {iodata(), list()}) -> any().
+generate(Pool, MapName, {Name, Table}) ->
     Inserter = spawn(map_generator, resource_inserter, [[]]),
     MapAttributes =
         lists:join(",",
@@ -68,7 +63,7 @@ generate(Connection, MapName, {Name, Table}) ->
                         "DO NOTHING",
                         [Name, list_to_binary(MapAttributes)]),
     do([postgres_m ||
-        _ <- {epgsql:squery(Connection, SQL), insert},
+        _ <- database:query(Pool, iolist_to_binary(SQL), []),
         ok]),
     Inserter ! {stop, self()},
     receive
@@ -79,6 +74,6 @@ generate(Connection, MapName, {Name, Table}) ->
                                     "VALUES ~s ON CONFLICT (map_name, kind, x_position, y_position) DO NOTHING;",
                                     [ResourceString]),
         do([postgres_m ||
-            _ <- {epgsql:squery(Connection, ResourceSQL), insert},
+            _ <- database:query(Pool, iolist_to_binary(ResourceSQL), []),
             ok])
     end.

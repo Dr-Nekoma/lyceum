@@ -25,12 +25,12 @@ create(
         intelligence := Intelligence,
         faith := Faith
     },
-    Connection
+    Pool
 ) ->
     Query = database_queries:fetch_query("character", "create_character.sql"),
     Result =
-        epgsql:equery(
-            Connection,
+        database:query(
+            Pool,
             Query,
             [
                 Name,
@@ -44,7 +44,7 @@ create(
                 Faith
             ]
         ),
-    do([postgres_m || _ <- {Result, insert}, ok]).
+    do([postgres_m || _ <- Result, ok]).
 
 activate(
     #{
@@ -52,19 +52,19 @@ activate(
         username := Username,
         email := Email
     },
-    Connection
+    Pool
 ) ->
     Query = database_queries:fetch_query("character", "activate_character.sql"),
     do([
         postgres_m
-     || _ <- {epgsql:equery(Connection, Query, [Name, Email, Username]), insert}, ok
+     || _ <- database:query(Pool, Query, [Name, Email, Username]), ok
     ]).
 
-deactivate(Name, Email, Username, Connection) ->
+deactivate(Name, Email, Username, Pool) ->
     Query = database_queries:fetch_query("character", "deactivate_character.sql"),
     do([
         postgres_m
-     || _ <- {epgsql:equery(Connection, Query, [Name, Email, Username]), delete}, ok
+     || _ <- database:query(Pool, Query, [Name, Email, Username]), ok
     ]).
 
 update(
@@ -83,42 +83,48 @@ update(
         health := Health,
         mana := Mana
     },
-    Connection
+    Pool
 ) ->
     Query = database_queries:fetch_query("character", "update_character.sql"),
-    Result =
-        epgsql:with_transaction(
-            Connection,
-            fun(Conn) ->
-                epgsql:equery(
-                    Conn,
-                    Query,
-                    [
-                        XPosition,
-                        YPosition,
-                        XVelocity,
-                        YVelocity,
-                        Level,
-                        Health,
-                        Mana,
-                        FaceDirection,
-                        StateType,
-                        Name,
-                        Email,
-                        Username,
-                        MapName
-                    ]
-                )
-            end,
-            #{begin_opts => "ISOLATION LEVEL READ UNCOMMITTED"}
-        ),
-    do([postgres_m || _ <- {Result, update}, epgsql:sync(Connection)]).
+    database:transaction(
+        Pool,
+        fun() ->
+            do([
+                postgres_m
+             || _ <- database:query(
+                        Pool,
+                        <<"SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED">>,
+                        []
+                    ),
+                _ <- database:query(
+                        Pool,
+                        Query,
+                        [
+                            XPosition,
+                            YPosition,
+                            XVelocity,
+                            YVelocity,
+                            Level,
+                            Health,
+                            Mana,
+                            FaceDirection,
+                            StateType,
+                            Name,
+                            Email,
+                            Username,
+                            MapName
+                        ]
+                    ),
+                ok
+            ])
+        end
+    ).
 
-retrieve_near_players(#{map_name := MapName, name := Name}, Connection) ->
+retrieve_near_players(#{map_name := MapName, name := Name}, Pool) ->
     Query = database_queries:fetch_query("character", "select_nearby_characters.sql"),
     do([
         postgres_m
-     || UnprocessedPlayers <- {epgsql:equery(Connection, Query, [MapName, Name]), select},
+     || UnprocessedPlayers <- database:query(Pool, Query, [MapName, Name]),
         ProcessedPlayers =
             database_utils:transform_character_map(
                 database_utils:columns_and_rows(UnprocessedPlayers)
@@ -126,13 +132,13 @@ retrieve_near_players(#{map_name := MapName, name := Name}, Connection) ->
         return(ProcessedPlayers)
     ]).
 
-player_characters(#{username := Username, email := Email}, Connection) ->
+player_characters(#{username := Username, email := Email}, Pool) ->
     Query = database_queries:fetch_query("character", "select_all_characters.sql"),
     do([
         postgres_m
-     || UnprocessedCharacters <- {epgsql:equery(Connection, Query, [Username, Email]), select},
-        ColumnsRows = database_utils:columns_and_rows(UnprocessedCharacters),
-        ProcessedCharacters = database_utils:transform_character_map(ColumnsRows),
+     || UnprocessedCharacters <- database:query(Pool, Query, [Username, Email]),
+        Rows = database_utils:columns_and_rows(UnprocessedCharacters),
+        ProcessedCharacters = database_utils:transform_character_map(Rows),
         return(ProcessedCharacters)
     ]).
 
@@ -142,13 +148,13 @@ player_character(
         username := Username,
         email := Email
     },
-    Connection
+    Pool
 ) ->
     Query = database_queries:fetch_query("character", "select_single_character.sql"),
     do([
         postgres_m
      || UnprocessedCharacter <-
-            {epgsql:equery(Connection, Query, [Username, Email, Name]), select},
+            database:query(Pool, Query, [Username, Email, Name]),
         case
             database_utils:transform_character_map(
                 database_utils:columns_and_rows(UnprocessedCharacter)
@@ -173,52 +179,39 @@ harvest_resource(
         x_position := XPosition,
         y_position := YPosition
     },
-    Connection
+    Pool
 ) ->
     logger:debug("[~p] NAME: ~p x USERNAME: ~p~n", [?MODULE, Name, Username]),
     Harvest = database_queries:fetch_query("map", "harvest_resource.sql"),
     Inventory = database_queries:fetch_query("character", "select_inventory.sql"),
     Resource = database_queries:fetch_query("map", "select_resource_quantity.sql"),
-    epgsql:with_transaction(
-        Connection,
-        fun(Conn) ->
+    database:transaction(
+        Pool,
+        fun() ->
             do([
                 postgres_m
-             || _ <-
-                    {
-                        epgsql:equery(
-                            Conn,
-                            Harvest,
-                            [
-                                MapName,
-                                Kind,
-                                XPosition,
-                                YPosition,
-                                Name,
-                                Email,
-                                Username
-                            ]
-                        ),
-                        call
-                    },
+             || _ <- database:query(
+                        Pool,
+                        <<"SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED">>,
+                        []
+                    ),
+                _ <- database:query(
+                        Pool,
+                        Harvest,
+                        [
+                            MapName,
+                            Kind,
+                            XPosition,
+                            YPosition,
+                            Name,
+                            Email,
+                            Username
+                        ]
+                    ),
                 UnprocessedDeltaInventory <-
-                    {
-                        epgsql:equery(
-                            Conn,
-                            Inventory,
-                            [Name, Username, Email]
-                        ),
-                        select
-                    },
+                    database:query(Pool, Inventory, [Name, Username, Email]),
                 UnprocessedDeltaResource <-
-                    {
-                        epgsql:equery(
-                            Conn,
-                            Resource,
-                            [MapName, XPosition, YPosition, Kind]
-                        ),
-                        select
-                    },
+                    database:query(Pool, Resource, [MapName, XPosition, YPosition, Kind]),
                 DeltaInventory =
                     hd(database_utils:columns_and_rows(UnprocessedDeltaInventory)),
                 DeltaResource =
@@ -233,6 +226,5 @@ harvest_resource(
                         maps:get(quantity, DeltaResource)
                 })
             ])
-        end,
-        #{begin_opts => "ISOLATION LEVEL READ UNCOMMITTED"}
+        end
     ).

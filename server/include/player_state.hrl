@@ -13,13 +13,11 @@
 -record(player_state,
         {player_id :: player_id(),
          client_pid :: pid(),
-         connection :: epgsql:connection(),
          data :: player_data()}).
 
 -type player_state() ::
     #player_state{player_id :: player_id(),
-                  client_pid :: pid(),
-                  connection :: epgsql:connection()}.
+                  client_pid :: pid()}.
 
 -record(player_cache,
         {player_id :: player_id(),

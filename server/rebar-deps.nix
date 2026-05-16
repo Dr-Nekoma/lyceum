@@ -4,6 +4,46 @@ in { builder ? fetchOnly, fetchHex, fetchgit, fetchFromGitHub, overrides ? (x: y
 let
   self = packages // (overrides self packages);
   packages = with self; {
+    pg_types = builder {
+      name = "pg_types";
+      version = "0.4.0";
+      src = fetchHex {
+        pkg = "pg_types";
+        version = "0.4.0";
+        sha256 = "sha256-sC76eFyuzs+XAsaByAqcoSo5+RYahGzhewH7IK7u1+s=";
+      };
+      beamDeps = [ ];
+    };
+    opentelemetry_api = builder {
+      name = "opentelemetry_api";
+      version = "1.5.0";
+      src = fetchHex {
+        pkg = "opentelemetry_api";
+        version = "1.5.0";
+        sha256 = "sha256-9T7IoTN65KSH1DrInaS9OjyZ3fV2ZV0HHe7YtWotXdo=";
+      };
+      beamDeps = [ ];
+    };
+    backoff = builder {
+      name = "backoff";
+      version = "1.1.6";
+      src = fetchHex {
+        pkg = "backoff";
+        version = "1.1.6";
+        sha256 = "sha256-zwz/+JlfsgVi+CLlzEfYzPZkxezcJqaEy+hcIl+dfDk=";
+      };
+      beamDeps = [ ];
+    };
+    pgo = builder {
+      name = "pgo";
+      version = "0.14.0";
+      src = fetchHex {
+        pkg = "pgo";
+        version = "0.14.0";
+        sha256 = "sha256-cQFsIlmZNuBC3AAS7kWJ0kxxQn0mYpL3devyAdl9+ck=";
+      };
+      beamDeps = [ backoff opentelemetry_api pg_types ];
+    };
     pc = builder {
       name = "pc";
       version = "1.15.0";

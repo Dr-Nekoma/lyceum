@@ -8,7 +8,8 @@
         stdlib,
         sasl,
         mnesia,
-        epgsql,
+        pgo,
+        database,
         erlandono,
         cache
     ]},

@@ -32,11 +32,8 @@ end_per_group(Name, Config) ->
     Config.
 
 init_per_testcase(TestCase, Config) ->
-    %% Mock database module if needed
-    meck:new(epgsql),
-    meck:new(database),
-    meck:expect(database, connect_as_mnesia, fun() -> {ok, fake_connection} end),
-
+    %% cache no longer touches Postgres at startup, so no DB mocking
+    %% is required here.
     {ok, Pid} = cache:start_link(),
     ct:pal("[~p] Gen Server started at ~p", [TestCase, Pid]),
 
@@ -63,9 +60,6 @@ end_per_testcase(TestCase, Config) ->
     mnesia:stop(),
     mnesia:delete_schema([node()]),
     catch mnesia:delete_table(player_cache),
-
-    meck:unload(database),
-    meck:unload(epgsql),
 
     Config.
 
