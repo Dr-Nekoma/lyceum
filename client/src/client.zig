@@ -15,8 +15,13 @@ const std = @import("std");
 const userMenu = @import("menu/user.zig");
 const zerl = @import("zerl");
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
+    const io = init.io;
     rl.setConfigFlags(.{ .window_resizable = true });
+
+    var stderr_buf: [512]u8 = undefined;
+    var stderr_fw = std.Io.File.stderr().writer(io, &stderr_buf);
+    const stderr = &stderr_fw.interface;
 
     rl.initWindow(
         @intFromFloat(config.Screen.initialWidth),
@@ -36,8 +41,10 @@ pub fn main() !void {
         .sound = &menuAssets.sounds.error_sound,
         .font = &menuAssets.font,
     };
-    var node = try zerl.Node.init("lyceum");
+    var node = try zerl.Node.init(io, "lyceum");
     var gameState = try state.init(
+        io,
+        stderr,
         std.heap.c_allocator, // Revisit this later
         config.Screen.initialWidth,
         config.Screen.initialHeight,

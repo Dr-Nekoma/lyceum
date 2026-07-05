@@ -61,7 +61,7 @@ pub const character = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = node.receive(messages.Character.Many.Response, gameState.allocator) catch {
+        const server_response = node.receive(messages.Character.Many.Response, gameState.gpa) catch {
             gameState.errorElem.update(.update_character_receive);
             return;
         };
@@ -102,14 +102,14 @@ pub const character = struct {
                 }
             },
             .@"error" => |msg| {
-                defer gameState.allocator.free(msg);
+                defer gameState.gpa.free(msg);
                 std.debug.print("[ERROR]: {s}\n", .{msg});
                 return error.update_character;
             },
         }
     }
     fn readMap(gameState: *GameState, map: *const messages.World.Map) !void {
-        defer gameState.allocator.free(map.resources);
+        defer gameState.gpa.free(map.resources);
         gameState.world.map.resources.clearRetainingCapacity();
         gameState.world.map.instance = map.*;
         gameState.world.map.instance.resources = &.{};
@@ -135,7 +135,7 @@ pub const character = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = node.receive(messages.Character.Join.Response, gameState.allocator) catch {
+        const server_response = node.receive(messages.Character.Join.Response, gameState.gpa) catch {
             gameState.errorElem.update(.joining_map_receive);
             return;
         };
@@ -146,7 +146,7 @@ pub const character = struct {
                 gameState.scene = .spawn;
             },
             .@"error" => |msg| {
-                defer gameState.allocator.free(msg);
+                defer gameState.gpa.free(msg);
                 std.debug.print("[ERROR]: {s}\n", .{msg});
                 return error.joining_map;
             },
@@ -172,13 +172,13 @@ pub const character = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = node.receive(messages.Character.Harvest.Response, gameState.allocator) catch {
+        const server_response = node.receive(messages.Character.Harvest.Response, gameState.gpa) catch {
             gameState.errorElem.update(.harvest_resource_receive);
             return;
         };
         switch (server_response) {
             .ok => |harvest_response| {
-                const gpa = gameState.allocator;
+                const gpa = gameState.gpa;
                 const items = &gameState.world.character.inventory.items;
                 try items.put(gpa, harvest_response.delta_inventory.item_name, harvest_response.delta_inventory.quantity);
 
@@ -197,7 +197,7 @@ pub const character = struct {
                 }
             },
             .@"error" => |msg| {
-                defer gameState.allocator.free(msg);
+                defer gameState.gpa.free(msg);
                 std.debug.print("[ERROR]: {s}\n", .{msg});
                 return error.harvest_resource;
             },
@@ -212,7 +212,7 @@ pub const character = struct {
             return;
         };
         const node = gameState.connection.node;
-        const server_response = node.receive(messages.ErlangResponse, gameState.allocator) catch {
+        const server_response = node.receive(messages.ErlangResponse, gameState.gpa) catch {
             gameState.errorElem.update(.exit_receive);
             return;
         };
@@ -221,7 +221,7 @@ pub const character = struct {
                 gameState.scene = .nothing;
             },
             .@"error" => |msg| {
-                defer gameState.allocator.free(msg);
+                defer gameState.gpa.free(msg);
                 std.debug.print("[ERROR]: {s}\n", .{msg});
                 return error.exit;
             },
@@ -242,7 +242,7 @@ pub const user = struct {
         };
         const node = gameState.connection.node;
 
-        const server_response = node.receive(messages.User.Login.Response, gameState.allocator) catch {
+        const server_response = node.receive(messages.User.Login.Response, gameState.gpa) catch {
             gameState.errorElem.update(.login_receive);
             return;
         };
@@ -252,7 +252,7 @@ pub const user = struct {
                 try getCharacters(gameState);
             },
             .@"error" => |msg| {
-                defer gameState.allocator.free(msg);
+                defer gameState.gpa.free(msg);
                 std.debug.print("[ERROR]: {s}\n", .{msg});
                 gameState.errorElem.update(.login_invalid);
                 return;
@@ -267,7 +267,7 @@ pub const user = struct {
                 return;
             };
             const node = gameState.connection.node;
-            const server_response = node.receive(messages.ErlangResponse, gameState.allocator) catch {
+            const server_response = node.receive(messages.ErlangResponse, gameState.gpa) catch {
                 gameState.errorElem.update(.logout_receive);
                 return;
             };
@@ -277,7 +277,7 @@ pub const user = struct {
                     gameState.scene = .nothing;
                 },
                 .@"error" => |msg| {
-                    defer gameState.allocator.free(msg);
+                    defer gameState.gpa.free(msg);
                     std.debug.print("[ERROR]: {s}\n", .{msg});
                     gameState.errorElem.update(.logout_invalid);
                     return;
@@ -298,7 +298,7 @@ pub const user = struct {
         };
 
         const node = gameState.connection.node;
-        const maybe_characters = node.receive(messages.Character.Many.Response, gameState.allocator) catch {
+        const maybe_characters = node.receive(messages.Character.Many.Response, gameState.gpa) catch {
             gameState.errorElem.update(.get_characters_receive);
             return;
         };
@@ -308,7 +308,7 @@ pub const user = struct {
 
                 var characters: std.ArrayList(GameCharacter) = .empty;
                 for (erlang_characters) |stats| {
-                    try characters.append(gameState.allocator, .{
+                    try characters.append(gameState.gpa, .{
                         .stats = stats,
                         .preview = placeholder,
                     });

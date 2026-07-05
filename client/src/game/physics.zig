@@ -74,7 +74,7 @@ pub const character = struct {
 
         velocity.* = rm.vector3Clamp(velocity.*, rm.vector3Scale(velocityCeiling, -1), velocityCeiling);
 
-        state.* = if (rm.vector3Equals(velocity.*, rm.vector3Zero()) == 0) .walking else .idle;
+        state.* = if (rm.vector3Equals(velocity.*, rm.vector3Zero())) .idle else .walking;
 
         var tempPosition: rl.Vector3 = entity.position.add(rm.vector3Scale(velocity.*, deltaTime));
         tempPosition.y = rm.clamp(tempPosition.y, floorLevel, ceilingLevel);

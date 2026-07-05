@@ -5,30 +5,27 @@ const GameState = @import("../game/state.zig");
 const GameCharacter = @import("../game/character.zig");
 
 fn createAnonymousStruct(comptime T: type, comptime keys: []const [:0]const u8) type {
-    const struct_info = @typeInfo(T).@"struct";
-    comptime var structKeys: [keys.len]struct { [:0]const u8 } = undefined;
-    comptime for (0.., keys) |index, key| {
-        structKeys[index] = .{key};
-    };
-    const mapKeys = std.StaticStringMap(void).initComptime(structKeys);
-    return comptime blk: {
-        var fields: [keys.len]std.builtin.Type.StructField = undefined;
-        var fieldsCounter: usize = 0;
+    comptime {
+        const struct_info = @typeInfo(T).@"struct";
+        var structKeys: [keys.len]struct { [:0]const u8, comptime_int } = undefined;
+        for (0.., keys) |idx, key| {
+            structKeys[idx] = .{ key, idx };
+        }
+        const mapKeys = std.StaticStringMap(comptime_int).initComptime(structKeys);
+        var types: [keys.len]type = undefined;
+        var attrs: [keys.len]std.builtin.Type.StructField.Attributes = undefined;
         for (struct_info.fields) |field| {
-            if (mapKeys.has(field.name)) {
-                fields[fieldsCounter] = field;
-                fieldsCounter += 1;
+            if (mapKeys.get(field.name)) |idx| {
+                types[idx] = field.type;
+                attrs[idx] = .{
+                    .@"comptime" = field.is_comptime,
+                    .@"align" = field.alignment,
+                    .default_value_ptr = field.default_value_ptr,
+                };
             }
         }
-        break :blk @Type(.{
-            .@"struct" = .{
-                .layout = .auto,
-                .fields = &fields,
-                .decls = &[_]std.builtin.Type.Declaration{},
-                .is_tuple = false,
-            },
-        });
-    };
+        return @Struct(.auto, null, &keys, &types, &attrs);
+    }
 }
 
 pub fn selectKeysFromStruct(data: anytype, comptime keys: []const [:0]const u8) createAnonymousStruct(@TypeOf(data), keys) {

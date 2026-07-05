@@ -36,18 +36,18 @@ pub fn build(b: *std.Build) !void {
         .linux_display_backend = display_backend,
     })) |raylib_zig| {
         if (b.systemIntegrationOption("raylib", .{})) {
-            exe.linkSystemLibrary("raylib");
+            root_module.linkSystemLibrary("raylib", .{});
         } else {
-            exe.linkLibrary(raylib_zig.artifact("raylib"));
+            root_module.linkLibrary(raylib_zig.artifact("raylib"));
         }
-        exe.root_module.addImport("raylib", raylib_zig.module("raylib"));
+        root_module.addImport("raylib", raylib_zig.module("raylib"));
     }
 
     if (b.lazyDependency("zerl", .{
         .target = target,
         .optimize = optimize,
     })) |zerl| {
-        exe.root_module.addImport("zerl", zerl.module("zerl"));
+        root_module.addImport("zerl", zerl.module("zerl"));
     }
 
     const assets = b.addInstallDirectory(.{
@@ -65,10 +65,10 @@ pub fn build(b: *std.Build) !void {
     exe.root_module.addOptions("build_options", options);
 
     if (b.lazyImport(@This(), "zerl")) |zerl_build| {
-        if (std.posix.getenv("LIBRARY_PATH")) |lib_path| {
+        if (b.graph.environ_map.get("LIBRARY_PATH")) |lib_path| {
             try zerl_build.add_erlang_paths(b, lib_path);
         }
-        if (std.posix.getenv("PATH")) |path| {
+        if (b.graph.environ_map.get("PATH")) |path| {
             try zerl_build.add_erlang_paths(b, path);
         }
     }
@@ -83,12 +83,7 @@ pub fn build(b: *std.Build) !void {
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
     // step when running `zig build`).
-    const no_bin = b.option(bool, "no-bin", "Skip emitting binary") orelse false;
-    if (no_bin) {
-        b.getInstallStep().dependOn(&exe.step);
-    } else {
-        b.installArtifact(exe);
-    }
+    b.installArtifact(exe);
 
     // This *creates* a Run step in the build graph, to be executed when another
     // step is evaluated that depends on it. The next line below will establish

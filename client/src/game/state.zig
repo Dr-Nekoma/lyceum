@@ -67,10 +67,12 @@ pub const Connection = struct {
     is_connected: bool = false,
 };
 
+io: std.Io,
+stderr: *std.Io.Writer,
 width: f32,
 height: f32,
 menu: mainMenu.Menu = undefined,
-allocator: std.mem.Allocator = std.heap.c_allocator,
+gpa: std.mem.Allocator = std.heap.c_allocator,
 scene: Scene = .nothing,
 connection: Connection,
 world: World = undefined,
@@ -103,7 +105,9 @@ pub fn canDisplayPlayer(mainPlayer: *const World.Character, player: *const World
 }
 
 pub fn init(
-    allocator: std.mem.Allocator,
+    io: std.Io,
+    stderr: *std.Io.Writer,
+    gpa: std.mem.Allocator,
     width: f32,
     height: f32,
     node: *zerl.Node,
@@ -119,16 +123,18 @@ pub fn init(
     };
     if (width < 0) return error.negative_width;
     if (height < 0) return error.negative_height;
-    const name = try allocator.allocSentinel(u8, config.nameSize, 0);
+    const name = try gpa.allocSentinel(u8, config.nameSize, 0);
     @memset(name, 0);
     return .{
+        .io = io,
+        .stderr = stderr,
         .width = width,
         .height = height,
-        .allocator = allocator,
+        .gpa = gpa,
         .connection = .{ .node = node },
         .world = .{
             .camera = camera,
-            .other_players = Character_Table.init(allocator),
+            .other_players = Character_Table.init(gpa),
             .character = .{
                 .inventory = .{
                     .hud = .{
@@ -143,7 +149,7 @@ pub fn init(
                 },
             },
             .map = .{
-                .resources = Resource_Table.init(allocator),
+                .resources = Resource_Table.init(gpa),
                 .tiles = try assets.tilesTable(),
                 .objects = try assets.objectsTable(),
             },

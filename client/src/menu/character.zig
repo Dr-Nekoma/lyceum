@@ -56,7 +56,7 @@ fn emptyCharacter(gameState: *GameState) !void {
             "face_direction",
             "state_type",
         })) {
-            const mutable_name: [:0]u8 = try gameState.allocator.allocSentinel(u8, field.name.len, 0);
+            const mutable_name: [:0]u8 = try gameState.gpa.allocSentinel(u8, field.name.len, 0);
             std.mem.copyForwards(u8, mutable_name, field.name);
             mutable_name[0] = std.ascii.toUpper(mutable_name[0]);
             const attributeComp = attribute{

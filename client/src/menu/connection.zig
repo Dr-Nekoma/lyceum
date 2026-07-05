@@ -9,16 +9,12 @@ const zerl = @import("zerl");
 const Button = @import("../components/button.zig");
 const GameState = @import("../game/state.zig");
 
-fn print_connect_server_error(message: anytype) !void {
-    var buf: [256]u8 = undefined;
-    var stderr_file = std.fs.File.stderr().writer(&buf);
-    const stderr = &stderr_file.interface;
-
-    try stderr.print(
+fn print_connect_server_error(sink: *std.Io.Writer, message: anytype) !void {
+    try sink.print(
         "Could not connect to Lyceum Server!\n\u{1b}[31mError: \u{1b}[37m{}\n",
         .{message},
     );
-    try stderr.flush();
+    try sink.flush();
 }
 
 pub fn connect(gameState: *GameState) !void {
@@ -75,7 +71,7 @@ pub fn connect(gameState: *GameState) !void {
             GameState.Connection.process_name,
             gameState.menu.connect.address[0..gameState.menu.connect.addressPosition],
         ) catch |error_value| {
-            try print_connect_server_error(error_value);
+            try print_connect_server_error(gameState.stderr, error_value);
             gameState.errorElem.update(.node_connection);
             return;
         };

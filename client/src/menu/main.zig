@@ -159,7 +159,7 @@ fn userConnectButton(gameState: *GameState) void {
     )) {
         if (next_scene == .nothing) {
             server.user.logout(gameState);
-            std.posix.close(gameState.connection.node.fd);
+            std.Io.Threaded.closeFd(gameState.connection.node.fd);
             gameState.connection.is_connected = false;
         }
         gameState.scene = next_scene;

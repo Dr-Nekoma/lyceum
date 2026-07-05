@@ -59,10 +59,10 @@ pub fn at(
     } else if (self.mode.* == .idle and self.position.* > 0) {
         const message: Message = .{
             .author = name,
-            .content = try gameState.allocator.allocSentinel(u8, self.position.*, 0),
+            .content = try gameState.gpa.allocSentinel(u8, self.position.*, 0),
         };
         std.mem.copyForwards(u8, message.content, self.content[0..self.position.*]);
-        try self.messages.append(gameState.allocator, message);
+        try self.messages.append(gameState.gpa, message);
         @memset(self.content, 0);
         self.position.* = 0;
     }

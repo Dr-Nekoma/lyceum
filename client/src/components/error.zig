@@ -6,26 +6,24 @@ pub const defaultErrorDuration = 3;
 const padding = 2;
 const fontSize = 22;
 
-const Error = @Type(.{ .@"enum" = .{
-    .is_exhaustive = true,
-    .decls = &.{},
-    .tag_type = blk: {
+const Error = error_type: {
+    const Tag = tag: {
         const possible_messages = @typeInfo(errorMessage).@"struct".decls.len;
         const bits = std.math.log2(possible_messages);
-        break :blk std.meta.Int(
+        break :tag @Int(
             .unsigned,
             bits + @intFromBool(@popCount(possible_messages) != 1),
         );
-    },
-    .fields = blk: {
-        const field_names = @typeInfo(errorMessage).@"struct".decls;
-        var decls: [field_names.len]std.builtin.Type.EnumField = undefined;
-        for (field_names, 0..) |fieldDecl, index| {
-            decls[index] = .{ .value = index, .name = fieldDecl.name };
-        }
-        break :blk &decls;
-    },
-} });
+    };
+    const field_decls = @typeInfo(errorMessage).@"struct".decls;
+    var names: [field_decls.len][]const u8 = undefined;
+    var values: [field_decls.len]Tag = undefined;
+    for (field_decls, 0..) |decl, index| {
+        names[index] = decl.name;
+        values[index] = index;
+    }
+    break :error_type @Enum(Tag, .exhaustive, &names, &values);
+};
 
 const errorMessage = struct {
     pub const create_account_not_implemented = "Account creation is not implemented yet!";
