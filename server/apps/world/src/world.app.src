@@ -1,18 +1,27 @@
 {application, world, [
     {description, "An OTP application"},
     {vsn, {git, short}},
-    {registered, []},
+    {registered, [world_sup, world_migrations, world]},
     {mod, {world_app, []}},
+    % migraterl is intentionally NOT listed here. Its app spec points at
+    % a callback module without start/2, so it can never be started, and
+    % listing it makes application_controller queue the world app forever
+    % waiting for it (world then silently never boots). The release loads
+    % migraterl's code via relx's {migraterl, load} and world_migrations
+    % calls it as a plain library.
     {applications, [
         kernel,
         stdlib,
         sasl,
         csv,
         epgsql,
+        pgo,
+        database,
+        lib_map,
         erlandono
     ]},
     {env, []},
     {modules, []},
     {licenses, ["Apache-2.0"]},
     {links, []}
- ]}.
+]}.

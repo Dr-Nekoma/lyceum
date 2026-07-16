@@ -105,8 +105,7 @@ init(_) ->
                 _ ->
                     ok
             end,
-        {ok, Connection} ?= database:connect_as_mnesia(),
-        State = #mnesia_state{connection = Connection},
+        State = #mnesia_state{},
         ok ?= mnesia:start(),
         ok ?= create_table(?PLAYER_CACHE_TABLE, Options),
         ok ?= mnesia:wait_for_tables([?PLAYER_CACHE_TABLE], ?MNESIA_INIT_TIMEOUT),

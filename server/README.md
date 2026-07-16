@@ -158,24 +158,24 @@ graph LR
             end
         end
 
-        subgraph PortLayer["Port Layer"]
-            Port1((Port 1))
-            Port2((Port 2))
-            Port3((Port 3))
+        subgraph CNodes["C Nodes Layer"]
+            CN1((C Node 1))
+            CN2((C Node 2))
+            CN3((C Node 3))
         end
         
-        P1 p1_pt1@<--> Port1
-        P2 p2_pt2@<--> Port2
-        P3 p3_pt3@<--> Port3
+        P1 p1_pt1@<--> CN1
+        P2 p2_pt2@<--> CN2
+        P3 p3_pt3@<--> CN3
 
         p1_pt1@{animation: "fast"}
         p2_pt2@{animation: "fast"}
         p3_pt3@{animation: "fast"}
     end
 
-    Port1 pt1_z@<--> Zerl1
-    Port2 pt2_z@<--> Zerl2
-    Port3 pt3_z@<--> Zerl3
+    CN1 pt1_z@<--> Zerl1
+    CN2 pt2_z@<--> Zerl2
+    CN3 pt3_z@<--> Zerl3
 
     pt1_z@{animation: "fast"}
     pt2_z@{animation: "fast"}
@@ -187,12 +187,12 @@ graph LR
     class Server serverBg
 
     class P1,P2,P3 process
-    class Port1,Port2,Port3 port
+    class CN1,CN2,CN3 cnode
 
     %% Enhanced Styling
     classDef clientBg fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#0d47a1
     classDef beamBg fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px,color:#4a148c
-    classDef portLayerBg fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f
+    classDef CNodeBg fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f
     classDef playerBg fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
     classDef serverBg fill:#ECEFF1,stroke:#37474F,stroke-width:3px
 
@@ -200,19 +200,19 @@ graph LR
     classDef zerlNode fill:#88E788,stroke:#2e7d32,stroke-width:2px,color:#353839
     classDef playerNode fill:#ff9800,stroke:#ef6c00,stroke-width:2px,color:#ffffff
     classDef process fill:#4CAF50,color:#ffffff,stroke:#2E7D32,stroke-width:2px
-    classDef portNode fill:#ec407a,stroke:#ad1457,stroke-width:3px,color:#ffffff
+    classDef cNode fill:#ec407a,stroke:#ad1457,stroke-width:3px,color:#ffffff
     
     %% Apply classes to subgraphs and nodes
     class Client1,Client2,Client3 clientBg
     class BEAM beamBg
     class Server serverBg
     class Player playerBg
-    class PortLayer portLayerBg
+    class CNode CNodeBg
     
     class Game1,Game2,Game3 gameNode
     class Zerl1,Zerl2,Zerl3 zerlNode
     class P1,P2,P3 process
-    class Port1,Port2,Port3 portNode
+    class CN1,CN2,CN3 cNode
 ```
 
 ## Shell
@@ -226,3 +226,21 @@ rebar3 shell
 # Now inside the rebar3 shell, you can run observer
 > observer:start().
 ```
+
+## Database Access
+
+PostgreSQL access goes through [pgo](https://github.com/erleans/pgo) connection pools owned by the `database` OTP application. Three named pools cover the privilege boundary between subsystems:
+
+| Pool          | Role env vars                              | Used by                          |
+| ------------- | ------------------------------------------ | -------------------------------- |
+| `lyceum_pool` | `PGUSER` / `PGPASSWORD` (`application`)    | `player`, `character`, `map`     |
+| `auth_pool`   | `PG_AUTH_USER` / `PG_AUTH_PASSWORD`        | `simple_auth`, `registry`        |
+| `mnesia_pool` | `PG_MNESIA_USER` / `PG_MNESIA_PASSWORD`    | reserved for `cache`             |
+
+Pool sizes are tunable from [`config/sys.config`](config/sys.config) under the `database` application's `pools` env. The pools are started by `database_sup` at boot, before `auth`, `player`, `cache`, or `world` start, so queries never race the pool startup.
+
+Every query goes through `database:query/2,3` and `database:transaction/2`; modules pass the pool atom rather than a connection. There are no per-session PostgreSQL connections: the number of backends to Postgres is bounded by `pool_size` regardless of player count.
+
+### Migration boot path
+
+`migraterl` is still hardcoded against `epgsql`, so `world:init/1` opens a single short-lived `epgsql` connection (`PG_MIGRATERL_USER` / `PG_MIGRATERL_PASSWORD`), runs migrations through `migraterl:migrate/3`, and immediately closes it via `database:close_migrator_connection/1`. This is the only `epgsql` call site that survives in our code; everything else runs through `pgo`.

@@ -1,0 +1,31 @@
+{application, database, [
+    {description, "An OTP application owning the PostgreSQL connection pools"},
+    {vsn, {git, short}},
+    {registered, [database_sup]},
+    {mod, {database_app, []}},
+    {applications, [
+        kernel,
+        stdlib,
+        sasl,
+        pgo,
+        epgsql,
+        erlandono
+    ]},
+    {env, [
+        {pools, [
+            #{name => lyceum_pool, role => application, size => 10},
+            #{name => auth_pool,   role => auth,        size => 4},
+            #{name => mnesia_pool, role => mnesia,      size => 4}
+        ]}
+    ]},
+    {modules, [
+        database,
+        database_app,
+        database_queries,
+        database_sup,
+        database_utils,
+        postgres_m
+    ]},
+    {licenses, ["Apache-2.0"]},
+    {links, []}
+ ]}.

@@ -60,8 +60,6 @@
 
           # nix build (devenv stuff)
           packages = {
-            devenv-up = self.devShells.${system}.default.config.procfileScript;
-            devenv-test = self.devShells.${system}.default.config.test;
           };
 
           # Bare minimum config needed for CI.

@@ -68,8 +68,7 @@ start_link() ->
 init(_) ->
     Pid = self(),
     logger:info("[~p] Starting at ~p...~n", [?SERVER, Pid]),
-    {ok, Connection} = database:connect_as_auth(),
-    State = #auth_state{connection = Connection, pid = Pid},
+    State = #auth_state{pid = Pid},
     {ok, State}.
 
 %%--------------------------------------------------------------------
@@ -130,7 +129,7 @@ handle_cast(Msg, State) ->
         | {stop, term(), auth_state()}.
 handle_info({From, {login, Request}}, State) ->
     logger:info("[~p] INFO: ~p~n", [?SERVER, From]),
-    login(State, From, Request),
+    _ = login(State, From, Request),
     {noreply, State};
 handle_info(Info, State) ->
     logger:error("[~p] INFO: ~p~n", [?SERVER, Info]),
@@ -183,9 +182,9 @@ code_change(_OldVsn, State, _Extra) ->
     Ok :: ok,
     Error :: {error, Reason :: string()},
     Result :: Ok | Error.
-login(State, From, #{username := Username, password := _Password} = Request) ->
+login(_State, From, #{username := Username, password := _Password} = Request) ->
     logger:info("[~p] User ~p is attempting to login from ~p~n", [?SERVER, Username, From]),
-    case registry:check_user(Request, State#auth_state.connection) of
+    case registry:check_user(Request, auth_pool) of
         {ok, {PlayerId, Email}} ->
             Cache =
                 #player_cache{

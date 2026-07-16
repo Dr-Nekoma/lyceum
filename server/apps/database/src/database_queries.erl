@@ -27,10 +27,10 @@ to_rel(Path) ->
 get_root_dir() ->
     LibDir =
         filename:absname(
-            code:lib_dir(lib_database)
+            code:lib_dir(database)
         ),
     RootDir = from_lib_dir(LibDir),
-    case application:get_env(lib_database, is_shell) of
+    case application:get_env(database, is_shell) of
         {ok, true} ->
             to_rel(RootDir);
         _ ->

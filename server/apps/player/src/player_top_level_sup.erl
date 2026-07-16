@@ -28,13 +28,13 @@ start_link() ->
 %% a player state machine.
 %% @end
 %%--------------------------------------------------------------------
--spec start_child(PlayerData) -> Result
-    when PlayerData :: player_cache(),
-         Pid :: pid(),
-         Reason :: string(),
-         Ok :: {ok, Pid},
-         Error :: {error, Reason},
-         Result :: Ok | Error.
+-spec start_child(PlayerData) -> Result when
+    PlayerData :: player_cache(),
+    Pid :: pid(),
+    Reason :: string(),
+    Ok :: {ok, Pid},
+    Error :: {error, Reason},
+    Result :: Ok | Error.
 start_child(PlayerData) ->
     logger:debug("[~p] Starting CHILD SUPERVISOR with ARGS = ~p~n", [?MODULE, PlayerData]),
     SupRef = {global, ?MODULE},
@@ -60,30 +60,37 @@ start_child(PlayerData) ->
 %% Starts a Dynamic Top Level Supervisor, a supervisor of supervisors.
 %% @end
 %%--------------------------------------------------------------------
--spec init(Args) -> Result
-    when Args :: list(),
-         Flags :: {supervisor:sup_flags(), list()},
-         ChildSpecs :: [supervisor:child_spec()],
-         Result :: {ok, {Flags, ChildSpecs}}.
+-spec init(Args) -> Result when
+    Args :: list(),
+    Flags :: {supervisor:sup_flags(), list()},
+    ChildSpecs :: [supervisor:child_spec()],
+    Result :: {ok, {Flags, ChildSpecs}}.
 init(Args) ->
     SupFlags =
-        #{strategy => simple_one_for_one,
-          % Don't restart children when
-          % they terminate normally
-          intensity => 0,
-          % Max secs. between restarts
-          period => 5,
-          % This Top Level Supervisor will
-          % live as long the VM is on
-          auto_shutdow => never},
+        #{
+            strategy => simple_one_for_one,
+            % Children are transient, so normal exits never trigger a
+            % restart, the intensity budget only covers crashes. It must
+            % not be 0, otherwise a single crashing player supervisor
+            % would exceed the limit and take down every connected
+            % player with it.
+            intensity => 10,
+            % Seconds over which the intensity is measured
+            period => 60,
+            % This Top Level Supervisor will
+            % live as long the VM is on
+            auto_shutdown => never
+        },
 
     InternalSup =
-        #{id => player_sup,
-          start => {player_sup, start_link, Args},
-          restart => transient,
-          shutdown => 5000,
-          type => supervisor,
-          modules => [player_sup]},
+        #{
+            id => player_sup,
+            start => {player_sup, start_link, Args},
+            restart => transient,
+            shutdown => 5000,
+            type => supervisor,
+            modules => [player_sup]
+        },
 
     {ok, {SupFlags, [InternalSup]}}.
 

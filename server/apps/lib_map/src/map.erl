@@ -4,7 +4,7 @@
 
 -compile({parse_transform, do}).
 
--spec atomize(binary()) -> atom().
+-spec atomize(binary() | list()) -> atom().
 atomize(Binary) when is_binary(Binary) ->
     list_to_atom(string:lowercase(binary_to_list(Binary)));
 atomize(Str) when is_list(Str) ->
@@ -24,7 +24,7 @@ transform_resource(Map) ->
     NewMap = maps:update_with(kind, fun atomize/1, Map),
     {Position, maps:without([x_position, y_position], NewMap)}.
 
--spec check_dimensions(map()) -> any().
+-spec check_dimensions([map()]) -> any().
 check_dimensions(UnprocessedMap) ->
     do([
         error_m
@@ -42,31 +42,31 @@ check_dimensions(UnprocessedMap) ->
         end
     ]).
 
--spec get_map(epgsql:bind_param(), epgsql:connection()) -> any().
-get_map(MapName, Connection) ->
+-spec get_map(iodata(), database:pool_name()) -> any().
+get_map(MapName, Pool) ->
     DimensionsQuery = database_queries:fetch_query("map", "select_map_dimensions.sql"),
-    Dimensions = epgsql:equery(Connection, DimensionsQuery, [MapName]),
+    Dimensions = database:query(Pool, DimensionsQuery, [MapName]),
     TilesQuery = database_queries:fetch_query("map", "select_tiles.sql"),
-    Tiles = epgsql:equery(Connection, TilesQuery, [MapName]),
+    Tiles = database:query(Pool, TilesQuery, [MapName]),
     ObjectsQuery = database_queries:fetch_query("map", "select_map_objects.sql"),
-    Objects = epgsql:equery(Connection, ObjectsQuery, [MapName]),
+    Objects = database:query(Pool, ObjectsQuery, [MapName]),
     ResourcesQuery = database_queries:fetch_query("map", "select_map_resources.sql"),
-    Resources = epgsql:equery(Connection, ResourcesQuery, [MapName]),
+    Resources = database:query(Pool, ResourcesQuery, [MapName]),
     do([
         postgres_m
-     || UnprocessedMap <- {Dimensions, select},
+     || UnprocessedMap <- Dimensions,
         %% I miss you ErrorT
         {ok, {Width, Height}} = check_dimensions(UnprocessedMap),
-        UnprocessedTiles <- {Tiles, select},
+        UnprocessedTiles <- Tiles,
         ProcessedTiles =
             lists:map(fun transform_tile/1, database_utils:columns_and_rows(UnprocessedTiles)),
-        UnprocessedObjects <- {Objects, select},
+        UnprocessedObjects <- Objects,
         ProcessedObjects =
             lists:map(
                 fun transform_object/1,
                 database_utils:columns_and_rows(UnprocessedObjects)
             ),
-        UnprocessedResources <- {Resources, select},
+        UnprocessedResources <- Resources,
         ProcessedResources =
             lists:map(
                 fun transform_resource/1,
@@ -83,7 +83,6 @@ get_map(MapName, Connection) ->
                     height => Height
                 });
             (length(ProcessedTiles) == 0) or (length(ProcessedObjects) == 0) ->
-                % TODO: Put the map name in this error message for the client!
                 fail("Map can't be instantiated!");
             true ->
                 fail("Mismatch between dimensions, tiles and objects!")

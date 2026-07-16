@@ -5,10 +5,10 @@
     {applications, [
         kernel,
         stdlib,
-        epgsql,
         sasl,
+        pgo,
         erlandono,
-        lib_database
+        database
     ]},
     {env, []},
     {modules, []},

@@ -115,6 +115,35 @@ To run our DEMO you need to follow the steps in this particular order:
 5. Once you get the client to launch, connect to ~localhost~ and you can try
    playing with any of the local credentials [[https://github.com/Dr-Nekoma/lyceum/blob/master/server/database/main.input.sql#L3][here]].
 
+** Database access with =pgo=
+
+PostgreSQL access goes through [[https://github.com/erleans/pgo][pgo]] connection pools owned by the
+=database= OTP application. Three named pools cover the privilege boundary
+between subsystems:
+
+| Pool          | Role env vars                              | Used by                          |
+|---------------+--------------------------------------------+----------------------------------|
+| =lyceum_pool= | =PGUSER= / =PGPASSWORD= (=application=)    | =player=, =character=, =map=     |
+| =auth_pool=   | =PG_AUTH_USER= / =PG_AUTH_PASSWORD=        | =simple_auth=, =registry=        |
+| =mnesia_pool= | =PG_MNESIA_USER= / =PG_MNESIA_PASSWORD=    | reserved for =cache=             |
+
+Pool sizes are tunable from =server/config/sys.config= under the =database=
+application's =pools= env. The pools are started by =database_sup= at boot,
+before =auth=, =player=, =cache=, or =world= start, so queries never race the
+pool startup.
+
+Every query goes through =database:query/2,3= and =database:transaction/2=;
+modules pass the pool atom rather than a connection. There are no per-session
+PostgreSQL connections: the number of backends to Postgres is bounded by
+=pool_size= regardless of player count.
+
+=migraterl= is still hardcoded against =epgsql=, so =world:init/1= opens a
+single short-lived =epgsql= connection (=PG_MIGRATERL_USER= /
+=PG_MIGRATERL_PASSWORD=), runs migrations through =migraterl:migrate/3=, and
+closes it via =database:close_migrator_connection/1=. This is the only
+=epgsql= call site that survives in our code; everything else runs through
+=pgo=.
+
 ** Deployment
 
 This game is deployed in our [[https://github.com/Dr-Nekoma/trashcan][NixOS server]].

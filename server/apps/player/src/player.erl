@@ -35,31 +35,24 @@
     Result :: gen_statem:start_ret().
 start_link(Cache) ->
     logger:debug("[~p] GEN_STATEM ARGS ~p~n", [?MODULE, Cache]),
-    {ok, Conn} = database:connect(),
     PlayerId = Cache#player_cache.player_id,
-    State = to_state(Conn, Cache),
+    State = to_state(Cache),
     logger:debug("[~p] GEN_STATEM ID = ~p WITH STATE = ~p~n", [?MODULE, PlayerId, State]),
     gen_statem:start_link({global, PlayerId}, ?MODULE, State, []).
 
 %%%===================================================================
 %%% gen_statem callbacks
 %%%===================================================================
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Define callback mode
-%% https://www.erlang.org/doc/apps/stdlib/gen_statem.html#t:callback_mode/0
-%% @end
-%%--------------------------------------------------------------------
+-doc """
+Defines callback mode, we default to state_functions instead of event
+handlers.
+""".
 callback_mode() ->
     state_functions.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Initializes the state machine
-%% @end
-%%--------------------------------------------------------------------
+-doc """
+Initializes the state machine
+""".
 -spec init(State) -> Return when
     State :: player_state(),
     Return :: gen_statem:init_result(player_fsm_state()).
@@ -72,13 +65,13 @@ init(State) ->
     ClientPid ! Reply,
     {ok, logged_in, State}.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% State function for when player is logged in, but hasn't selected a
-%% character nor has joined any map.
-%% @end
-%%--------------------------------------------------------------------
+%%%===================================================================
+%%% State Functions
+%%%===================================================================
+-doc """
+State function for when player is logged in, but hasn't selected a
+character nor has joined any map.
+""".
 -spec logged_in(EventType, term(), State) -> Return when
     EventType :: gen_statem:event_type(),
     State :: player_state(),
@@ -194,18 +187,16 @@ handle_common_events(EventType, Info, State, StateName) ->
     ),
     {keep_state, State}.
 
--spec to_state(Conn, Cache) -> State when
-    Conn :: epgsql:connection(),
+-spec to_state(Cache) -> State when
     Cache :: player_cache(),
     State :: player_state().
-to_state(Conn, Cache) ->
+to_state(Cache) ->
     PlayerId = Cache#player_cache.player_id,
     Username = Cache#player_cache.username,
     Email = Cache#player_cache.email,
     ClientPid = Cache#player_cache.client_pid,
     Data = #player_data{username = Username, email = Email},
     #player_state{
-        connection = Conn,
         client_pid = ClientPid,
         player_id = PlayerId,
         data = Data
@@ -219,8 +210,7 @@ to_state(Conn, Cache) ->
     Return :: ok.
 list_characters(State, #{email := _, username := Username} = Request) ->
     logger:info("[~p] Querying ~p's characters...~n", [?MODULE, Username]),
-    Conn = State#player_state.connection,
-    Reply = character:player_characters(Request, Conn),
+    Reply = character:player_characters(Request, lyceum_pool),
     logger:info("[~p] Characters: ~p~n", [?MODULE, Reply]),
     State#player_state.client_pid ! Reply,
     ok.
@@ -234,15 +224,14 @@ list_characters(State, #{email := _, username := Username} = Request) ->
     Return :: ok | {error, Reason}.
 joining_map(State, #{name := Name, map_name := MapName} = Request) ->
     Pid = State#player_state.client_pid,
-    Connection = State#player_state.connection,
-    case character:activate(Request, Connection) of
+    case character:activate(Request, lyceum_pool) of
         ok ->
             logger:info("[~p] Retrieving ~p's updated info...", [?MODULE, Name]),
             Result =
                 do([
                     error_m
-                 || Character <- character:player_character(Request, Connection),
-                    Map <- map:get_map(MapName, Connection),
+                 || Character <- character:player_character(Request, lyceum_pool),
+                    Map <- map:get_map(MapName, lyceum_pool),
                     logger:info("Retrieving ~p's map...", [MapName]),
                     return(#{character => Character, map => Map})
                 ]),
@@ -260,24 +249,25 @@ atom_to_upperstring(Atom) ->
 -spec harvest_resource(player_state(), map()) -> ok.
 harvest_resource(State, Request) ->
     Pid = State#player_state.client_pid,
-    Connection = State#player_state.connection,
     Result =
         character:harvest_resource(
-            maps:update_with(kind, fun atom_to_upperstring/1, Request), Connection
+            maps:update_with(kind, fun atom_to_upperstring/1, Request), lyceum_pool
         ),
     logger:info("Harvest Result: ~p\n", [Result]),
     Pid ! Result.
 
--spec update(player_state(), map()) -> term().
+-spec update(player_state(), map()) -> ok.
 update(State, CharacterMap) ->
     Pid = State#player_state.client_pid,
-    case character:update(CharacterMap, State#player_state.connection) of
+    case character:update(CharacterMap, lyceum_pool) of
         ok ->
-            Result = character:retrieve_near_players(CharacterMap, State#player_state.connection),
-            Pid ! Result;
+            Result = character:retrieve_near_players(CharacterMap, lyceum_pool),
+            Pid ! Result,
+            ok;
         {error, Message} ->
             logger:error("Failed to Update: ~p~n", [Message]),
-            Pid ! {error, Message}
+            Pid ! {error, Message},
+            ok
     end.
 
 -spec exit_map(player_state()) -> ok | {error, term()}.
@@ -286,7 +276,7 @@ exit_map(State) ->
     Name = State#player_state.data#player_data.character_name,
     Email = State#player_state.data#player_data.email,
     Username = State#player_state.data#player_data.username,
-    case character:deactivate(Name, Email, Username, State#player_state.connection) of
+    case character:deactivate(Name, Email, Username, lyceum_pool) of
         ok ->
             Pid ! ok,
             ok;
@@ -304,8 +294,7 @@ logout(State) ->
     Name = State#player_state.data#player_data.character_name,
     Email = State#player_state.data#player_data.email,
     Username = State#player_state.data#player_data.username,
-    Connection = State#player_state.connection,
-    case character:deactivate(Name, Email, Username, Connection) of
+    case character:deactivate(Name, Email, Username, lyceum_pool) of
         ok ->
             cache:logout(State#player_state.player_id),
             Pid ! ok,

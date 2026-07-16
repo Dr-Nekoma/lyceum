@@ -15,9 +15,7 @@
       # server build cache.
       src = lib.cleanSourceWith {
         src = ./.;
-        filter =
-          name: type:
-          (lib.cleanSourceFilter name type) && !(lib.hasSuffix ".nix" (baseNameOf name));
+        filter = name: type: (lib.cleanSourceFilter name type) && !(lib.hasSuffix ".nix" (baseNameOf name));
       };
     in
     {
@@ -139,7 +137,7 @@
           enable = true;
           package = pkgs.postgresql_18;
           extensions = ext: [
-            ext.periods
+            ext.pg_cron
             ext.omnigres
           ];
           initdbArgs = [
@@ -147,12 +145,20 @@
             "--encoding=UTF8"
           ];
           settings = {
-            shared_preload_libraries = "pg_stat_statements";
+            shared_preload_libraries = pkgs.lib.concatStringsSep "," [
+              "auto_explain"
+              "pg_cron"
+              "pg_stat_statements"
+            ];
             session_preload_libraries = "auto_explain";
             "auto_explain.log_min_duration" = 150;
             "auto_explain.log_analyze" = true;
             log_min_duration_statement = 0;
             log_statement = "all";
+            # pg_cron's background worker only runs in a single database.
+            # Point it at the app's dev DB so `CREATE EXTENSION pg_cron`
+            # and cron.schedule() operate on app tables.
+            "cron.database_name" = "${app_name}";
             # pg_stat_statements config, nested attr sets need to be
             # converted to strings, otherwise postgresql.conf fails
             # to be generated.
