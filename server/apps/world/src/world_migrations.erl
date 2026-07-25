@@ -206,29 +206,28 @@ run_migrations(Conn) ->
     Type :: migration_type().
 migrate(Conn, Dir, init_data) ->
     Path = filename:join([Dir, "database", "migrations", "init"]),
-    {ok, _} = migraterl:migrate(Conn, Path, #{repeatable => true}),
+    {ok, _} = migraterl:migrate(Conn, #{
+        namespace => <<"init">>,
+        sources => [{on_change, Path}]
+    }),
     % Now populate the game's maps via the application pool...
     MapPath = filename:join([Dir, "maps"]),
     ok = map_generator:create_map(MapPath, "Pond"),
     ok;
 migrate(Conn, Dir, Type) ->
-    Suffix =
+    {Suffix, Namespace, Class} =
         case Type of
             main ->
-                "main";
+                {"main", <<"main">>, once};
             repeatable ->
-                "repeatable";
+                {"repeatable", <<"repeatable">>, on_change};
             test ->
-                "test"
+                {"test", <<"test">>, on_change}
         end,
     Path = filename:join([Dir, "database", "migrations", Suffix]),
     logger:debug("[~p] MIGRATION PATH: ~p", [?SERVER, Path]),
-    Options =
-        case Type of
-            main ->
-                #{repeatable => false};
-            _ ->
-                #{repeatable => true}
-        end,
-    {ok, _} = migraterl:migrate(Conn, Path, Options),
+    {ok, _} = migraterl:migrate(Conn, #{
+        namespace => Namespace,
+        sources => [{Class, Path}]
+    }),
     ok.

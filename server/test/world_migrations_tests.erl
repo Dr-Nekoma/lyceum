@@ -9,7 +9,7 @@ migrations_run_in_order_test() ->
 
     meck:expect(database, open_migrator_connection, fun() -> {ok, fake_connection} end),
     meck:expect(database, close_migrator_connection, fun(_) -> ok end),
-    meck:expect(migraterl, migrate, fun(_, _, _) -> {ok, []} end),
+    meck:expect(migraterl, migrate, fun(_, _) -> {ok, []} end),
     meck:expect(map_generator, create_map, fun(_, _) -> ok end),
 
     {ok, State, {continue, migrate}} = world_migrations:init([]),
@@ -18,11 +18,12 @@ migrations_run_in_order_test() ->
     ?assert(meck:called(database, open_migrator_connection, [])),
     ?assert(meck:called(database, close_migrator_connection, '_')),
     % main -> repeatable -> init -> test
-    ?assertEqual(4, meck:num_calls(migraterl, migrate, 3)),
+    ?assertEqual(4, meck:num_calls(migraterl, migrate, 2)),
     Dirs =
         [
             filename:basename(Path)
-         || {_Pid, {migraterl, migrate, [_Conn, Path, _Opts]}, _Ret} <- meck:history(migraterl)
+         || {_Pid, {migraterl, migrate, [_Conn, #{sources := [{_Class, Path}]}]}, _Ret} <-
+                meck:history(migraterl)
         ],
     ?assertEqual(["main", "repeatable", "init", "test"], Dirs),
     ?assertEqual(1, meck:num_calls(map_generator, create_map, 2)),
