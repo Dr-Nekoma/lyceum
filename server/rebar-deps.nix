@@ -24,6 +24,16 @@ let
       };
       beamDeps = [ ];
     };
+    fs = builder {
+      name = "fs";
+      version = "11.4.1";
+      src = fetchHex {
+        pkg = "fs";
+        version = "11.4.1";
+        sha256 = "sha256-3QCmHYnqwB0W0/xR1bDrXwci7448GjpUfNCGlX8yYKk=";
+      };
+      beamDeps = [ ];
+    };
     backoff = builder {
       name = "backoff";
       version = "1.1.6";
@@ -56,13 +66,13 @@ let
     };
     migraterl = builder {
       name = "migraterl";
-      version = "0.1.2";
+      version = "0.5.0";
       src = fetchHex {
         pkg = "migraterl";
-        version = "0.1.2";
-        sha256 = "sha256-EZusb9EPON9fudmnxsdnRWK9COA0QWUAH18mYDv42ME=";
+        version = "0.5.0";
+        sha256 = "sha256-/O1wFlQGw/TSs3GjLyvaA4p4tTNVNuK5AwWcHy5rSMc=";
       };
-      beamDeps = [ epgsql erlandono ];
+      beamDeps = [ epgsql erlandono fs ];
     };
     erlandono = builder {
       name = "erlandono";
@@ -92,7 +102,7 @@ let
         version = "3.0.4";
         sha256 = "sha256-RKH7dhTjyuh6vKhj8A5hx4xRMYK3lSINZWHM47NPVts=";
       };
-      beamDeps = [ pc ];
+      beamDeps = [ ];
     };
   };
 in self

@@ -11,6 +11,13 @@
       inherit (lyceum) app_name app_version erlangVersion;
       erl_app = "server";
 
+      # rebar3Relx/buildRebar3 have no `rebar3` argument, each build
+      # instead constructs `rebar3WithPlugins { plugins = buildPlugins; }`
+      # internally. To make a plugin globally available we therefore set
+      # `buildPlugins` on the release and on every dependency build.
+      # pc (port_compiler) is required by some of our dependencies.
+      buildPlugins = with pkgs.beamPackages; [ pc ];
+
       # Strip .nix files so edits to this module don't invalidate the
       # server build cache.
       src = lib.cleanSourceWith {
@@ -24,14 +31,14 @@
         let
           deps = import ./rebar-deps.nix {
             inherit (pkgs) fetchHex fetchFromGitHub fetchgit;
-            builder = pkgs.beamPackages.buildRebar3;
+            builder = args: pkgs.beamPackages.buildRebar3 (args // { inherit buildPlugins; });
           };
         in
         pkgs.beamPackages.rebar3Relx {
+          inherit src;
           pname = erl_app;
           version = app_version;
           root = ./.;
-          inherit src;
           releaseType = "release";
           profile = "prod";
           plugins = [

@@ -42,6 +42,17 @@
           lib,
           ...
         }:
+        let
+          # Single source of truth for the (rebar) release name and version.
+          #
+          # Parses the relx `{release, {Name, "Vsn"}, ...}` tuple out of rebar.config so
+          # the flake never hardcodes them. Whitespace is stripped first so the match is
+          # insensitive to formatting and line breaks.
+          rebarConfig = builtins.readFile ./server/rebar.config;
+          stripped = lib.replaceStrings [ " " "\t" "\n" "\r" ] [ "" "" "" "" ] rebarConfig;
+          # POSIX ERE: match literal braces via bracket expressions, not backslashes.
+          m = builtins.match ''.*[{]release,[{]([a-zA-Z0-9_]+),"([^"]+)"[}].*'' stripped;
+        in
         {
           # This sets `pkgs` to a nixpkgs with allowUnfree option set.
           _module.args.pkgs = import nixpkgs {
@@ -52,8 +63,8 @@
           # Shared constants/versions consumed by client/ and server/
           # via the `lyceum` module argument.
           _module.args.lyceum = {
-            app_name = "lyceum";
-            app_version = "0.2.3";
+            app_name = builtins.elemAt m 0;
+            app_version = builtins.elemAt m 1;
             erlangVersion = pkgs.erlang;
             zigVersion = pkgs.zig_0_15;
           };
