@@ -1,4 +1,21 @@
 -module(cache_SUITE).
+-moduledoc """
+The session store, against a real PostgreSQL.
+
+This is the one suite that does not mock `database`. It cannot: what is
+under test is mostly what the *database* guarantees -- that a player
+cannot hold two overlapping sessions, that closing one leaves it in the
+history -- and a mock is only as good as its author's guess about those
+guarantees.
+
+It skips rather than fails when PostgreSQL is unreachable or the schema
+has not been migrated, so `just test` still works on a machine that has
+never run `just db-up`.
+
+Every test uses its own random `player_id`, so the suite is safe to run
+repeatedly against a database it does not own and safe to run beside
+another copy of itself.
+""".
 
 -include_lib("common_test/include/ct.hrl").
 -include_lib("eunit/include/eunit.hrl").
@@ -6,138 +23,280 @@
 -include("player_state.hrl").
 
 %% CT Callbacks
--export([all/0, groups/0, init_per_group/2, end_per_group/2, init_per_testcase/2,
-         end_per_testcase/2]).
-%% Test cases
--export([test_get_by_id_success/1, test_get_by_id_failure/1]).
--export([test_login_success/1, test_logout_success/1, test_upsert_record_success/1]).
+-export([all/0, init_per_suite/1, end_per_suite/1, init_per_testcase/2, end_per_testcase/2]).
 
-%%--------------------------------------------------------------------
-%% CT Callbacks
-%%--------------------------------------------------------------------
+%% Test cases
+-export([
+    test_login_opens_a_session/1,
+    test_login_returns_previous_client_pid/1,
+    test_logout_closes_the_session/1,
+    test_logout_keeps_the_history/1,
+    test_get_by_id_without_session/1,
+    test_close_sessions_of_node/1,
+    test_stale_sessions_are_closed_once/1,
+    test_concurrent_logins_leave_one_open_session/1
+]).
+
+-define(CONCURRENT_LOGINS, 12).
 
 all() ->
-    [{group, query_operations}, {group, cache_functions}].
+    [
+        test_login_opens_a_session,
+        test_login_returns_previous_client_pid,
+        test_logout_closes_the_session,
+        test_logout_keeps_the_history,
+        test_get_by_id_without_session,
+        test_close_sessions_of_node,
+        test_stale_sessions_are_closed_once,
+        test_concurrent_logins_leave_one_open_session
+    ].
 
-groups() ->
-    [{query_operations, [test_get_by_id_success, test_get_by_id_failure]},
-     {cache_functions, [test_login_success, test_logout_success, test_upsert_record_success]}].
+init_per_suite(Config) ->
+    ok = application:set_env(lyceum_cluster, node_types, [service]),
+    ok = application:set_env(database, root_dir, server_root()),
+    case application:ensure_all_started(database) of
+        {ok, Started} ->
+            case schema_present() of
+                true ->
+                    [{started, Started} | Config];
+                false ->
+                    stop_all(Started),
+                    {skip, "player.session is missing; run `just db-up` first"}
+            end;
+        {error, Reason} ->
+            {skip, lists:flatten(io_lib:format("database app unavailable: ~p", [Reason]))}
+    end.
 
-init_per_group(Name, Config) ->
-    ct:pal("Starting group: ~p~n", [Name]),
+end_per_suite(Config) ->
+    stop_all(?config(started, Config)),
+    ok = application:unset_env(lyceum_cluster, node_types),
+    ok = application:unset_env(database, root_dir),
     Config.
 
-end_per_group(Name, Config) ->
-    ct:pal("Ending Group: ~p~n", [Name]),
-    Config.
+init_per_testcase(_TestCase, Config) ->
+    [{player_id, unique_player_id()} | Config].
 
-init_per_testcase(TestCase, Config) ->
-    %% cache no longer touches Postgres at startup, so no DB mocking
-    %% is required here.
-    {ok, Pid} = cache:start_link(),
-    ct:pal("[~p] Gen Server started at ~p", [TestCase, Pid]),
-
-    %% Create test data
-    TestPlayer =
-        #player_cache{player_id = "uid",
-                      username = "player",
-                      email = "player@email.com",
-                      client_pid = self()},
-
-    gen_server:cast(cache, {upsert_record, TestPlayer}),
-    timer:sleep(100), %% Allow cast to complete
-
-    [{server_pid, Pid}, {test_player_01, TestPlayer} | Config].
-
-end_per_testcase(TestCase, Config) ->
-    ct:comment("Ending test case: ~p", [TestCase]),
-
-    %% Stop the server
-    ServerPid = ?config(server_pid, Config),
-    gen_server:stop(ServerPid),
-
-    %% Clean up test tables
-    mnesia:stop(),
-    mnesia:delete_schema([node()]),
-    catch mnesia:delete_table(player_cache),
-
+end_per_testcase(_TestCase, Config) ->
+    purge(?config(player_id, Config)),
     Config.
 
 %%--------------------------------------------------------------------
 %% Test Cases
 %%--------------------------------------------------------------------
-%% Simple Queries
-test_get_by_id_success(Config) ->
-    TestCache = ?config(test_player_01, Config),
-    PlayerId = TestCache#player_cache.player_id,
-    Username = TestCache#player_cache.username,
-    Email = TestCache#player_cache.email,
 
-    %% Test get by ID
-    {ok, C} = gen_server:call(cache, {get_by_id, PlayerId}),
+test_login_opens_a_session(Config) ->
+    PlayerId = ?config(player_id, Config),
+    Cache = player(PlayerId, self()),
 
-    ?assertEqual(PlayerId, C#player_cache.player_id),
-    ?assertEqual(Username, C#player_cache.username),
-    ?assertEqual(Email, C#player_cache.email).
+    %% Nobody was logged in, so there is no previous session to kick.
+    ?assertEqual({ok, Cache, undefined}, cache:login(Cache, node())),
 
-test_get_by_id_failure(_Config) ->
-    {error, _} = gen_server:call(cache, {get_by_id, "nonexistent"}).
+    {ok, Stored} = cache:get_by_id(PlayerId),
+    ?assertEqual(PlayerId, Stored#player_cache.player_id),
+    ?assertEqual(Cache#player_cache.username, Stored#player_cache.username),
+    ?assertEqual(Cache#player_cache.email, Stored#player_cache.email),
+    %% The pid survives the round trip through bytea, which text
+    %% encoding would not have managed across nodes.
+    ?assertEqual(self(), Stored#player_cache.client_pid),
+    ?assertEqual(1, open_sessions(PlayerId)).
 
-%% Cache Operations
-test_login_success(Config) ->
-    NewPlayer =
-        #player_cache{player_id = "uid2",
-                      username = "mmagueta",
-                      email = "mmagueta@example.com",
-                      client_pid = self()},
-    Request1 = {login, NewPlayer},
+test_login_returns_previous_client_pid(Config) ->
+    PlayerId = ?config(player_id, Config),
+    First = spawn(fun() -> receive stop -> ok end end),
 
-    %% Test if a new player is properly cached
-    {ok, C1} = gen_server:call(cache, Request1),
+    {ok, _, undefined} = cache:login(player(PlayerId, First), node()),
 
-    ?assertEqual(NewPlayer#player_cache.player_id, C1#player_cache.player_id),
-    ?assertEqual(NewPlayer#player_cache.username, C1#player_cache.username),
-    ?assertEqual(NewPlayer#player_cache.email, C1#player_cache.email),
+    %% The second login is handed the first session's client pid, which
+    %% is the whole mechanism behind kicking a duplicate login.
+    Second = player(PlayerId, self()),
+    ?assertEqual({ok, Second, First}, cache:login(Second, node())),
 
-    %% Now the same for a player already logged in
-    TestCache = ?config(test_player_01, Config),
-    Request2 = {login, TestCache},
-    {ok, C2} = gen_server:call(cache, Request2),
+    %% ... and it replaced it rather than joining it.
+    ?assertEqual(1, open_sessions(PlayerId)),
+    ?assertEqual(2, total_sessions(PlayerId)),
+    First ! stop.
 
-    ?assertEqual(TestCache#player_cache.player_id, C2#player_cache.player_id),
-    ?assertEqual(TestCache#player_cache.username, C2#player_cache.username),
-    ?assertEqual(TestCache#player_cache.email, C2#player_cache.email).
+test_logout_closes_the_session(Config) ->
+    PlayerId = ?config(player_id, Config),
+    {ok, _, undefined} = cache:login(player(PlayerId, self()), node()),
 
-test_upsert_record_success(_Config) ->
-    NewPlayer =
-        #player_cache{player_id = "uid2",
-                      username = "mmagueta",
-                      email = "mmagueta@example.com",
-                      client_pid = self()},
-    Request1 = {upsert_record, NewPlayer},
+    ?assertEqual(ok, cache:logout(PlayerId)),
+    ?assertEqual({error, not_found}, cache:get_by_id(PlayerId)),
+    ?assertEqual(0, open_sessions(PlayerId)),
 
-    %% Test if a new player is properly cached
-    ok = gen_server:cast(cache, Request1),
-    %% Allow cast to complete
-    timer:sleep(200),
+    %% Logging out twice is not an error: the second finds nothing open.
+    ?assertEqual(ok, cache:logout(PlayerId)).
 
-    Request2 = {get_by_id, NewPlayer#player_cache.player_id},
-    {ok, C1} = gen_server:call(cache, Request2),
+test_logout_keeps_the_history(Config) ->
+    PlayerId = ?config(player_id, Config),
+    {ok, _, undefined} = cache:login(player(PlayerId, self()), node()),
+    ok = cache:logout(PlayerId),
 
-    ?assertEqual(NewPlayer#player_cache.player_id, C1#player_cache.player_id),
-    ?assertEqual(NewPlayer#player_cache.username, C1#player_cache.username),
-    ?assertEqual(NewPlayer#player_cache.email, C1#player_cache.email).
+    %% Closed, not deleted: the row is the record that this player was
+    %% online, and when.
+    ?assertEqual(1, total_sessions(PlayerId)),
+    ?assertEqual(0, open_sessions(PlayerId)),
+    ?assertEqual(0, empty_periods(PlayerId)).
 
-test_logout_success(Config) ->
-    TestPlayer = ?config(test_player_01, Config),
-    Request1 = {logout, TestPlayer#player_cache.player_id},
-    ok = gen_server:cast(cache, Request1),
-    %% Allow cast to complete
-    timer:sleep(200),
+test_get_by_id_without_session(Config) ->
+    ?assertEqual({error, not_found}, cache:get_by_id(?config(player_id, Config))).
 
-    Request2 = {get_by_id, TestPlayer#player_cache.player_id},
-    {error, _} = gen_server:call(cache, Request2).
+test_close_sessions_of_node(Config) ->
+    PlayerId = ?config(player_id, Config),
+    Owner = 'lyceum_logic@nowhere',
+    {ok, _, undefined} = cache:login(player(PlayerId, self()), Owner),
+    ?assertEqual(1, open_sessions(PlayerId)),
+
+    %% What the reaper does when a logic node dies: its players are gone
+    %% with it, so their sessions are over.
+    ?assertEqual(ok, cache:close_sessions_of_node(Owner)),
+    ?assertEqual(0, open_sessions(PlayerId)),
+    ?assertEqual(1, total_sessions(PlayerId)).
+
+test_stale_sessions_are_closed_once(Config) ->
+    PlayerId = ?config(player_id, Config),
+    Owner = 'lyceum_logic@nowhere',
+    {ok, _, undefined} = cache:login(player(PlayerId, self()), Owner),
+
+    %% A session opened a moment ago is not stale, whatever its owner.
+    {ok, Fresh} = cache:stale_sessions(3600, 100),
+    ?assertNot(lists:member({PlayerId, Owner}, Fresh)),
+
+    %% With the threshold at zero it is a candidate...
+    {ok, Candidates} = cache:stale_sessions(0, 100),
+    ?assert(lists:member({PlayerId, Owner}, Candidates)),
+
+    %% ... and closing it reports the one row it actually changed.
+    ?assertEqual({ok, 1}, cache:close_stale_session(PlayerId, Owner, 0)),
+    ?assertEqual(0, open_sessions(PlayerId)),
+
+    %% Repeating it closes nothing: the re-check in the statement is
+    %% what keeps a session that stopped being stale from being reaped.
+    ?assertEqual({ok, 0}, cache:close_stale_session(PlayerId, Owner, 0)).
+
+test_concurrent_logins_leave_one_open_session(Config) ->
+    PlayerId = ?config(player_id, Config),
+    Parent = self(),
+
+    %% Every worker logs the same player in at the same moment. The
+    %% advisory lock serialises them and the temporal primary key is the
+    %% backstop, so the outcome must be exactly one live session no
+    %% matter how the interleaving falls.
+    Workers = [
+        spawn_monitor(fun() ->
+            Client = spawn(fun() -> receive stop -> ok end end),
+            Parent ! {result, self(), cache:login(player(PlayerId, Client), node())}
+        end)
+     || _ <- lists:seq(1, ?CONCURRENT_LOGINS)
+    ],
+    Results = collect(Workers, []),
+
+    Succeeded = [R || {ok, _, _} = R <- Results],
+    Failed = Results -- Succeeded,
+
+    %% A crashed worker must fail the test rather than be absorbed by a
+    %% count that only looks at the survivors.
+    ?assertEqual(?CONCURRENT_LOGINS, length(Results)),
+    ?assertEqual([], Failed),
+    ?assertEqual(?CONCURRENT_LOGINS, length(Succeeded)),
+
+    ?assertEqual(1, open_sessions(PlayerId)),
+    ?assertEqual(?CONCURRENT_LOGINS, total_sessions(PlayerId)),
+    %% Adjacent periods, never overlapping and never degenerate.
+    ?assertEqual(0, empty_periods(PlayerId)),
+
+    %% Exactly one login found no predecessor. The other eleven each
+    %% picked up the session before them, which is the chain that makes
+    %% every duplicate login kick somebody.
+    Firsts = [R || {ok, _, undefined} = R <- Succeeded],
+    ?assertEqual(1, length(Firsts)).
 
 %%--------------------------------------------------------------------
-%% Helper Functions
+%% Helpers
 %%--------------------------------------------------------------------
+
+collect([], Acc) ->
+    Acc;
+collect([{Pid, Ref} | Rest], Acc) ->
+    receive
+        {result, Pid, Result} ->
+            %% Drain the DOWN so it cannot be mistaken for another
+            %% worker's later.
+            receive
+                {'DOWN', Ref, process, Pid, _} -> ok
+            after 5000 -> ct:fail({worker_never_exited, Pid})
+            end,
+            collect(Rest, [Result | Acc]);
+        {'DOWN', Ref, process, Pid, Reason} when Reason =/= normal ->
+            ct:fail({worker_crashed, Pid, Reason})
+    after 15000 ->
+        ct:fail({worker_timeout, Pid})
+    end.
+
+player(PlayerId, ClientPid) ->
+    #player_cache{
+        player_id = PlayerId,
+        username = "session_" ++ integer_to_list(PlayerId),
+        email = "session_" ++ integer_to_list(PlayerId) ++ "@example.com",
+        client_pid = ClientPid
+    }.
+
+-doc """
+A player id no other run will pick.
+
+`erlang:unique_integer/1` restarts with the VM, so two `rebar3 ct` runs
+against the same database would hand out the same ids and the second
+would be testing the first run's leftovers.
+""".
+unique_player_id() ->
+    <<Id:63/unsigned-integer, _:1>> = crypto:strong_rand_bytes(8),
+    Id.
+
+open_sessions(PlayerId) ->
+    count("SELECT count(*) AS n FROM player.session "
+          "WHERE player_id = $1 AND upper(valid_at) = 'infinity'", PlayerId).
+
+total_sessions(PlayerId) ->
+    count("SELECT count(*) AS n FROM player.session WHERE player_id = $1", PlayerId).
+
+empty_periods(PlayerId) ->
+    count("SELECT count(*) AS n FROM player.session "
+          "WHERE player_id = $1 AND isempty(valid_at)", PlayerId).
+
+count(SQL, PlayerId) ->
+    #{rows := [#{n := N}]} = database:query(lyceum_pool, SQL, [PlayerId]),
+    N.
+
+purge(PlayerId) ->
+    _ = database:query(lyceum_pool, "DELETE FROM player.session WHERE player_id = $1", [PlayerId]),
+    ok.
+
+-doc "True only if the database answers *and* has been migrated.".
+schema_present() ->
+    Query = "SELECT to_regclass('player.session') IS NOT NULL AS present",
+    try database:query(lyceum_pool, Query, []) of
+        #{rows := [#{present := true}]} -> true;
+        _Other -> false
+    catch
+        _:_ -> false
+    end.
+
+-doc """
+The server directory, where `database/queries` lives.
+
+Under CT the code path is `<server>/_build/test/lib/database`, which is
+not a release layout, so `database_queries` has to be pointed at the
+tree explicitly -- the same reason the `just cluster` nodes set it.
+""".
+server_root() ->
+    lists:foldl(
+        fun(_, Path) -> filename:dirname(Path) end,
+        filename:absname(code:lib_dir(database)),
+        lists:seq(1, 4)
+    ).
+
+stop_all(undefined) ->
+    ok;
+stop_all(Started) ->
+    _ = [application:stop(App) || App <- lists:reverse(Started)],
+    ok.

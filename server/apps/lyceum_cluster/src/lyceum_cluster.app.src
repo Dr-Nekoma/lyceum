@@ -1,0 +1,28 @@
+{application, lyceum_cluster, [
+    {description, "Cluster membership and service discovery shared by every node type"},
+    {vsn, {git, short}},
+    {registered, [lyceum_cluster_sup, lyceum_cluster_connector]},
+    {mod, {lyceum_cluster_app, []}},
+    {applications, [
+        kernel,
+        stdlib,
+        sasl
+    ]},
+    {env, [
+        % node_types has no default on purpose. A node that does not
+        % declare which layers it hosts is a configuration bug and must
+        % fail to boot rather than guess.
+        {peers, []},
+        {connect_retry_base_ms, 1000},
+        {connect_retry_max_ms, 30000}
+    ]},
+    {modules, [
+        lyceum_cluster,
+        lyceum_cluster_app,
+        lyceum_cluster_backoff,
+        lyceum_cluster_connector,
+        lyceum_cluster_sup
+    ]},
+    {licenses, ["Apache-2.0"]},
+    {links, []}
+]}.

@@ -1,8 +1,32 @@
-## Name of the node
+## Name of the node.
+##
+## One release boots as a frontend, logic or service node depending on
+## its environment, so the name comes from $LYCEUM_NODE_NAME.
+##
+## The frontend node's name is load-bearing for the Zig client, not
+## just cosmetic: zerl's establish_connection/3 builds the target node
+## name as "lyceum_server@" ++ <address typed in the client>, so
+## whichever node hosts the client-facing gateway has to be started
+## with LYCEUM_NODE_NAME=lyceum_server. Renaming it requires a matching
+## client change.
+##
+## Short names also have to stay: zerl inits its C node with
+## ei_connect_init, which is short-name mode, and a long-name VM
+## refuses those connections. Short names are enough for same-host
+## multi-node work, which covers development and the test clusters.
+## Going multi-host later means moving the client to
+## ei_connect_xinit first.
 -sname lyceum_server
 
 ## Cookie for distributed Erlang
 -setcookie lyceum
+
+## Connect only to the peers in LYCEUM_PEERS, never transitively to
+## whatever they are connected to. This is what keeps the layering
+## real: a frontend node linked to logic does not learn about the
+## service nodes behind it, and `pg` (which never relays across an
+## intermediate node) therefore cannot show it a service worker.
+-kernel connect_all false
 
 ## Extra options
 -heart

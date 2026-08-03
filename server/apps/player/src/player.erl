@@ -20,8 +20,6 @@
 -include("player_state.hrl").
 -include("player_fsm_state.hrl").
 
--compile({parse_transform, do}).
-
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -38,7 +36,7 @@ start_link(Cache) ->
     PlayerId = Cache#player_cache.player_id,
     State = to_state(Cache),
     logger:debug("[~p] GEN_STATEM ID = ~p WITH STATE = ~p~n", [?MODULE, PlayerId, State]),
-    gen_statem:start_link({global, PlayerId}, ?MODULE, State, []).
+    gen_statem:start_link(?MODULE, State, []).
 
 %%%===================================================================
 %%% gen_statem callbacks
@@ -57,12 +55,12 @@ Initializes the state machine
     State :: player_state(),
     Return :: gen_statem:init_result(player_fsm_state()).
 init(State) ->
-    ClientPid = State#player_state.client_pid,
-    PlayerData = State#player_state.data,
-    PlayerEmail = PlayerData#player_data.email,
-    PlayerPid = self(),
-    Reply = {ok, {PlayerPid, PlayerEmail}},
-    ClientPid ! Reply,
+    %% The login reply travels back through player_session; this
+    %% process never talks to the client directly, only to its proxy.
+    %% The pg membership replaces the old {global, PlayerId} name: it
+    %% is observability plus a kick fallback, never a routing handle.
+    ok = lyceum_cluster:join({player, State#player_state.player_id}),
+    _ = monitor(process, State#player_state.client_pid),
     {ok, logged_in, State}.
 
 %%%===================================================================
@@ -180,6 +178,22 @@ code_change(_OldVsn, StateName, State, _Extra) ->
     EventType :: gen_statem:event_type(),
     State :: player_state(),
     Return :: gen_statem:event_handler_result(atom()).
+handle_common_events(
+    info,
+    {'DOWN', _Ref, process, Pid, Reason},
+    #player_state{client_pid = Pid} = State,
+    StateName
+) ->
+    %% The proxy is gone: client disconnect, kick by a newer login, or
+    %% a lost frontend. Deactivate the character but leave the session
+    %% cache row alone, after a kick that row already belongs to the
+    %% new session, and a stale row is healed by the next login.
+    logger:info(
+        "[~p] Proxy ~p went down in state ~p: ~p~n",
+        [?MODULE, Pid, StateName, Reason]
+    ),
+    _ = lyceum_service:exit_map(character_id(State)),
+    {stop, normal, State};
 handle_common_events(EventType, Info, State, StateName) ->
     logger:warning(
         "[~p] UNHANDLED EVENT ~p IN STATE ~p: ~p~n",
@@ -210,10 +224,9 @@ to_state(Cache) ->
     Return :: ok.
 list_characters(State, #{email := _, username := Username} = Request) ->
     logger:info("[~p] Querying ~p's characters...~n", [?MODULE, Username]),
-    Reply = character:player_characters(Request, lyceum_pool),
+    Reply = lyceum_service:list_characters(Request),
     logger:info("[~p] Characters: ~p~n", [?MODULE, Reply]),
-    State#player_state.client_pid ! Reply,
-    ok.
+    reply_to_client(State, Reply).
 
 -spec joining_map(State, Map) -> Return when
     State :: player_state(),
@@ -222,24 +235,14 @@ list_characters(State, #{email := _, username := Username} = Request) ->
     Map :: #{name := Name, map_name := MapName},
     Reason :: string(),
     Return :: ok | {error, Reason}.
-joining_map(State, #{name := Name, map_name := MapName} = Request) ->
-    Pid = State#player_state.client_pid,
-    case character:activate(Request, lyceum_pool) of
-        ok ->
-            logger:info("[~p] Retrieving ~p's updated info...", [?MODULE, Name]),
-            Result =
-                do([
-                    error_m
-                 || Character <- character:player_character(Request, lyceum_pool),
-                    Map <- map:get_map(MapName, lyceum_pool),
-                    logger:info("Retrieving ~p's map...", [MapName]),
-                    return(#{character => Character, map => Map})
-                ]),
-            Pid ! Result,
-            ok;
+joining_map(State, #{name := Name, map_name := _} = Request) ->
+    logger:info("[~p] ~p is joining a map...", [?MODULE, Name]),
+    case lyceum_service:join_map(Request) of
+        {ok, _} = Result ->
+            reply_to_client(State, Result);
         {error, Message} ->
             logger:error("Failed to Join Map: ~p~n", [Message]),
-            Pid ! {error, "Could not join map"},
+            ok = reply_to_client(State, {error, "Could not join map"}),
             {error, Message}
     end.
 
@@ -248,58 +251,57 @@ atom_to_upperstring(Atom) ->
 
 -spec harvest_resource(player_state(), map()) -> ok.
 harvest_resource(State, Request) ->
-    Pid = State#player_state.client_pid,
     Result =
-        character:harvest_resource(
-            maps:update_with(kind, fun atom_to_upperstring/1, Request), lyceum_pool
+        lyceum_service:harvest_resource(
+            maps:update_with(kind, fun atom_to_upperstring/1, Request)
         ),
     logger:info("Harvest Result: ~p\n", [Result]),
-    Pid ! Result.
+    reply_to_client(State, Result).
 
 -spec update(player_state(), map()) -> ok.
 update(State, CharacterMap) ->
-    Pid = State#player_state.client_pid,
-    case character:update(CharacterMap, lyceum_pool) of
-        ok ->
-            Result = character:retrieve_near_players(CharacterMap, lyceum_pool),
-            Pid ! Result,
-            ok;
+    case lyceum_service:update_character(CharacterMap) of
+        {ok, _} = Result ->
+            reply_to_client(State, Result);
         {error, Message} ->
             logger:error("Failed to Update: ~p~n", [Message]),
-            Pid ! {error, Message},
-            ok
+            reply_to_client(State, {error, Message})
     end.
 
 -spec exit_map(player_state()) -> ok | {error, term()}.
 exit_map(State) ->
-    Pid = State#player_state.client_pid,
-    Name = State#player_state.data#player_data.character_name,
-    Email = State#player_state.data#player_data.email,
-    Username = State#player_state.data#player_data.username,
-    case character:deactivate(Name, Email, Username, lyceum_pool) of
+    case lyceum_service:exit_map(character_id(State)) of
         ok ->
-            Pid ! ok,
-            ok;
+            reply_to_client(State, ok);
         {error, Message} ->
             logger:error("[~p] Failed to ExitMap: ~p~n", [?MODULE, Message]),
-            Pid ! {error, Message},
+            ok = reply_to_client(State, {error, Message}),
             {error, Message}
     end.
 
--spec logout(State) -> Exit when
+-spec logout(State) -> Return when
     State :: player_state(),
-    Exit :: no_return().
+    Return :: ok.
 logout(State) ->
-    Pid = State#player_state.client_pid,
-    Name = State#player_state.data#player_data.character_name,
-    Email = State#player_state.data#player_data.email,
-    Username = State#player_state.data#player_data.username,
-    case character:deactivate(Name, Email, Username, lyceum_pool) of
+    Request = maps:put(player_id, State#player_state.player_id, character_id(State)),
+    case lyceum_service:logout_player(Request) of
         ok ->
-            cache:logout(State#player_state.player_id),
-            Pid ! ok,
-            ok;
+            reply_to_client(State, ok);
         {error, Message} ->
-            Pid ! {error, Message},
-            ok
+            reply_to_client(State, {error, Message})
     end.
+
+%% Client-bound messages are tagged so the proxy can tell them apart
+%% from client-originated traffic it forwards the other way.
+-spec reply_to_client(player_state(), term()) -> ok.
+reply_to_client(State, Msg) ->
+    State#player_state.client_pid ! {reply, Msg},
+    ok.
+
+-spec character_id(player_state()) -> #{name := _, email := _, username := _}.
+character_id(State) ->
+    #{
+        name => State#player_state.data#player_data.character_name,
+        email => State#player_state.data#player_data.email,
+        username => State#player_state.data#player_data.username
+    }.

@@ -8,14 +8,23 @@ set dotenv-load := true
 # --------------
 # Application
 
-database := justfile_directory() + "server/database"
+database := justfile_directory() + "/server/database"
 server := justfile_directory() + "/server"
 client := justfile_directory() + "/client"
 server_port := "8080"
 application := "lyceum"
 
-# Deploy
-deploy_host := env_var_or_default("DEPLOY_HOST", "127.0.0.1")
+# Cluster personality of the node `just server` starts. One release
+# boots as any of the three layers; the default is all-in-one, which is
+# what a single-machine development setup wants. `set export` above
+# means these reach the release as environment variables, which is how
+# config/{sys.config,vm.args}.src get filled in.
+#
+# LYCEUM_NODE_NAME has to stay `lyceum_server` on whichever node hosts
+# the frontend: that is the name the Zig client dials.
+LYCEUM_NODE_NAME := env_var_or_default("LYCEUM_NODE_NAME", "lyceum_server")
+LYCEUM_NODE_TYPES := env_var_or_default("LYCEUM_NODE_TYPES", "frontend,logic,service")
+LYCEUM_PEERS := env_var_or_default("LYCEUM_PEERS", "")
 
 # Utils
 
@@ -83,7 +92,7 @@ client-deps:
 # --------
 
 build:
-    cd {{ server }} && rebar3 compile && rebar3 release as default
+    cd {{ server }} && rebar3 compile && rebar3 as default release
 
 # Fetches rebar3 dependencies, updates both the rebar and nix lockfiles
 deps:
@@ -104,6 +113,15 @@ server: build
     cd {{ server }} && \
         rebar3 release -n {{ application }} && \
         ./_build/default/rel/{{ application }}/bin/{{ application }} foreground
+
+# Runs a local 3-node cluster with braid (needs `just dbu`; closing the shell stops it)
+cluster:
+    #!/usr/bin/env bash
+    cd {{ server }} && \
+        rebar3 as dev compile && \
+        erl -sname lyceum_braid -setcookie lyceum \
+            -pa _build/dev/lib/*/ebin -pa _build/dev/extras/dev \
+            -eval 'lyceum_dev:cluster().'
 
 # Runs unit tests in the server
 test:
@@ -144,15 +162,10 @@ release-nix:
 build-docker:
     nix build .#dockerImage
 
-# Builds and deploys a release in the host VM
-deploy:
-    @echo "Attemping to deploy to: {{deploy_host}}"
-    ./deploy.sh --deploy-host {{deploy_host}}
-
 # Starts the deployed code
 start:
     #!/usr/bin/env bash
-    export SERVER_APP=lyceum_server
+    export SERVER_APP=lyceum
     export ERL_DIST_PORT=8080
     if [[ $(./result/bin/$SERVER_APP ping) == "pong" ]]; then
         ./result/bin/$SERVER_APP stop

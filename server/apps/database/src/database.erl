@@ -8,6 +8,7 @@ migrations (which is still hardcoded against epgsql)
 -export([query/2, query/3, transaction/2]).
 -export([pool_configs/0, pool_options/1]).
 -export([open_migrator_connection/0, close_migrator_connection/1]).
+-export([lock_migrations/1, unlock_migrations/1]).
 
 -include_lib("database/include/pool.hrl").
 -export_type([pool_name/0, pool_role/0, pool_config/0, query_result/0]).
@@ -20,10 +21,12 @@ migrations (which is still hardcoded against epgsql)
 -define(PG_APP_PASSWORD, os:getenv("PGPASSWORD", "application")).
 -define(PG_AUTH_USER, os:getenv("PG_AUTH_USER", "lyceum_auth")).
 -define(PG_AUTH_PASSWORD, os:getenv("PG_AUTH_PASSWORD", "lyceum_auth")).
--define(PG_MNESIA_USER, os:getenv("PG_MNESIA_USER", "mnesia")).
--define(PG_MNESIA_PASSWORD, os:getenv("PG_MNESIA_PASSWORD", "mnesia")).
 -define(PG_MIGRATERL_USER, os:getenv("PG_MIGRATERL_USER", "migrations")).
 -define(PG_MIGRATERL_PASSWORD, os:getenv("PG_MIGRATERL_PASSWORD", "migrations")).
+
+%% Hashed in-database into the advisory lock key, so the value is a
+%% name rather than a magic number.
+-define(LOCK_KEY, <<"lyceum_migrations">>).
 
 %%%===================================================================
 %%% Pool configuration (consumed by database_sup)
@@ -39,8 +42,7 @@ pool_configs() ->
 default_pool_configs() ->
     [
         #{name => lyceum_pool, role => application, size => 10},
-        #{name => auth_pool, role => auth, size => 4},
-        #{name => mnesia_pool, role => mnesia, size => 4}
+        #{name => auth_pool, role => auth, size => 4}
     ].
 
 -spec pool_options(pool_config()) -> map().
@@ -59,8 +61,7 @@ pool_options(#{role := Role, size := Size}) ->
 
 -spec role_credentials(pool_role()) -> {string(), string()}.
 role_credentials(application) -> {?PG_APP_USER, ?PG_APP_PASSWORD};
-role_credentials(auth) -> {?PG_AUTH_USER, ?PG_AUTH_PASSWORD};
-role_credentials(mnesia) -> {?PG_MNESIA_USER, ?PG_MNESIA_PASSWORD}.
+role_credentials(auth) -> {?PG_AUTH_USER, ?PG_AUTH_PASSWORD}.
 
 %%%===================================================================
 %%% Query API
@@ -139,4 +140,32 @@ open_migrator_connection() ->
 -spec close_migrator_connection(epgsql:connection()) -> ok.
 close_migrator_connection(Conn) ->
     _ = epgsql:close(Conn),
+    ok.
+
+-doc """
+Takes the cluster-wide migration lock on a migrator connection.
+
+migraterl already locks per namespace, but only *after* it has ensured
+its journal exists, and it creates that with `CREATE SCHEMA IF NOT
+EXISTS`. That is not atomic against a concurrent creator: two service
+nodes booting against a fresh database both pass the existence check and
+the loser fails on `pg_namespace`'s unique index. The lock has to be
+taken before migraterl is called at all, which means here.
+
+Session-level rather than transaction-level, because migraterl runs its
+own transactions on this connection and the lock has to outlive them.
+The key is derived in-database from a constant so any external tool can
+compute the same one, which is the convention migraterl uses too.
+""".
+-spec lock_migrations(epgsql:connection()) -> ok | {error, term()}.
+lock_migrations(Conn) ->
+    case epgsql:equery(Conn, "SELECT pg_advisory_lock(hashtextextended($1, 0))", [?LOCK_KEY]) of
+        {ok, _, _} -> ok;
+        Other -> {error, {migration_lock_failed, Other}}
+    end.
+
+-doc "Releases the migration lock. Best-effort: closing the connection also drops it.".
+-spec unlock_migrations(epgsql:connection()) -> ok.
+unlock_migrations(Conn) ->
+    _ = epgsql:equery(Conn, "SELECT pg_advisory_unlock(hashtextextended($1, 0))", [?LOCK_KEY]),
     ok.

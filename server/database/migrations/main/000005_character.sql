@@ -1,7 +1,7 @@
 -- TYPES
 DO $$ BEGIN
     -- Movement Type
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'character.STATE_TYPE') THEN
+    IF to_regtype('"character".STATE_TYPE') IS NULL THEN
         CREATE DOMAIN character.STATE_TYPE AS TEXT 
         CONSTRAINT CHECK_STATE_TYPE
         NOT NULL CHECK (VALUE IN (
@@ -58,13 +58,39 @@ CREATE TABLE IF NOT EXISTS character.position(
     PRIMARY KEY(name, username, email)
 );
 
+-- =================================================
+-- Which characters are in the world, and when they were.
+--
+-- This is a temporal table: activating a character opens a period and
+-- deactivating closes it, rather than inserting and deleting a row. The
+-- present is `upper(valid_at) = 'infinity'`, which is all the game asks for;
+-- keeping the closed periods costs one column and turns playtime, "last
+-- seen" and session length into ordinary queries instead of data nobody
+-- has.
+--
+-- The primary key still says a character cannot be in the world twice.
+-- `WITHOUT OVERLAPS` (PostgreSQL 18) just makes it say so about every
+-- instant rather than only about now, and being an exclusion constraint
+-- it is the database refusing, not the application remembering to check.
+--
+-- Bounds are `clock_timestamp()`, never `now()`: `now()` is the
+-- transaction's start time, so a transaction that began earlier but
+-- committed later would close a period below its own lower bound, which
+-- Postgres rejects.
+-- =================================================
 CREATE TABLE IF NOT EXISTS character.active(
     name TEXT NOT NULL,
     email player.email NOT NULL,
     username TEXT NOT NULL,
+    valid_at TSTZRANGE NOT NULL DEFAULT tstzrange(clock_timestamp(), 'infinity', '[)'),
     FOREIGN KEY (name, username, email) REFERENCES character.instance(name, username, email),
-    PRIMARY KEY(name, username, email)      
+    PRIMARY KEY (name, username, email, valid_at WITHOUT OVERLAPS)
 );
+
+-- Every read is "who is in the world right now", so index exactly that.
+CREATE INDEX IF NOT EXISTS idx_character_active_open
+ON character.active (name, username, email)
+WHERE upper(valid_at) = 'infinity';
 
 CREATE TABLE IF NOT EXISTS character.item(
     name TEXT NOT NULL,

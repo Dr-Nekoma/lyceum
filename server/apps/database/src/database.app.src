@@ -9,13 +9,13 @@
         sasl,
         pgo,
         epgsql,
-        erlandono
+        erlandono,
+        lyceum_cluster
     ]},
     {env, [
         {pools, [
             #{name => lyceum_pool, role => application, size => 10},
-            #{name => auth_pool,   role => auth,        size => 4},
-            #{name => mnesia_pool, role => mnesia,      size => 4}
+            #{name => auth_pool,   role => auth,        size => 4}
         ]}
     ]},
     {modules, [

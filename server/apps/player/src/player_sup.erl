@@ -30,8 +30,7 @@
          Return :: supervisor:startlink_ret().
 start_link(Args) ->
     logger:debug("[~p] Starting CHILD with ARGS = ~p~n", [?MODULE, Args]),
-    Username = Args#player_cache.username,
-    supervisor:start_link({global, Username}, ?MODULE, Args).
+    supervisor:start_link(?MODULE, Args).
 
 %%%===================================================================
 %%% Supervisor callbacks

@@ -1,7 +1,7 @@
 -- TYPES
 DO $$ BEGIN
     -- Map Tile
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'map.TILE_TYPE') THEN
+    IF to_regtype('map.TILE_TYPE') IS NULL THEN
       CREATE DOMAIN map.TILE_TYPE AS TEXT 
       CONSTRAINT CHECK_TILE_TYPE
       NOT NULL CHECK (VALUE IN (
@@ -14,7 +14,7 @@ DO $$ BEGIN
     END IF;
 
     -- Object Type
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'map.OBJECT_TYPE') THEN
+    IF to_regtype('map.OBJECT_TYPE') IS NULL THEN
       CREATE DOMAIN map.OBJECT_TYPE AS TEXT 
       CONSTRAINT CHECK_OBJECT_TYPE
       NOT NULL CHECK (VALUE IN (
@@ -27,7 +27,7 @@ DO $$ BEGIN
     END IF;
 
     -- Map Tile Input
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'map.tile_input') THEN
+    IF to_regtype('map.tile_input') IS NULL THEN
         CREATE TYPE map.tile_input AS (
             map_name TEXT,
             tile_type map.TILE_TYPE,
@@ -42,7 +42,16 @@ END $$;
 -- Creates a SUM Type for map entities, to check it use 
 --      table omni_types.sum_types;
 -- ENTITY_TYPE = OBJECT_TYPE | TILE_TYPE
-SELECT omni_types.sum_type('map.ENTITY_TYPE', 'map.OBJECT_TYPE', 'map.TILE_TYPE');
+--
+-- Guarded because sum_type is not idempotent and the type it creates is
+-- named literally: it lands in public as "map.ENTITY_TYPE", so it
+-- survives a DROP SCHEMA map CASCADE and a second run would fail on a
+-- duplicate pg_type name.
+DO $$ BEGIN
+    IF to_regtype('public."map.ENTITY_TYPE"') IS NULL THEN
+        PERFORM omni_types.sum_type('map.ENTITY_TYPE', 'map.OBJECT_TYPE', 'map.TILE_TYPE');
+    END IF;
+END $$;
 
 -- TABLES
 CREATE TABLE IF NOT EXISTS map.instance(

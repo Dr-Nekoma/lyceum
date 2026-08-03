@@ -49,13 +49,29 @@ VALUES
 ON CONFLICT (name, kind)
 DO NOTHING;
 
--- Insert into lyceum.character_equipment
-INSERT INTO equipment.character (name, email, username, is_equiped, equipment_name, use, kind)
-VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::equipment.kind),
-       ('Huneric', 'mmagueta@example.com', 'mmagueta', true, 'Blood-Reaver''s Gauntlet', 'ARMS'::equipment.use, 'ARMS'::equipment.kind),
-       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::equipment.kind),
-       ('Scipio', 'benin@example.com', 'benin', true, 'Legate''s Pugio', 'RIGHT_ARM', 'ARMS'::equipment.kind),
-       ('Scipio', 'benin@example.com', 'benin', true, 'Sussman''s Lispy Fez', 'HEAD', 'HEAD'::equipment.kind),
-       ('Legion', 'lemos@example.com', 'lemos', true, 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::equipment.kind)
+-- What each character owns.
+INSERT INTO equipment.character (name, email, username, equipment_name, kind)
+VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 'Vandal''s Prima', 'ARMS'::equipment.kind),
+       ('Huneric', 'mmagueta@example.com', 'mmagueta', 'Blood-Reaver''s Gauntlet', 'ARMS'::equipment.kind),
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 'Vandal''s Prima', 'ARMS'::equipment.kind),
+       ('Scipio', 'benin@example.com', 'benin', 'Legate''s Pugio', 'ARMS'::equipment.kind),
+       ('Scipio', 'benin@example.com', 'benin', 'Sussman''s Lispy Fez', 'HEAD'::equipment.kind),
+       ('Legion', 'lemos@example.com', 'lemos', 'Vandal''s Prima', 'ARMS'::equipment.kind)
 ON CONFLICT (name, username, email, equipment_name)
 DO NOTHING;
+
+-- What each character is wearing, from now until they take it off.
+-- Note Huneric wears two ARMS pieces in different slots (RIGHT_ARM and
+-- ARMS), which the slot constraint allows; two items in the *same* slot
+-- at the same time is what it now refuses.
+--
+-- DO NOTHING without a conflict target on purpose: the keys here are
+-- exclusion constraints, and only the untargeted form covers those.
+INSERT INTO equipment.equipped (name, email, username, equipment_name, use, kind)
+VALUES ('Huneric', 'mmagueta@example.com', 'mmagueta', 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::equipment.kind),
+       ('Huneric', 'mmagueta@example.com', 'mmagueta', 'Blood-Reaver''s Gauntlet', 'ARMS'::equipment.use, 'ARMS'::equipment.kind),
+       ('Gaiseric', 'mmagueta@example.com', 'mmagueta', 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::equipment.kind),
+       ('Scipio', 'benin@example.com', 'benin', 'Legate''s Pugio', 'RIGHT_ARM', 'ARMS'::equipment.kind),
+       ('Scipio', 'benin@example.com', 'benin', 'Sussman''s Lispy Fez', 'HEAD', 'HEAD'::equipment.kind),
+       ('Legion', 'lemos@example.com', 'lemos', 'Vandal''s Prima', 'RIGHT_ARM', 'ARMS'::equipment.kind)
+ON CONFLICT DO NOTHING;

@@ -18,6 +18,7 @@ logs
 .idea
 *.iml
 rebar3.crashdump
+*.coverdata
 *~
 
 # Zig

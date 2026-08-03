@@ -25,6 +25,19 @@ to_rel(Path) ->
 
 -spec get_root_dir() -> file:name_all().
 get_root_dir() ->
+    case application:get_env(database, root_dir) of
+        {ok, Dir} ->
+            % Set explicitly when the code is not running from a
+            % release layout, as in the `just cluster` dev nodes, where
+            % `database/migrations` sits next to the build directory
+            % rather than inside it.
+            Dir;
+        undefined ->
+            infer_root_dir()
+    end.
+
+-spec infer_root_dir() -> file:name_all().
+infer_root_dir() ->
     LibDir =
         filename:absname(
             code:lib_dir(database)
@@ -80,4 +93,20 @@ fetch_query("map" = D, "harvest_resource.sql" = F) ->
 fetch_query("map" = D, "select_resource_quantity.sql" = F) ->
     read_embedded_query(D, F);
 fetch_query("map" = D, "select_tiles.sql" = F) ->
+    read_embedded_query(D, F);
+fetch_query("session" = D, "lock_player.sql" = F) ->
+    read_embedded_query(D, F);
+fetch_query("session" = D, "select_session.sql" = F) ->
+    read_embedded_query(D, F);
+fetch_query("session" = D, "select_open_session.sql" = F) ->
+    read_embedded_query(D, F);
+fetch_query("session" = D, "open_session.sql" = F) ->
+    read_embedded_query(D, F);
+fetch_query("session" = D, "close_open_session.sql" = F) ->
+    read_embedded_query(D, F);
+fetch_query("session" = D, "close_sessions_by_node.sql" = F) ->
+    read_embedded_query(D, F);
+fetch_query("session" = D, "select_stale_sessions.sql" = F) ->
+    read_embedded_query(D, F);
+fetch_query("session" = D, "close_stale_session.sql" = F) ->
     read_embedded_query(D, F).

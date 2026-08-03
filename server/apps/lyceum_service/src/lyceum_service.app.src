@@ -1,0 +1,36 @@
+{application, lyceum_service, [
+    {description, "Service-layer facade owning every PostgreSQL and session-cache operation"},
+    {vsn, {git, short}},
+    {registered, [lyceum_service_sup]},
+    {mod, {lyceum_service_app, []}},
+    {applications, [
+        kernel,
+        stdlib,
+        sasl,
+        erlandono,
+        lyceum_cluster,
+        database,
+        lib_map,
+        cache
+    ]},
+    {env, [
+        % Number of worker processes joined to the `service` pg group.
+        % This is the concurrency knob for service-layer operations:
+        % each request occupies one worker for its whole duration,
+        % including any pgo transaction it runs.
+        {workers, 8},
+        % How long callers wait for a service worker before giving up
+        % with {error, service_timeout}.
+        {call_timeout, 5000}
+    ]},
+    {modules, [
+        character,
+        lyceum_service,
+        lyceum_service_app,
+        lyceum_service_sup,
+        lyceum_service_worker,
+        registry
+    ]},
+    {licenses, ["Apache-2.0"]},
+    {links, []}
+]}.

@@ -7,11 +7,9 @@
         kernel,
         stdlib,
         sasl,
-        mnesia,
-        pgo,
-        database,
-        erlandono,
-        cache
+        lyceum_cluster,
+        lyceum_service,
+        player
     ]},
     {env, []},
     {modules, []},

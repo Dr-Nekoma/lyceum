@@ -2,218 +2,180 @@
 
 - [Erlang Server](#erlang-server)
   - [Architecture](#architecture)
+    - [The three layers](#the-three-layers)
     - [Client/Server Communication](#clientserver-communication)
+    - [Login and session flow](#login-and-session-flow)
   - [Shell](#shell)
+  - [Database Access](#database-access)
+    - [Migration boot path](#migration-boot-path)
+    - [Temporal tables](#temporal-tables)
 
 ## Architecture
 
-- Our server is a [Multi-App Project](https://adoptingerlang.org/docs/development/umbrella_projects/) consisting of smaller [OTP Applications](https://www.erlang.org/doc/system/applications.html) (each managining its own supervision trees and worker processes) or libraries.
-- Each Player is an Erlang Process, which are all monitored by a single supervisor.
+Our server is a [Multi-App Project](https://adoptingerlang.org/docs/development/umbrella_projects/) of smaller [OTP Applications](https://www.erlang.org/doc/system/applications.html), each managing its own supervision tree.
+
+It runs as **three node types**: `frontend`, `logic` and `service`, with calls only ever travelling downward. This follows closed the idea propposed by Francesco Cessari in [Designing for Scalability with Erlang/OTP: Implement Robust, Fault-Tolerant Systems](https://www.amazon.com/Designing-Scalability-Erlang-OTP-Fault-Tolerant/dp/1449320732). There is still exactly one release: every application is present on every node and what differs is the `node_types` configuration. Each supervisor filters its own children in `init/1`:
+
+```erlang
+Children = [Spec || {Layer, Spec} <- Specs, lyceum_cluster:hosts_layer(Layer)],
+```
+
+so a node that does not host a layer boots that layer's supervisor empty. `LYCEUM_NODE_TYPES=frontend,logic,service` is the all-in-one node that `just server` runs and that development assumes.
+
+Discovery is `pg` (scope `lyceum`), never `global`, and nodes run with `-kernel connect_all false`. That combination is what makes the layering structural rather than a convention: `pg` syncs only across directly connected, visible nodes and never relays, so a frontend node linked only to logic *cannot see* the service groups even when both are up.
+
+### The three layers
 
 ```mermaid
 graph TD
-    subgraph Server[Server Umbrella]
-        subgraph "Auth"
-            AA[Auth Application]
-            AS[Auth Supervisor]
-            SAW[Simple Auth Worker]
-            AA aa_as@==>|Starts| AS
-            AS as_saw@==>|Monitors| SAW
+    subgraph Frontend["frontend node"]
+        SA[simple_auth<br/>registered as lyceum_server]
+        CPS[client_proxy_sup]
+        CP1[client_proxy<br/>one per session]
 
-            aa_as@{animation: slow}
-            as_saw@{animation: fast}
-        end
-        
-        subgraph "World"
-            WA[World Application]
-            WS[World Supervisor]
-            WM[World Migrations]
-            WM1[Map 1]
-            WA wa_ws@==>|Starts| WS
-            WS ws_wm@==>|Monitors| WM
-            WS ws_wm1@==>|Monitors| WM1
-
-            wa_ws@{animation: slow}
-            ws_wm@{animation: fast}
-            ws_wm1@{animation: fast}
-        end
-
-        subgraph "Player"
-            PA[Player Application]
-            DPS[Dynamic Player Supervisor]
-            P1[Player 1]
-            P2[Player 2]
-            P3[Player 3]
-            PN[Player N]
-            PA pa_dps@==>|Starts| DPS
-            DPS dps_p1@==>|Monitors| P1
-            DPS dps_p2@==>|Monitors| P2
-            DPS dps_p3@==>|Monitors| P3
-            DPS dps_p4@==>|Monitors| PN
-
-            pa_dps@{animation: slow}
-            dps_p1@{animation: fast}
-            dps_p2@{animation: fast}
-            dps_p3@{animation: fast}
-            dps_p4@{animation: fast}
-        end
-
-        subgraph "Cache"
-            CA[Cache Application]
-            CS[Cache Supervisor]
-            CW[Cache Worker]
-            MNESIA@{ shape: cyl }
-            CA ca_cs@==> CS
-            CS cs_cw@==> CW
-            CW cw_mnesia@<==> MNESIA
-
-            ca_cs@{animation: slow}
-            cs_cw@{animation: fast}
-            cw_mnesia@{animation: fast}
-        end
-        
-        subgraph Libraries[Utility Libraries]
-            LPG[PostgreSQL Library]
-            LMAP[Map Library]
-        end
+        SA sa_cps@==>|Starts a proxy per login| CPS
+        CPS cps_cp@==>|Monitors| CP1
+        sa_cps@{animation: slow}
+        cps_cp@{animation: fast}
     end
-    
-    %% Inter-application connections
-    SAW saw_dps@==>|Create Player Processes| DPS
-    SAW saw_cw@==>|Queries| CW
-    CW -.- Libraries
-    P1 & P2 & P3 & PN -.- Libraries
-    WM -.- Libraries
 
-    saw_dps@{animation: fast}
-    saw_cw@{animation: fast}
-    
-    %% Node & Edges
-    classDef app fill:#1a365d,color:#ffffff,stroke:#ffffff,stroke-width:3px,font-weight:bold
-    classDef supervisor fill:#b91c1c,color:#ffffff,stroke:#ffffff,stroke-width:3px,font-weight:bold
-    classDef dynamicSup fill:#dc2626,color:#ffffff,stroke:#ffffff,stroke-width:3px,font-weight:bold
-    classDef process fill:#059669,color:#ffffff,stroke:#ffffff,stroke-width:2px,font-weight:bold
-    classDef library fill:#7c3aed,color:#ffffff,stroke:#ffffff,stroke-width:3px,stroke-dasharray: 8 8,font-weight:bold
-    classDef database fill:#374151,color:#ffffff,stroke:#ffffff,stroke-width:3px,font-weight:bold
+    subgraph Logic["logic node"]
+        PS[player_session]
+        PTS[player_top_level_sup]
+        P1[player gen_statem]
+        W[world<br/>in-memory state]
 
-    classDef edgeLabel fill:#ffffff,color:#000000,stroke:#000000,stroke-width:2px,font-weight:bold,font-size:14px
-    
-    %% Subgraph Backgrounds
-    classDef authBg fill:#dbeafe,stroke:#1e40af,stroke-width:3px,color:#1e40af,font-weight:bold
-    classDef worldBg fill:#dcfce7,stroke:#16a34a,stroke-width:3px,color:#16a34a,font-weight:bold
-    classDef playerBg fill:#fed7aa,stroke:#ea580c,stroke-width:3px,color:#ea580c,font-weight:bold
-    classDef cacheBg fill:#f3e8ff,stroke:#9333ea,stroke-width:3px,color:#9333ea,font-weight:bold
-    classDef utilityBg fill:#f1f5f9,stroke:#475569,stroke-width:3px,color:#475569,font-weight:bold
-    classDef serverBg fill:#f8fafc,stroke:#0f172a,stroke-width:4px,color:#0f172a,font-weight:bold
+        PS ps_pts@==>|Starts| PTS
+        PTS pts_p@==>|Monitors| P1
+        ps_pts@{animation: slow}
+        pts_p@{animation: fast}
+    end
 
-    %% Styling
-    class AA,WA,PA,CA app
-    class AS,WS,CS supervisor
-    class DPS dynamicSup
-    class CW,P1,P2,P3,PN,SAW,WM,WM1 process
-    class LPG,LMAP library
-    class MNESIA database
-    
-    class Auth authBg
-    class World worldBg
-    class Player playerBg
-    class Cache cacheBg
-    class Libraries utilityBg
-    class Server serverBg
+    subgraph Service["service node"]
+        LSW[lyceum_service_worker pool]
+        POOLS[(pgo pools<br/>lyceum_pool / auth_pool)]
+        WM[world_migrations]
+        SR[session_reaper]
+
+        LSW lsw_pools@==>|Queries| POOLS
+        lsw_pools@{animation: fast}
+    end
+
+    CP1 cp_ps@==>|player_session:login| PS
+    P1 p_lsw@==>|lyceum_service facade| LSW
+    cp_ps@{animation: fast}
+    p_lsw@{animation: fast}
+
+    classDef process fill:#4CAF50,color:#ffffff,stroke:#2E7D32,stroke-width:2px
+    classDef database fill:#795548,color:#ffffff,stroke:#4E342E,stroke-width:2px
+    classDef frontendBg fill:#E3F2FD,stroke:#1976D2,stroke-width:3px
+    classDef logicBg fill:#FFF3E0,stroke:#F57C00,stroke-width:3px
+    classDef serviceBg fill:#E8F5E9,stroke:#2E7D32,stroke-width:3px
+
+    class SA,CPS,CP1,PS,PTS,P1,W,LSW,WM,SR process
+    class POOLS database
+    class Frontend frontendBg
+    class Logic logicBg
+    class Service serviceBg
 ```
+
+Applications under `apps/`, in boot order: `lyceum_cluster` -> `database` -> `lib_map` -> `cache` -> `lyceum_service` -> `world` -> `player` -> `auth`.
+
+- **`lyceum_cluster`**: membership and discovery. Workers register with `lyceum_cluster:join/1`, callers reach one with `lyceum_cluster:call/3`, which owns the cross-layer policy (local members win, one re-pick on a stale pid, dropped connections become error values). Never hardcode node names.
+- **`lyceum_service`**: The only way anything reaches the database. `lyceum_service.erl` is the caller-side facade, `lyceum_service_worker` processes run on `service` nodes and execute the SQL locally, which is what keeps `pgo` transactions on the pool's node. Failures come back as values, i.e. `{error, no_service | service_timeout | Reason}`, never as exceptions.
+- **`database`**: The `pgo` pools, started only on `service` nodes.
+- **`world`**: Spans two layers: `world_migrations` (service) runs migrations at boot, the `world` worker (logic) is pure in-memory state.
+- **`auth`** (frontend): `simple_auth` is a thin dispatcher that turns a client's first message into a `client_proxy` and is never spoken to again.
+- **`player`** (logic): `player_session` performs logins and spawns one `player` `gen_statem` per session.
+- **`cache`** (service): the session store. No longer a process, sessions live in `player.session` and the module runs inside the calling service worker. `session_reaper` closes sessions whose logic node died.
+- **`lib_map`**: map/terrain library.
 
 ### Client/Server Communication
 
-We leverage [Zerl](https://github.com/dont-rely-on-nulls/zerl) to enable communication between the Zig Client and our Erlang server. 
+We leverage [Zerl](https://github.com/dont-rely-on-nulls/zerl) to enable communication between the Zig Client and our Erlang server.
+
+The client holds **exactly one distribution connection**, to `lyceum_server@<host>`, and Erlang distribution does not relay. Every pid the client is handed must therefore live on the frontend node, which is why a login returns a `client_proxy` pid rather than the player's: the proxy is a per-session gateway on the frontend that relays in both directions. The client is unchanged by this, the reply is still `{ok, {Pid, Email}}` and it treats the pid as opaque.
 
 ```mermaid
 graph LR
     subgraph Client1[Zig Client #1]
         Game1[Game #1]
         Zerl1@{ shape: das, label: "zerl" }
-
         Zerl1 === Game1
     end
 
     subgraph Client2[Zig Client #2]
         Game2[Game #2]
         Zerl2@{ shape: das, label: "zerl" }
-
         Zerl2 === Game2
     end
 
-    subgraph Client3[Zig Client #3]
-        Game3[Game #3]
-        Zerl3@{ shape: das, label: "zerl" }
+    subgraph FrontendNode["frontend node (lyceum_server)"]
+        CN1((C Node 1))
+        CN2((C Node 2))
+        CP1[client_proxy 1]
+        CP2[client_proxy 2]
 
-        Zerl3 === Game3
-    end
-    
-    subgraph BEAM[ERTS]
-        subgraph Server["Server Umbrella"]
-            subgraph Player[Player Application]
-                P1[Player 1]
-                P2[Player 2]
-                P3[Player 3]
-            end
-        end
-
-        subgraph CNodes["C Nodes Layer"]
-            CN1((C Node 1))
-            CN2((C Node 2))
-            CN3((C Node 3))
-        end
-        
-        P1 p1_pt1@<--> CN1
-        P2 p2_pt2@<--> CN2
-        P3 p3_pt3@<--> CN3
-
-        p1_pt1@{animation: "fast"}
-        p2_pt2@{animation: "fast"}
-        p3_pt3@{animation: "fast"}
+        CN1 cn1_cp1@<--> CP1
+        CN2 cn2_cp2@<--> CP2
+        cn1_cp1@{animation: "fast"}
+        cn2_cp2@{animation: "fast"}
     end
 
-    CN1 pt1_z@<--> Zerl1
-    CN2 pt2_z@<--> Zerl2
-    CN3 pt3_z@<--> Zerl3
+    subgraph LogicNode["logic node"]
+        P1[player 1]
+        P2[player 2]
+    end
 
-    pt1_z@{animation: "fast"}
-    pt2_z@{animation: "fast"}
-    pt3_z@{animation: "fast"}
-    
-    %% Styling
+    subgraph ServiceNode["service node"]
+        LSW[lyceum_service_worker]
+        DB[(PostgreSQL)]
+        LSW lsw_db@<--> DB
+        lsw_db@{animation: "fast"}
+    end
 
-    class Player playerBg
-    class Server serverBg
+    Zerl1 z1_cn1@<--> CN1
+    Zerl2 z2_cn2@<--> CN2
+    CP1 cp1_p1@<--> P1
+    CP2 cp2_p2@<--> P2
+    P1 p1_lsw@<--> LSW
+    P2 p2_lsw@<--> LSW
 
-    class P1,P2,P3 process
-    class CN1,CN2,CN3 cnode
+    z1_cn1@{animation: "fast"}
+    z2_cn2@{animation: "fast"}
+    cp1_p1@{animation: "fast"}
+    cp2_p2@{animation: "fast"}
+    p1_lsw@{animation: "fast"}
+    p2_lsw@{animation: "fast"}
 
-    %% Enhanced Styling
     classDef clientBg fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#0d47a1
-    classDef beamBg fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px,color:#4a148c
-    classDef CNodeBg fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f
-    classDef playerBg fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
-    classDef serverBg fill:#ECEFF1,stroke:#37474F,stroke-width:3px
-
+    classDef frontendBg fill:#E3F2FD,stroke:#1976D2,stroke-width:3px
+    classDef logicBg fill:#FFF3E0,stroke:#F57C00,stroke-width:3px
+    classDef serviceBg fill:#E8F5E9,stroke:#2E7D32,stroke-width:3px
     classDef gameNode fill:#42a5f5,stroke:#1565c0,stroke-width:2px,color:#ffffff
     classDef zerlNode fill:#88E788,stroke:#2e7d32,stroke-width:2px,color:#353839
-    classDef playerNode fill:#ff9800,stroke:#ef6c00,stroke-width:2px,color:#ffffff
     classDef process fill:#4CAF50,color:#ffffff,stroke:#2E7D32,stroke-width:2px
     classDef cNode fill:#ec407a,stroke:#ad1457,stroke-width:3px,color:#ffffff
-    
-    %% Apply classes to subgraphs and nodes
-    class Client1,Client2,Client3 clientBg
-    class BEAM beamBg
-    class Server serverBg
-    class Player playerBg
-    class CNode CNodeBg
-    
-    class Game1,Game2,Game3 gameNode
-    class Zerl1,Zerl2,Zerl3 zerlNode
-    class P1,P2,P3 process
-    class CN1,CN2,CN3 cNode
+    classDef database fill:#795548,color:#ffffff,stroke:#4E342E,stroke-width:2px
+
+    class Client1,Client2 clientBg
+    class FrontendNode frontendBg
+    class LogicNode logicBg
+    class ServiceNode serviceBg
+    class Game1,Game2 gameNode
+    class Zerl1,Zerl2 zerlNode
+    class CP1,CP2,P1,P2,LSW process
+    class CN1,CN2 cNode
+    class DB database
 ```
+
+### Login and session flow
+
+`client -> simple_auth (frontend) -> client_proxy (frontend) -> player_session (logic) -> player (logic) -> lyceum_service (service)`
+
+The proxy relays client messages to the player verbatim and unwraps `{reply, Msg}` coming back. It monitors the player and the client's node, the player monitors the proxy and, on its death, deactivates the character.
+
+A duplicate login is a **takeover**: the service layer returns the previous session's proxy pid, which gets kicked. Rejecting the second login instead would let a crashed client lock a player out of their own account until the session was reaped, so the new login wins.
 
 ## Shell
 
@@ -229,18 +191,49 @@ rebar3 shell
 
 ## Database Access
 
-PostgreSQL access goes through [pgo](https://github.com/erleans/pgo) connection pools owned by the `database` OTP application. Three named pools cover the privilege boundary between subsystems:
+PostgreSQL access goes through [pgo](https://github.com/erleans/pgo) connection pools owned by the `database` OTP application. Two named pools cover the privilege boundary between subsystems:
 
 | Pool          | Role env vars                              | Used by                          |
 | ------------- | ------------------------------------------ | -------------------------------- |
-| `lyceum_pool` | `PGUSER` / `PGPASSWORD` (`application`)    | `player`, `character`, `map`     |
-| `auth_pool`   | `PG_AUTH_USER` / `PG_AUTH_PASSWORD`        | `simple_auth`, `registry`        |
-| `mnesia_pool` | `PG_MNESIA_USER` / `PG_MNESIA_PASSWORD`    | reserved for `cache`             |
+| `lyceum_pool` | `PGUSER` / `PGPASSWORD` (`application`)    | `character`, `map`, `cache`      |
+| `auth_pool`   | `PG_AUTH_USER` / `PG_AUTH_PASSWORD`        | `registry`                       |
 
-Pool sizes are tunable from [`config/sys.config`](config/sys.config) under the `database` application's `pools` env. The pools are started by `database_sup` at boot, before `auth`, `player`, `cache`, or `world` start, so queries never race the pool startup.
+(A third `mnesia` role still exists in `000002_roles.sql` and in the Nix Postgres setup. It is vestigial -- nothing uses it now that sessions are in PostgreSQL -- and is left alone because removing it means editing an already-applied `once` migration.)
+
+Both pools live **only on `service` nodes**: `database_sup` asks `lyceum_cluster:hosts_layer(service)` and starts nothing anywhere else, so a frontend or logic node never opens a connection to PostgreSQL. Everything above the service layer reaches the database through `lyceum_service`, whose workers run the queries where the pools are.
+
+Pool sizes are tunable from [`config/sys.config.src`](config/sys.config.src) under the `database` application's `pools` env. The pools are started by `database_sup` at boot, before `lyceum_service`, `world`, `player`, or `auth` start, so queries never race the pool startup.
 
 Every query goes through `database:query/2,3` and `database:transaction/2`; modules pass the pool atom rather than a connection. There are no per-session PostgreSQL connections: the number of backends to Postgres is bounded by `pool_size` regardless of player count.
 
 ### Migration boot path
 
-`migraterl` is still hardcoded against `epgsql`, so `world:init/1` opens a single short-lived `epgsql` connection (`PG_MIGRATERL_USER` / `PG_MIGRATERL_PASSWORD`), runs migrations through `migraterl:migrate/3`, and immediately closes it via `database:close_migrator_connection/1`. This is the only `epgsql` call site that survives in our code; everything else runs through `pgo`.
+`migraterl` is still hardcoded against `epgsql`, so `world_migrations:handle_continue/2` opens a single short-lived `epgsql` connection (`PG_MIGRATERL_USER` / `PG_MIGRATERL_PASSWORD`), runs the four namespaces in order (`main` -> `repeatable` -> `init` -> `test`), and closes it. This is the only `epgsql` call site that survives in our code; everything else runs through `pgo`.
+
+**Several service nodes may boot at once.** Three things make that safe, and they are worth keeping straight:
+
+1. `world_migrations` takes a **cluster-wide** advisory lock (`database:lock_migrations/1`) around the entire pass. This is the one that matters on a *fresh* database: migraterl creates its journal with `CREATE SCHEMA IF NOT EXISTS` before it can take any lock of its own, and that is not atomic against a concurrent creator, two nodes both pass the existence check and the loser dies on `pg_namespace`'s unique index. It is session-level rather than transaction-level because migraterl runs its own transactions on that connection.
+2. migraterl then takes a **per-namespace** `pg_advisory_lock` across planning and applying, so a node that arrives later finds nothing left to do.
+3. Seeding the maps through `map_generator` happens outside both, and carries its own protection: every insert is `ON CONFLICT DO NOTHING`.
+
+`world_migrations_SUITE` runs concurrent passes and asserts all of it, every script journalled once, no duplicated seed rows, and it is worth running against a *dropped* schema, since the journal-bootstrap race only appears when the journal does not exist yet.
+
+Before seeding, the runner waits for the `pgo` pool to actually answer a query. The pool's supervisor returns as soon as it starts but its connections are established asynchronously, so `lyceum_pool` can exist while every query through it comes back `none_available`. Giving up is a value, folded into the same backoff used for an unreachable database, not a crash.
+
+### Temporal tables
+
+Three tables record *when* something was true rather than only what is true now, using PostgreSQL 18's `WITHOUT OVERLAPS` (hence `btree_gist` in `000001_schemas.sql`):
+
+| Table                 | A period means                        | The constraint buys                                     |
+| --------------------- | ------------------------------------- | ------------------------------------------------------- |
+| `player.session`      | a player was logged in                | one live session per player, plus login history          |
+| `character.active`    | a character was in the world          | one presence per character, plus playtime                |
+| `equipment.equipped`  | an item was worn in a slot            | one item per slot at a time, plus what was worn when     |
+
+The shape is the same in all three:
+
+- An open period is `upper(valid_at) = 'infinity'`, closing one sets the upper bound to `clock_timestamp()`, and rows are **closed, never deleted**.
+- The upper bound is a real `'infinity'` rather than an unbounded (NULL) one, so "still open" is a value in the domain.
+- Bounds are `clock_timestamp()` and never `now()`. `now()` is the *transaction's* start time, so a transaction that began earlier but committed later would close a period with an upper bound below its own lower bound, which PostgreSQL rejects outright.
+
+`player.session` is what lifted the one-service-node limit. The invariant "a player has at most one live session" used to be enforced structurally, by there being exactly one `cache` gen_server to ask, with the session in a shared table the exclusion constraint enforces it instead, no matter which service node answers. A per-player `pg_advisory_xact_lock` serialises the writers on the way in. Note that `pg_advisory_xact_lock` returns `void`, which `pgo` cannot decode, so the call is wrapped in a subselect that yields a real column.
