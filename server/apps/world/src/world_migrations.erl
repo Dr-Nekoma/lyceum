@@ -19,7 +19,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/0, status/0]).
+-export([start_link/0, status/0, run_migrations/1]).
 %% gen_server callbacks
 -export([
     init/1,
@@ -36,6 +36,12 @@
 %% up until ?MAX_RETRY_MS.
 -define(BASE_RETRY_MS, 1000).
 -define(MAX_RETRY_MS, 30000).
+%% How long to wait for the pgo pool to answer before giving up on this
+%% pass and retrying the whole thing.
+-define(POOL_READY_TIMEOUT_MS, 5000).
+-define(POOL_READY_INTERVAL_MS, 50).
+%% The pool map_generator seeds through; it hardcodes the same one.
+-define(POOL, lyceum_pool).
 
 -include("migrations.hrl").
 
@@ -99,24 +105,33 @@ handle_continue(migrate, #state{status = done} = State) ->
 handle_continue(migrate, #state{status = waiting} = State) ->
     case database:open_migrator_connection() of
         {ok, Conn} ->
-            try
-                ok = run_migrations(Conn)
-            after
-                database:close_migrator_connection(Conn)
-            end,
-            logger:info("[~p] All migrations applied~n", [?SERVER]),
-            {noreply, State#state{status = done}};
+            Result =
+                try
+                    run_migrations(Conn)
+                after
+                    database:close_migrator_connection(Conn)
+                end,
+            case Result of
+                ok ->
+                    logger:info("[~p] All migrations applied~n", [?SERVER]),
+                    {noreply, State#state{status = done}};
+                {error, Reason} ->
+                    retry_later(Reason, State)
+            end;
         {error, Reason} ->
-            Attempts = State#state.attempts + 1,
-            Delay = retry_delay(Attempts),
-            logger:warning(
-                "[~p] Database unavailable (~p), retrying in ~pms "
-                "(attempt ~p)~n",
-                [?SERVER, Reason, Delay, Attempts]
-            ),
-            _ = erlang:send_after(Delay, self(), retry),
-            {noreply, State#state{attempts = Attempts}}
+            retry_later(Reason, State)
     end.
+
+-spec retry_later(term(), state()) -> {noreply, state()}.
+retry_later(Reason, State) ->
+    Attempts = State#state.attempts + 1,
+    Delay = retry_delay(Attempts),
+    logger:warning(
+        "[~p] Database unavailable (~p), retrying in ~pms (attempt ~p)~n",
+        [?SERVER, Reason, Delay, Attempts]
+    ),
+    _ = erlang:send_after(Delay, self(), retry),
+    {noreply, State#state{attempts = Attempts}}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -190,17 +205,51 @@ code_change(_OldVsn, State, _Extra) ->
 retry_delay(Attempts) ->
     min(?BASE_RETRY_MS bsl min(Attempts - 1, 8), ?MAX_RETRY_MS).
 
--spec run_migrations(Conn) -> ok when
+-doc """
+One full migration pass on an already-open migrator connection.
+
+Exported so a test -- or an operator from a remote shell -- can run a
+pass without going through this gen_server's boot.
+""".
+-spec run_migrations(Conn) -> ok | {error, term()} when
     Conn :: epgsql:connection().
 run_migrations(Conn) ->
     Dir = database_queries:get_root_dir(),
     logger:info("[~p] Running migrations from ~p~n", [?SERVER, Dir]),
-    lists:foreach(
-        fun(Type) -> ok = migrate(Conn, Dir, Type) end,
-        [main, repeatable, init_data, test]
-    ).
+    %% Held across the whole pass, including migraterl's journal
+    %% bootstrap. See database:lock_migrations/1 for why that bootstrap
+    %% is the part that actually needs protecting.
+    case database:lock_migrations(Conn) of
+        ok ->
+            try
+                run_each(Conn, Dir, [main, repeatable, init_data, test])
+            after
+                database:unlock_migrations(Conn)
+            end;
+        {error, _} = Error ->
+            Error
+    end.
 
--spec migrate(Conn, Dir, Type) -> ok when
+-doc """
+Runs each namespace in order, stopping at the first that could not run.
+
+Ordering matters -- `repeatable` assumes `main`'s tables exist -- so
+this cannot become a `foreach` that keeps going. migraterl takes a
+per-namespace advisory lock around planning and applying, which is what
+lets several service nodes boot at once: the second blocks on the lock
+and then finds nothing left to do.
+""".
+-spec run_each(epgsql:connection(), file:name_all(), [migration_type()]) ->
+    ok | {error, term()}.
+run_each(_Conn, _Dir, []) ->
+    ok;
+run_each(Conn, Dir, [Type | Rest]) ->
+    case migrate(Conn, Dir, Type) of
+        ok -> run_each(Conn, Dir, Rest);
+        {error, _} = Error -> Error
+    end.
+
+-spec migrate(Conn, Dir, Type) -> ok | {error, term()} when
     Conn :: epgsql:connection(),
     Dir :: file:name_all(),
     Type :: migration_type().
@@ -211,9 +260,14 @@ migrate(Conn, Dir, init_data) ->
         sources => [{on_change, Path}]
     }),
     % Now populate the game's maps via the application pool...
-    MapPath = filename:join([Dir, "maps"]),
-    ok = map_generator:create_map(MapPath, "Pond"),
-    ok;
+    case wait_for_pool(?POOL) of
+        ok ->
+            MapPath = filename:join([Dir, "maps"]),
+            ok = map_generator:create_map(MapPath, "Pond"),
+            ok;
+        {error, _} = Error ->
+            Error
+    end;
 migrate(Conn, Dir, Type) ->
     {Suffix, Namespace, Class} =
         case Type of
@@ -231,3 +285,53 @@ migrate(Conn, Dir, Type) ->
         sources => [{Class, Path}]
     }),
     ok.
+
+-doc """
+Blocks until the pgo pool actually answers a query, or gives up.
+
+The pool's supervisor returns as soon as it is started, but its
+connections are established asynchronously, so `lyceum_pool` can exist
+while every query through it comes back `none_available`. The seed data
+below runs seconds after boot and races exactly that -- and the race
+gets likelier, not less, as more service nodes start at once.
+
+Giving up returns an error rather than crashing so the caller folds it
+into the same backoff it already uses for an unreachable database.
+""".
+-spec wait_for_pool(database:pool_name()) -> ok | {error, pool_unavailable}.
+wait_for_pool(Pool) ->
+    Deadline = erlang:monotonic_time(millisecond) + env(pool_ready_timeout_ms, ?POOL_READY_TIMEOUT_MS),
+    wait_for_pool(Pool, Deadline).
+
+-spec wait_for_pool(database:pool_name(), integer()) -> ok | {error, pool_unavailable}.
+wait_for_pool(Pool, Deadline) ->
+    case pool_answers(Pool) of
+        true ->
+            ok;
+        false ->
+            case erlang:monotonic_time(millisecond) < Deadline of
+                true ->
+                    timer:sleep(env(pool_ready_interval_ms, ?POOL_READY_INTERVAL_MS)),
+                    wait_for_pool(Pool, Deadline);
+                false ->
+                    logger:warning("[~p] Pool ~p never became available~n", [?SERVER, Pool]),
+                    {error, pool_unavailable}
+            end
+    end.
+
+-spec pool_answers(database:pool_name()) -> boolean().
+pool_answers(Pool) ->
+    try database:query(Pool, "SELECT 1") of
+        #{rows := _} -> true;
+        _Other -> false
+    catch
+        _:_ -> false
+    end.
+
+-doc "App env with a type-checked fallback, so a bad value cannot reach arithmetic.".
+-spec env(atom(), pos_integer()) -> pos_integer().
+env(Key, Default) ->
+    case application:get_env(world, Key, Default) of
+        Value when is_integer(Value), Value > 0 -> Value;
+        _Other -> Default
+    end.

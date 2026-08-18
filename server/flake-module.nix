@@ -33,39 +33,56 @@
             inherit (pkgs) fetchHex fetchFromGitHub fetchgit;
             builder = args: pkgs.beamPackages.buildRebar3 (args // { inherit buildPlugins; });
           };
+
+          release = pkgs.beamPackages.rebar3Relx {
+            inherit src;
+            pname = erl_app;
+            version = app_version;
+            root = ./.;
+            releaseType = "release";
+            profile = "prod";
+            plugins = [
+              pkgs.beamPackages.pc
+            ];
+            include = [
+              "rebar.config"
+            ];
+            buildInputs = (
+              with pkgs;
+              [
+                coreutils
+                gawk
+                gnugrep
+                openssl
+              ]
+              ++ lib.optional stdenv.isLinux [
+                liburing
+              ]
+            );
+            beamDeps = builtins.attrValues deps;
+            buildPhase = ''
+              runHook preBuild
+              HOME=. DEBUG=1 rebar3 as prod release --relname ${app_name}
+              runHook postBuild
+            '';
+          };
         in
-        pkgs.beamPackages.rebar3Relx {
-          inherit src;
-          pname = erl_app;
-          version = app_version;
-          root = ./.;
-          releaseType = "release";
-          profile = "prod";
-          plugins = [
-            pkgs.beamPackages.pc
-          ];
-          include = [
-            "rebar.config"
-          ];
-          buildInputs = (
-            with pkgs;
-            [
-              coreutils
-              gawk
-              gnugrep
-              openssl
-            ]
-            ++ lib.optional stdenv.isLinux [
-              liburing
-            ]
-          );
-          beamDeps = builtins.attrValues deps;
-          buildPhase = ''
-            runHook preBuild
-            HOME=. DEBUG=1 rebar3 as prod release --relname ${app_name}
-            runHook postBuild
+        # The release reads its node name, layers and peers from the
+        # environment: `config/{sys.config,vm.args}.src` are expanded at
+        # *start* time. relx writes the expanded files next to the .src
+        # ones, which here means inside the store, so point it at a
+        # writable directory instead. Anything already exported wins, so
+        # a deployment can put the generated config wherever it likes.
+        #
+        # rebar3Relx defines its own postInstall, hence overrideAttrs.
+        release.overrideAttrs (previous: {
+          nativeBuildInputs = (previous.nativeBuildInputs or [ ]) ++ [ pkgs.makeWrapper ];
+          postInstall = (previous.postInstall or "") + ''
+            wrapProgram $out/bin/${app_name} \
+              --run 'export RELX_OUT_FILE_PATH="''${RELX_OUT_FILE_PATH:-''${XDG_RUNTIME_DIR:-/tmp}/${app_name}}"' \
+              --run 'mkdir -p "$RELX_OUT_FILE_PATH"'
           '';
-        };
+        });
 
       # nix build .#dockerImage
       packages.dockerImage = pkgs.dockerTools.buildLayeredImage {
@@ -83,17 +100,23 @@
           };
           WorkingDir = "/opt/${erl_app}";
           Cmd = [
-            "${self'.packages.server}/bin/${erl_app}"
+            "${self'.packages.server}/bin/${app_name}"
             "foreground"
           ];
           Env = [
             "ERL_DIST_PORT=8080"
             "ERL_AFLAGS=\"-kernel shell_history enabled\""
-            "NODE_NAME=${erl_app}"
+            # The image defaults to an all-in-one node. Split deployments
+            # override these three: LYCEUM_NODE_NAME must stay
+            # `lyceum_server` on whichever node hosts the frontend, since
+            # that name is what the client dials.
+            "LYCEUM_NODE_NAME=lyceum_server"
+            "LYCEUM_NODE_TYPES=frontend,logic,service"
+            "LYCEUM_PEERS="
           ];
           ExposedPorts = {
             "4369/tcp" = { };
-            "4369/ucp" = { };
+            "4369/udp" = { };
             "8080/tcp" = { };
             "8080/udp" = { };
           };
@@ -103,7 +126,7 @@
       # nix run .#server -- foreground
       apps.server = {
         type = "app";
-        program = "${self'.packages.server}/bin/${erl_app}";
+        program = "${self'.packages.server}/bin/${app_name}";
       };
 
       # Server-side dev-shell contributions, merged into the shared

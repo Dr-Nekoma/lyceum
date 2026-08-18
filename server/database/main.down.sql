@@ -1,5 +1,20 @@
 DROP SCHEMA IF EXISTS migraterl CASCADE;
 
+-- omni_types:sum_type names the type it builds *literally*, so
+-- 'map.ENTITY_TYPE' becomes a type called "map.ENTITY_TYPE" sitting in
+-- public rather than a type called ENTITY_TYPE in map. Dropping the map
+-- schema therefore leaves it behind, and the next db-up fails on a
+-- duplicate pg_type name. Remove it here, registry row first, since
+-- that row references the type's oid.
+DO $$ BEGIN
+    IF to_regtype('public."map.ENTITY_TYPE"') IS NOT NULL THEN
+        DELETE FROM omni_types.sum_types
+        WHERE typ = 'public."map.ENTITY_TYPE"'::regtype;
+
+        DROP TYPE public."map.ENTITY_TYPE" CASCADE;
+    END IF;
+END $$;
+
 DROP SCHEMA IF EXISTS player CASCADE;
 DROP SCHEMA IF EXISTS map CASCADE;
 DROP SCHEMA IF EXISTS character CASCADE;

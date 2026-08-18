@@ -19,7 +19,15 @@ SELECT
     character.view.mana,
     character.view.state_type
 FROM character.view
-NATURAL JOIN character.active
+-- Spelled out rather than NATURAL: character.active carries a validity
+-- period now, and a natural join would happily match the closed ones
+-- too, returning a player once per session they have ever had. Only the
+-- open period means "in the world right now".
+JOIN character.active
+  ON character.active.name = character.view.name
+ AND character.active.username = character.view.username
+ AND character.active.email = character.view.email
+ AND upper(character.active.valid_at) = 'infinity'
 WHERE
-    map_name = $1::TEXT
-AND name <> $2::TEXT
+    character.view.map_name = $1::TEXT
+AND character.view.name <> $2::TEXT

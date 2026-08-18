@@ -7,11 +7,8 @@
         kernel,
         stdlib,
         sasl,
-        mnesia,
-        pgo,
-        database,
-        lib_map,
-        erlandono
+        lyceum_cluster,
+        lyceum_service
     ]},
     {env, []},
     {modules, []},

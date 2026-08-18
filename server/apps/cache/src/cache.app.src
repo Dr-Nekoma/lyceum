@@ -7,8 +7,9 @@
         kernel,
         stdlib,
         sasl,
-        mnesia,
-        erlandono
+        erlandono,
+        lyceum_cluster,
+        database
     ]},
     {env, []},
     {modules, []},

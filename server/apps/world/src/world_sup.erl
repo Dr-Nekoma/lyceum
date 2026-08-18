@@ -1,12 +1,18 @@
-%%%-------------------------------------------------------------------
-%% @doc World supervisor. Uses rest_for_one so the world process only
-%%      starts after the migration runner, and gets restarted whenever
-%%      the migration runner crashes (the world is only meaningful on
-%%      top of a migrated schema).
-%% @end
-%%%-------------------------------------------------------------------
-
 -module(world_sup).
+-moduledoc """
+World supervisor.
+
+Uses rest_for_one so the world process only starts after the migration
+runner, and gets restarted whenever the migration runner crashes (the
+world is only meaningful on top of a migrated schema).
+
+The two children belong to different layers: migrations own the
+database schema and so run on `service`, while the world itself is a
+pure in-memory process serving player state machines and runs on
+`logic`. On an all-in-one node both are present and the ordering above
+still holds; on a logic-only node the world starts on its own, trusting
+that some service node has migrated the schema.
+""".
 
 -behaviour(supervisor).
 
@@ -21,16 +27,14 @@
 %%% API functions
 %%%===================================================================
 
-%%--------------------------------------------------------------------
-%% @doc
-%% Starts the supervisor
-%%--------------------------------------------------------------------
+-spec start_link() -> supervisor:startlink_ret().
 start_link() ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
 %%%===================================================================
 %%% Supervisor callbacks
 %%%===================================================================
+-spec init([]) -> {ok, {supervisor:sup_flags(), [supervisor:child_spec()]}}.
 init([]) ->
     SupFlags =
         #{
@@ -61,9 +65,8 @@ init([]) ->
             modules => [world]
         },
 
-    logger:info("[~p] Starting Supervisor...~n", [?SERVER]),
-    {ok, {SupFlags, [Migrations, WorldWorker]}}.
+    Specs = [{service, Migrations}, {logic, WorldWorker}],
+    Children = [Spec || {Layer, Spec} <- Specs, lyceum_cluster:hosts_layer(Layer)],
 
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
+    logger:info("[~p] Starting Supervisor...~n", [?SERVER]),
+    {ok, {SupFlags, Children}}.

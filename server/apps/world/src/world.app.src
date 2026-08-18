@@ -18,7 +18,8 @@
         pgo,
         database,
         lib_map,
-        erlandono
+        erlandono,
+        lyceum_cluster
     ]},
     {env, []},
     {modules, []},

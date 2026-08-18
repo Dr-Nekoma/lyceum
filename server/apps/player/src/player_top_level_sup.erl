@@ -20,7 +20,7 @@
 -spec start_link() -> supervisor:startlink_ret().
 start_link() ->
     logger:debug("[~p] Starting TOP LEVEL SUPERVISOR...~n", [?MODULE]),
-    supervisor:start_link({global, ?MODULE}, ?MODULE, []).
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -37,14 +37,10 @@ start_link() ->
     Result :: Ok | Error.
 start_child(PlayerData) ->
     logger:debug("[~p] Starting CHILD SUPERVISOR with ARGS = ~p~n", [?MODULE, PlayerData]),
-    SupRef = {global, ?MODULE},
-    case supervisor:start_child(SupRef, [PlayerData]) of
+    case supervisor:start_child(?MODULE, [PlayerData]) of
         {ok, SupPid} ->
             {ok, SupPid};
         {ok, SupPid, _} ->
-            {ok, SupPid};
-        {error, {already_started, SupPid}} ->
-            logger:notice("[~p] SUP ~p IS ALREADY STARTED~n", [?MODULE, SupPid]),
             {ok, SupPid};
         {error, Err} ->
             logger:error("[~p] start_child ERROR ~p~n", [?MODULE, Err]),

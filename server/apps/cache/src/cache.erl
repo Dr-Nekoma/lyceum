@@ -1,317 +1,279 @@
 -module(cache).
--behaviour(gen_server).
+-moduledoc """
+The live-session store: who is logged in, and where their client is.
 
-%% API
--export([start_link/0, get_by_id/1, login/1, logout/1]).
+This was a mnesia table owned by a single gen_server on a single
+service node. Being the only process that could answer a login is what
+made "a player has at most one live session" true, and it is also what
+capped the cluster at one service node.
 
-%% gen_server callbacks
--export([
-    init/1,
-    handle_call/3,
-    handle_cast/2,
-    handle_info/2,
-    terminate/2,
-    code_change/3
-]).
+It is now a plain module -- no process, no state -- executing SQL in
+whichever `lyceum_service_worker` called it. That matters: `pgo` binds
+a transaction to the calling process, so running here keeps the whole
+login on the node that owns the pool.
 
--define(MNESIA_INIT_TIMEOUT, 30000).
--define(SERVER, ?MODULE).
--define(PLAYER_CACHE_TABLE, player_cache).
+The invariant survives the loss of the single process because
+`player.session` is a PostgreSQL 18 temporal table: its primary key is
+`(player_id, valid_at WITHOUT OVERLAPS)`, so two overlapping sessions
+for one player are refused by the database no matter how many service
+nodes are asking. A transaction-scoped advisory lock on the player serialises the
+writers, and the constraint is the backstop that would catch a writer
+which somehow skipped it.
 
--include("mnesia_state.hrl").
+Sessions are closed, never deleted, so the table is also the login
+history.
+""".
+
+%% Session API
+-export([login/2, logout/1, get_by_id/1]).
+%% Reaping, used by session_reaper
+-export([close_sessions_of_node/1, stale_sessions/2, close_stale_session/3]).
+
 -include("player_state.hrl").
 
--include_lib("stdlib/include/qlc.hrl").
+-define(POOL, lyceum_pool).
+-define(QUERY_DIR, "session").
+
+%% 23P01 exclusion_violation, 23505 unique_violation. Both mean another
+%% node opened a session for this player first.
+-define(OVERLAP_CODES, [<<"23P01">>, <<"23505">>]).
+
+-type error() :: {error, term()}.
 
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-%%--------------------------------------------------------------------
-%% @doc
-%% Starts the server
-%% @end
-%%--------------------------------------------------------------------
--spec start_link() -> gen_server:start_ret().
-start_link() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+-doc """
+Opens a session for `Cache`, closing whatever session that player had.
 
-%%--------------------------------------------------------------------
-%% @doc
-%% Fetchs Player's CLIENT PID from MNESIA.
-%% @end
-%%--------------------------------------------------------------------
--spec get_by_id(PlayerId) -> Result when
-    PlayerId :: player_id(),
-    State :: player_state(),
-    Reply :: {reply, term(), State} | {reply, term(), State, timeout()},
-    NoReply :: {noreply, State} | {noreply, State, timeout()},
-    Stop :: {stop, term(), term(), State} | {stop, term(), State},
-    Result :: Reply | NoReply | Stop.
-get_by_id(PlayerId) ->
-    gen_server:call(?MODULE, {get_by_id, PlayerId}).
+Returns the previous session's client pid so the caller can kick it, or
+`undefined` when there was none. `OwnerNode` is the logic node running
+the player FSM: it is the only node the service layer can watch, and so
+the key the reaper cleans up by.
+""".
+-spec login(player_cache(), node()) ->
+    {ok, player_cache(), pid() | undefined} | error().
+login(Cache, OwnerNode) ->
+    login(Cache, OwnerNode, 1).
 
-%%--------------------------------------------------------------------
-%% @doc
-%% Attemps to login a Player
-%% @end
-%%--------------------------------------------------------------------
--spec login(Data) -> Result when
-    Data :: player_cache(),
-    State :: player_state(),
-    Reply :: {reply, term(), State} | {reply, term(), State, timeout()},
-    NoReply :: {noreply, State} | {noreply, State, timeout()},
-    Stop :: {stop, term(), term(), State} | {stop, term(), State},
-    Result :: Reply | NoReply | Stop.
-login(Data) ->
-    gen_server:call(?MODULE, {login, Data}).
-
-%%--------------------------------------------------------------------
-%% @doc
-%% Logs a Player off
-%% @end
-%%--------------------------------------------------------------------
+-doc "Closes the player's open session. A player with none is not an error.".
+-spec logout(player_id()) -> ok | error().
 logout(PlayerId) ->
-    gen_server:cast(?MODULE, {logout, PlayerId}).
+    run(fun() ->
+        _ = query("close_open_session.sql", [PlayerId]),
+        ok
+    end).
+
+-doc "The player's open session, if there is one.".
+-spec get_by_id(player_id()) -> {ok, player_cache()} | {error, not_found | term()}.
+get_by_id(PlayerId) ->
+    run(fun() ->
+        case query("select_session.sql", [PlayerId]) of
+            [] -> {error, not_found};
+            [Row | _] -> {ok, row_to_cache(Row)}
+        end
+    end).
+
+-doc """
+Closes every open session owned by `Node`.
+
+Called when a logic node goes down: the player FSMs it held are gone,
+so their sessions are over even though nothing logged out.
+""".
+-spec close_sessions_of_node(node()) -> ok | error().
+close_sessions_of_node(Node) ->
+    run(fun() ->
+        _ = query("close_sessions_by_node.sql", [Node]),
+        ok
+    end).
+
+-doc """
+Up to `Limit` open sessions that have been open longer than
+`StaleAfterSeconds`, oldest first. Candidates only: whether they are
+really stale depends on their owner node, which is the caller's
+question to answer.
+""".
+-spec stale_sessions(non_neg_integer(), pos_integer()) ->
+    {ok, [{player_id(), node()}]} | error().
+stale_sessions(StaleAfterSeconds, Limit) ->
+    run(fun() ->
+        Rows = query("select_stale_sessions.sql", [StaleAfterSeconds, Limit]),
+        {ok, [
+            {maps:get(player_id, Row), to_atom(maps:get(owner_node, Row))}
+         || Row <- Rows
+        ]}
+    end).
+
+-doc """
+Closes one stale session, re-checking staleness in the statement itself.
+
+The check is repeated rather than trusted from `stale_sessions/2`
+because the row can stop being stale in between -- the owner node
+reconnects, or the player logs in again and this is a different session
+entirely. Returns how many rows it actually closed, which is 0 when
+that happened.
+""".
+-spec close_stale_session(player_id(), node(), non_neg_integer()) ->
+    {ok, non_neg_integer()} | error().
+close_stale_session(PlayerId, OwnerNode, StaleAfterSeconds) ->
+    run(fun() ->
+        {ok, affected_rows("close_stale_session.sql", [PlayerId, OwnerNode, StaleAfterSeconds])}
+    end).
 
 %%%===================================================================
-%%% gen_server callbacks
+%%% Login
 %%%===================================================================
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Initializes the server
-%% @end
-%%--------------------------------------------------------------------
--spec init(Args) -> Result when
-    Args :: list(),
-    State :: mnesia_state(),
-    Error :: {stop, Reason :: string()},
-    Ok :: {ok, State},
-    Result :: Ok | Error.
-init(_) ->
-    Nodes = [node()],
-    DefaultAttributes = [{ram_copies, Nodes}],
-    PlayerTableSettings = [{attributes, record_info(fields, ?PLAYER_CACHE_TABLE)}],
-    Options = PlayerTableSettings ++ DefaultAttributes,
-    % Warning: You cant use "maybe" and enable Erlandono's
-    % "do" parse transform at the same time.
-    maybe
-        ok ?=
-            case mnesia:system_info(db_nodes) of
-                [] ->
-                    mnesia:create_schema(Nodes);
-                _ ->
-                    ok
-            end,
-        State = #mnesia_state{},
-        ok ?= mnesia:start(),
-        ok ?= create_table(?PLAYER_CACHE_TABLE, Options),
-        ok ?= mnesia:wait_for_tables([?PLAYER_CACHE_TABLE], ?MNESIA_INIT_TIMEOUT),
-        {ok, State}
-    else
-        {error, Reason} ->
-            logger:error("[~p] Error: ~p~n", [?MODULE, Reason]),
-            {stop, Reason};
-        Err ->
-            logger:error("[~p] Unexpected Error: ~p~n", [?MODULE, Err]),
-            {stop, "Unexpected Error"}
+-spec login(player_cache(), node(), non_neg_integer()) ->
+    {ok, player_cache(), pid() | undefined} | error().
+login(Cache, OwnerNode, RetriesLeft) ->
+    try transaction(fun() -> do_login(Cache, OwnerNode) end) of
+        Result -> Result
+    catch
+        throw:{?MODULE, Reason} ->
+            case overlap_error(Reason) andalso RetriesLeft > 0 of
+                true ->
+                    %% Another node won the race to open the first
+                    %% session. Retry: there is a row to lock now, so
+                    %% this becomes an ordinary duplicate login.
+                    logger:info("[~p] Lost the login race, retrying~n", [?MODULE]),
+                    login(Cache, OwnerNode, RetriesLeft - 1);
+                false ->
+                    logger:error("[~p] Login failed: ~p~n", [?MODULE, Reason]),
+                    {error, Reason}
+            end
     end.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Handling call messages
-%% @end
-%%--------------------------------------------------------------------
--spec handle_call(Request, From, State) -> Result when
-    Request :: term(),
-    From :: gen_server:from(),
-    State :: mnesia_state(),
-    Reply :: {reply, term(), State} | {reply, term(), State, timeout()},
-    NoReply :: {noreply, State} | {noreply, State, timeout()},
-    Stop :: {stop, term(), term(), State} | {stop, term(), State},
-    Result :: Reply | NoReply | Stop.
-handle_call({login, CacheData}, From, State) ->
-    logger:debug("[~p] Player Logging From: ~p~n", [?MODULE, From]),
-    NewData =
-        case get_by_id(?PLAYER_CACHE_TABLE, CacheData#player_cache.player_id) of
-            {ok, Data} ->
-                %% TODO:
-                %% 1. Kill old PID
-                %% 2. Replace old record
-                Data#player_cache{client_pid = CacheData#player_cache.client_pid};
-            {error, Reason} ->
-                logger:warning("[~p] Cache missing: ~p~n", [?MODULE, Reason]),
-                CacheData
-        end,
-    _ = upsert_record(?PLAYER_CACHE_TABLE, NewData),
-    Reply = {ok, NewData},
-    {reply, Reply, State};
-handle_call({get_by_id, UserId}, _, State) ->
-    Reply = get_by_id(?PLAYER_CACHE_TABLE, UserId),
-    {reply, Reply, State};
-handle_call(_Request, _, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+-spec do_login(player_cache(), node()) -> {ok, player_cache(), pid() | undefined}.
+do_login(#player_cache{player_id = PlayerId} = Cache, OwnerNode) ->
+    %% Take the player's lock before looking: `FOR UPDATE` cannot
+    %% serialise two nodes opening a *first* session, because there is
+    %% no row to lock yet and both would insert. The advisory lock has
+    %% no such gap, and being transaction-scoped it is released by the
+    %% commit or rollback with no bookkeeping here.
+    _ = query("lock_player.sql", [PlayerId]),
+    Previous = open_session_client_pid(PlayerId),
+    _ = query("close_open_session.sql", [PlayerId]),
+    _ = query("open_session.sql", [
+        PlayerId,
+        Cache#player_cache.username,
+        Cache#player_cache.email,
+        term_to_binary(Cache#player_cache.client_pid),
+        node(Cache#player_cache.client_pid),
+        OwnerNode
+    ]),
+    {ok, Cache, Previous}.
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Handling cast messages
-%%
-%% @spec handle_cast(Msg, State) -> {noreply, State} |
-%%                                  {noreply, State, Timeout} |
-%%                                  {stop, Reason, State}
-%% @end
-%%--------------------------------------------------------------------
-handle_cast({upsert_record, Cache}, State) ->
-    {ok, _} = upsert_record(?PLAYER_CACHE_TABLE, Cache),
-    {noreply, State};
-handle_cast({logout, UserId}, State) ->
-    {ok, _} = delete_player_entry(?PLAYER_CACHE_TABLE, UserId),
-    {noreply, State};
-handle_cast(_Msg, State) ->
-    {noreply, State}.
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Handling all non call/cast messages
-%%
-%% @spec handle_info(Info, State) -> {noreply, State} |
-%%                                   {noreply, State, Timeout} |
-%%                                   {stop, Reason, State}
-%% @end
-%%--------------------------------------------------------------------
-handle_info(_Info, State) ->
-    {noreply, State}.
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any
-%% necessary cleaning up. When it returns, the gen_server terminates
-%% with Reason. The return value is ignored.
-%%
-%% @spec terminate(Reason, State) -> void()
-%% @end
-%%--------------------------------------------------------------------
-terminate(_Reason, _State) ->
-    ok.
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Convert process state when code is changed
-%%
-%% @spec code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% @end
-%%--------------------------------------------------------------------
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
+-spec open_session_client_pid(player_id()) -> pid() | undefined.
+open_session_client_pid(PlayerId) ->
+    case query("select_open_session.sql", [PlayerId]) of
+        [] -> undefined;
+        [#{client_pid := Encoded} | _] -> decode_pid(Encoded)
+    end.
 
 %%%===================================================================
-%%% Internal functions
+%%% Internal
 %%%===================================================================
-%% @doc
-%% An abstraction to avoid crashing if a table
-%% already exists.
-%% @end
--spec create_table(RecordType, Attributes) -> Result when
-    RecordType :: mnesia:table(),
-    Attributes :: [mnesia:create_option()],
-    Ok :: ok,
-    Error :: {error, Reason :: string()},
-    Result :: Ok | Error.
-create_table(RecordType, Attributes) ->
-    case mnesia:create_table(RecordType, Attributes) of
-        {atomic, ok} ->
-            ok;
-        {aborted, {already_exists, Table}} ->
-            Message = io_lib:format("Table ~p already exists, skipping creation!~n", [Table]),
-            logger:warning(Message),
-            ok;
-        {aborted, Reason} ->
-            logger:error(Reason),
+
+-doc """
+Runs `Fun`, turning the throws `query/2` uses for control flow back
+into `{error, _}` values. Nothing above the service layer sees an
+exception from here.
+""".
+-spec run(fun(() -> Result)) -> Result | error().
+run(Fun) ->
+    try
+        Fun()
+    catch
+        throw:{?MODULE, Reason} ->
+            logger:error("[~p] Session query failed: ~p~n", [?MODULE, Reason]),
             {error, Reason}
     end.
 
-%% @doc
-%% Standardizes the output of MNESIA transactions:.
-%% @end
--spec format_query_result(Result) -> Result when
-    Result :: {atomic, term()} | {aborted, term()},
-    Cache :: player_cache(),
-    Reason :: mnesia_query_error(),
-    Ok :: {ok, Cache},
-    Error :: {error, Reason},
-    Result :: Ok | Error.
-format_query_result(Result) ->
-    case Result of
-        {atomic, []} ->
-            {error, not_found};
-        {atomic, [C]} ->
-            {ok, C};
-        {atomic, _} ->
-            {error, inconsistent_data};
-        _ ->
-            {error, generic_error}
+-spec transaction(fun(() -> Result)) -> Result.
+transaction(Fun) ->
+    case database:transaction(?POOL, Fun) of
+        {error, Reason} -> throw({?MODULE, Reason});
+        Result -> Result
     end.
 
-%% @doc
-%% Takes a deterministacally generated UserID and
-%% fetches the Client PID associated with it.
-%% @end
--spec get_by_id(Table, UserId) -> Result when
-    Table :: mnesia:table(),
-    UserId :: player_id(),
-    Cache :: player_cache(),
-    Reason :: mnesia_query_error(),
-    Ok :: {ok, Cache},
-    Error :: {error, Reason},
-    Result :: Ok | Error.
-get_by_id(Table, UserId) ->
-    Fun = fun() -> mnesia:read({Table, UserId}) end,
-    format_query_result(mnesia:transaction(Fun)).
+-doc """
+Runs a named query, throwing on failure.
 
-%% @doc
-%% Takes a deterministacally generated UserID and
-%% fetches the PID associated with it.
-%% @end
--spec upsert_record(Table, Cache) -> Result when
-    Table :: mnesia:table(),
-    Cache :: player_cache(),
-    Pid :: pid(),
-    Ok :: {ok, Pid},
-    Error :: {error, mnesia_write_error},
-    Result :: Ok | Error.
-upsert_record(Table, Cache) ->
-    Fun = fun() -> mnesia:write(Table, Cache, write) end,
-    case mnesia:transaction(Fun) of
-        {atomic, ok} ->
-            {ok, Cache#player_cache.client_pid};
-        _ ->
-            {error, mnesia_write_error}
+Throwing rather than returning is deliberate: inside
+`database:transaction/2` an exception is what makes `pgo` roll back.
+Returning an error value would let a half-finished login commit.
+""".
+-spec query(string(), [term()]) -> [map()].
+query(File, Params) ->
+    #{rows := Rows} = execute(File, Params),
+    Rows.
+
+-spec affected_rows(string(), [term()]) -> non_neg_integer().
+affected_rows(File, Params) ->
+    maps:get(num_rows, execute(File, Params), 0).
+
+-spec execute(string(), [term()]) -> database:query_result().
+execute(File, Params) ->
+    SQL = database_queries:fetch_query(?QUERY_DIR, File),
+    case database:query(?POOL, SQL, Params) of
+        #{rows := _} = Result -> Result;
+        {error, Reason} -> throw({?MODULE, Reason})
     end.
 
-%% @doc
-%% Removes a UserID from the cache table, therefore
-%% invalidating the PID associated with it.
-%% @end
--spec delete_player_entry(Table, UserId) -> Result when
-    Table :: mnesia:table(),
-    UserId :: player_id(),
-    Error :: {error, mnesia_delete_error},
-    Ok :: {ok, UserId},
-    Result :: Ok | Error.
-delete_player_entry(Table, UserId) ->
-    Fun = fun() -> mnesia:delete(Table, UserId, write) end,
-    case mnesia:transaction(Fun) of
-        {atomic, ok} ->
-            {ok, UserId};
-        _ ->
-            {error, delete_write_error}
-    end.
+-spec overlap_error(term()) -> boolean().
+overlap_error({pgo_error, Fields}) ->
+    lists:member(error_code(Fields), ?OVERLAP_CODES);
+overlap_error(_Other) ->
+    false.
+
+-spec error_code(map() | [{atom(), term()}]) -> binary() | undefined.
+error_code(Fields) when is_map(Fields) ->
+    maps:get(code, Fields, undefined);
+error_code(Fields) when is_list(Fields) ->
+    proplists:get_value(code, Fields, undefined);
+error_code(_Other) ->
+    undefined.
+
+-spec row_to_cache(map()) -> player_cache().
+row_to_cache(#{
+    player_id := PlayerId,
+    username := Username,
+    email := Email,
+    client_pid := Encoded
+}) ->
+    #player_cache{
+        player_id = PlayerId,
+        username = to_list(Username),
+        email = to_list(Email),
+        client_pid = decode_pid(Encoded)
+    }.
+
+-doc """
+Decodes a stored pid.
+
+`safe` is not usable here: the frontend node that owns the pid may be
+one this node has never spoken to, so its name is not yet an atom, and
+`safe` refuses to create it. The data is ours -- nothing but `login/2`
+ever writes this column.
+""".
+-spec decode_pid(binary()) -> pid() | undefined.
+decode_pid(Encoded) when is_binary(Encoded) ->
+    try binary_to_term(Encoded) of
+        Pid when is_pid(Pid) -> Pid;
+        _Other -> undefined
+    catch
+        _:_ -> undefined
+    end;
+decode_pid(_Other) ->
+    undefined.
+
+-spec to_list(binary() | string()) -> string().
+to_list(Value) when is_binary(Value) -> binary_to_list(Value);
+to_list(Value) -> Value.
+
+-spec to_atom(binary() | atom() | string()) -> atom().
+to_atom(Value) when is_atom(Value) -> Value;
+to_atom(Value) when is_binary(Value) -> binary_to_atom(Value, utf8);
+to_atom(Value) when is_list(Value) -> list_to_atom(Value).

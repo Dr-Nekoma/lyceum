@@ -1,0 +1,50 @@
+[
+  {lyceum_cluster, [
+    %% Which layers this node runs, and which nodes it links to. One
+    %% release, three personalities:
+    %%
+    %%   LYCEUM_NODE_NAME=lyceum_server LYCEUM_NODE_TYPES=frontend \
+    %%     LYCEUM_PEERS=lyceum_logic@host
+    %%   LYCEUM_NODE_NAME=lyceum_logic  LYCEUM_NODE_TYPES=logic \
+    %%     LYCEUM_PEERS=lyceum_svc@host
+    %%   LYCEUM_NODE_NAME=lyceum_svc    LYCEUM_NODE_TYPES=service
+    %%
+    %% Peers point downward only (frontend -> logic -> service): the
+    %% connector on each node dials the layer below it, and nothing
+    %% dials back up.
+    {node_types, "${LYCEUM_NODE_TYPES}"},
+    {peers, "${LYCEUM_PEERS}"}
+  ]},
+  {lyceum_service, [
+    {workers, 8},
+    {call_timeout, 5000}
+  ]},
+  {database, [
+    {pools, [
+      #{name => lyceum_pool, role => application, size => 10},
+      #{name => auth_pool,   role => auth,        size => 4}
+    ]}
+  ]},
+  {kernel, [
+    {logger_level, info},
+    {logger, [
+      {handler, default, logger_std_h, #{
+        level => info,
+        config => #{
+          type => standard_io
+        },
+        formatter => {logger_formatter, #{
+          single_line => false,
+          template => [
+            "{\"timestamp\":\"", time, "\",",
+            "\"level\":\"", level, "\",",
+            "\"pid\":\"", pid, "\",",
+            "\"mfa\":\"", mfa, "\",",
+            "\"line\":", line, ",",
+            "\"msg\":", msg, "}\n"
+          ]
+        }}
+      }}
+    ]}
+  ]}
+].

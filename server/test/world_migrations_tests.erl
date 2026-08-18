@@ -9,6 +9,12 @@ migrations_run_in_order_test() ->
 
     meck:expect(database, open_migrator_connection, fun() -> {ok, fake_connection} end),
     meck:expect(database, close_migrator_connection, fun(_) -> ok end),
+    %% Seeding the maps waits for the pgo pool to actually answer before
+    %% it runs, so the pool has to answer here too.
+    meck:expect(database, query, fun(_, _) -> #{command => select, num_rows => 1, rows => [#{}]} end),
+    %% The whole pass runs under the cluster-wide migration lock.
+    meck:expect(database, lock_migrations, fun(_) -> ok end),
+    meck:expect(database, unlock_migrations, fun(_) -> ok end),
     meck:expect(migraterl, migrate, fun(_, _) -> {ok, []} end),
     meck:expect(map_generator, create_map, fun(_, _) -> ok end),
 
