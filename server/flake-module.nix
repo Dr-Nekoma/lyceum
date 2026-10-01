@@ -55,7 +55,7 @@
                 gnugrep
                 openssl
               ]
-              ++ lib.optional stdenv.isLinux [
+              ++ lib.optionals stdenv.isLinux [
                 liburing
               ]
             );
